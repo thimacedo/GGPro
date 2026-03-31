@@ -84,8 +84,19 @@ export default function DashboardTab({ matchState, ctrl, ui, ai }: Props) {
                 </div>
             </div>
         </div>
-      ) : (<div className={`${ui.isFullscreen ? 'h-full' : 'h-[500px]'}`}><PenaltyShootout homeTeam={matchState.homeTeam} awayTeam={matchState.awayTeam} state={matchState} onRegisterPenalty={(t, p, o, d) => {
-          ctrl.saveToHistory(); ctrl.setMatchState((prev: MatchState) => { const s = { ...prev.penaltyScore }; if (o === 'scored') s[t]++; const shot: PenaltyShot = { id: Math.random().toString(36).substr(2, 9), teamId: t, playerId: p.id, outcome: o, number: prev.penaltySequence.length + 1 }; const event: MatchEvent = { id: Math.random().toString(36).substr(2, 9), type: 'PENALTY_SHOOTOUT', teamId: t, playerId: p.id, minute: prev.currentTime, timestamp: Date.now(), description: `${d} - ${p.name}`, isAnnulled: false }; return { ...prev, penaltyScore: s, penaltySequence: [...prev.penaltySequence, shot], events: [event, ...(prev.events || [])] }; });
+      }} /></div>)}<div className={`${ui.isFullscreen ? 'h-full' : 'h-[500px]'}`}><PenaltyShootout homeTeam={matchState.homeTeam} awayTeam={matchState.awayTeam} state={matchState} onRegisterPenalty={(t, p, o, d) => {
+          ctrl.saveToHistory(); 
+          ctrl.setMatchState((prev: MatchState) => { 
+            const now = Date.now();
+            const currentMs = prev.timeElapsed + (prev.timerStartedAt ? now - prev.timerStartedAt : 0);
+            const currentMin = Math.floor(currentMs / 60000);
+            
+            const s = { ...prev.penaltyScore }; 
+            if (o === 'scored') s[t]++; 
+            const shot: PenaltyShot = { id: Math.random().toString(36).substr(2, 9), teamId: t, playerId: p.id, outcome: o, number: prev.penaltySequence.length + 1 }; 
+            const event: MatchEvent = { id: Math.random().toString(36).substr(2, 9), type: 'PENALTY_SHOOTOUT', teamId: t, playerId: p.id, minute: currentMin, timestamp: now, description: `${d} - ${p.name}`, isAnnulled: false }; 
+            return { ...prev, penaltyScore: s, penaltySequence: [...prev.penaltySequence, shot], events: [event, ...(prev.events || [])] }; 
+          });
       }} /></div>)}
 
       {!ui.isFullscreen && (

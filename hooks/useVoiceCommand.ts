@@ -30,7 +30,11 @@ export const useVoiceCommand = ({ matchState, addToast, addEvent, setMatchState,
         home: { name: matchState.homeTeam.name, players: matchState.homeTeam.players.map(p=>({num: p.number, name: p.name})) },
         away: { name: matchState.awayTeam.name, players: matchState.awayTeam.players.map(p=>({num: p.number, name: p.name})) }
       });
-      const context = `Tempo Atual: ${matchState.currentTime}'. Fase: ${matchState.period}. DADOS OFICIAIS DOS TIMES: ${richContextData}`;
+      const now = Date.now();
+      const currentMs = matchState.timeElapsed + (matchState.timerStartedAt ? now - matchState.timerStartedAt : 0);
+      const currentTime = Math.floor(currentMs / 60000);
+      
+      const context = `Tempo Atual: ${currentTime}'. Fase: ${matchState.period}. DADOS OFICIAIS DOS TIMES: ${richContextData}`;
       
       const result = await processVoiceCommand(text, matchState.homeTeam, matchState.awayTeam, recentEvents);
       

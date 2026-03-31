@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 import { initializeApp } from "firebase/app";
-import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "firebase/firestore";
+import { getFirestore, doc, updateDoc, setDoc, getDoc, onSnapshot } from "firebase/firestore";
 
 // A configuração virá do env, ou o app prosseguirá offline se faltar dados
 const firebaseConfig = {
@@ -23,8 +23,15 @@ export const syncMatchStateToFirebase = async (matchId: string, state: any) => {
   if (!db || firebaseConfig.apiKey === "dummy") return;
   try {
     const docRef = doc(db, 'matches', matchId);
-    // Usa merge true (updateDoc) para ser menos obstrutivo
-    await setDoc(docRef, state, { merge: true });
+    // Usa updateDoc para ser atômico e não sobrescrever o documento inteiro se outros campos existirem
+    await updateDoc(docRef, state).catch(async (err) => {
+      // Se o documento não existir, cria com setDoc
+      if (err.code === 'not-found') {
+        await setDoc(docRef, state);
+      } else {
+        throw err;
+      }
+    });
   } catch (error) {
     console.error("Sync Error Background:", error);
   }

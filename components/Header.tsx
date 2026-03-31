@@ -78,7 +78,8 @@ const Header: React.FC<HeaderProps> = ({ matchState, resetSignal, onPlayPauseTog
               </button>
            </div>
            <TimerDisplay 
-             initialMinutes={matchState.currentTime}
+             timerStartedAt={matchState.timerStartedAt}
+             timeElapsed={matchState.timeElapsed}
              isPaused={matchState.isPaused}
              period={matchState.period}
              onMinuteChange={onMinuteChange}

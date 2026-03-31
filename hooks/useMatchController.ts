@@ -8,12 +8,22 @@ export function useMatchController(addToast: (title: string, msg: string, type: 
     const saved = localStorage.getItem(STORAGE_KEY);
     const defaultRules = { halfDuration: 45, maxSubstitutions: 5, penaltyKicks: 5, summary: '' };
     
-    const baseState = {
+    const baseState: MatchState = {
       homeTeam: { ...DEFAULT_HOME_TEAM, coach: '' }, 
       awayTeam: { ...DEFAULT_AWAY_TEAM, coach: '' },
-      events: [], startTime: null, currentTime: 0, isPaused: true, period: 'PRE_MATCH' as MatchStatus,
-      competition: '', matchDate: new Date().toISOString().split('T')[0], stadium: '', referee: '', observations: '',
-      penaltyScore: { home: 0, away: 0 }, penaltySequence: [], penaltyStarter: 'home' as 'home' | 'away',
+      events: [], startTime: null, 
+      timerStartedAt: null, 
+      timeElapsed: 0, 
+      isPaused: true, 
+      period: 'PRE_MATCH' as MatchStatus,
+      competition: '', 
+      matchDate: new Date().toISOString().split('T')[0], 
+      stadium: '', 
+      referee: '', 
+      observations: '',
+      penaltyScore: { home: 0, away: 0 }, 
+      penaltySequence: [], 
+      penaltyStarter: 'home' as 'home' | 'away',
       rules: defaultRules
     };
 
@@ -43,7 +53,11 @@ export function useMatchController(addToast: (title: string, msg: string, type: 
   }, [matchState]);
 
   const handleMinuteChange = useCallback((newMins: number) => {
-    setMatchState(prev => ({ ...prev, currentTime: newMins }));
+    // Apenas para compatibilidade se algo ainda chamar, mas o ideal é não depender disso no estado
+    setMatchState(prev => {
+        const totalMs = newMins * 60000;
+        return { ...prev, timeElapsed: totalMs, timerStartedAt: prev.isPaused ? null : Date.now() };
+    });
   }, []);
 
   const lastToastEventId = useRef<string | null>(null);
@@ -75,14 +89,26 @@ export function useMatchController(addToast: (title: string, msg: string, type: 
     }
     
     setMatchState(prev => {
+      const now = Date.now();
+      let newTimeElapsed = prev.timeElapsed;
+      
+      // Se estava rodando e vai pausar, acumula o tempo
+      if (!prev.isPaused && prev.timerStartedAt) {
+        newTimeElapsed += (now - prev.timerStartedAt);
+      }
+
+      const newIsPaused = !prev.isPaused;
+      const newTimerStartedAt = newIsPaused ? null : now;
+
       if (prev.isPaused) {
         if (prev.period === 'PRE_MATCH') {
           return {
             ...prev,
             period: '1T',
             isPaused: false,
-            currentTime: 0,
-            events: [{ id: Math.random().toString(36).substr(2, 9), type: 'PERIOD_START', teamId: 'none', minute: 0, timestamp: Date.now(), description: `Início de Jogo (1º Tempo)`, isAnnulled: false }, ...(prev.events || [])]
+            timerStartedAt: now,
+            timeElapsed: 0,
+            events: [{ id: Math.random().toString(36).substr(2, 9), type: 'PERIOD_START', teamId: 'none', minute: 0, timestamp: now, description: `Início de Jogo (1º Tempo)`, isAnnulled: false }, ...(prev.events || [])]
           };
         }
         if (prev.period === 'INTERVAL') {
@@ -90,12 +116,19 @@ export function useMatchController(addToast: (title: string, msg: string, type: 
             ...prev,
             period: '2T',
             isPaused: false,
-            currentTime: 0, 
-            events: [{ id: Math.random().toString(36).substr(2, 9), type: 'PERIOD_START', teamId: 'none', minute: 0, timestamp: Date.now(), description: `Recomeço de Jogo (2º Tempo)`, isAnnulled: false }, ...(prev.events || [])]
+            timerStartedAt: now,
+            timeElapsed: 0, 
+            events: [{ id: Math.random().toString(36).substr(2, 9), type: 'PERIOD_START', teamId: 'none', minute: 0, timestamp: now, description: `Recomeço de Jogo (2º Tempo)`, isAnnulled: false }, ...(prev.events || [])]
           };
         }
       }
-      return { ...prev, isPaused: !prev.isPaused };
+      
+      return { 
+        ...prev, 
+        isPaused: newIsPaused, 
+        timerStartedAt: newTimerStartedAt, 
+        timeElapsed: newTimeElapsed 
+      };
     });
   }, [matchState.isPaused, matchState.period]);
 
@@ -114,13 +147,17 @@ export function useMatchController(addToast: (title: string, msg: string, type: 
 
   useEffect(() => { 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(matchState)); 
+    
+    // Sincronização otimizada para o Firebase
     const handler = setTimeout(() => {
         if (isRemoteUpdate.current) {
             isRemoteUpdate.current = false;
         } else {
+            // Não precisamos sincronizar o tempo a cada segundo com esta nova lógica, 
+            // apenas quando o estado geral muda ou o cronômetro é pausado/iniciado.
             syncMatchStateToFirebase('current-match', matchState);
         }
-    }, 1000);
+    }, 1500); // Aumentado um pouco o debounce para poupar conexões
     return () => clearTimeout(handler);
   }, [matchState]);
 
@@ -142,7 +179,10 @@ export function useMatchController(addToast: (title: string, msg: string, type: 
     setMatchState({
       homeTeam: { ...DEFAULT_HOME_TEAM, coach: '' },
       awayTeam: { ...DEFAULT_AWAY_TEAM, coach: '' },
-      events: [], startTime: null, currentTime: 0, isPaused: true, period: 'PRE_MATCH',
+      events: [], startTime: null, 
+      timerStartedAt: null, 
+      timeElapsed: 0,
+      isPaused: true, period: 'PRE_MATCH',
       competition: '', matchDate: new Date().toISOString().split('T')[0], stadium: '', referee: '', observations: '',
       penaltyScore: { home: 0, away: 0 }, penaltySequence: [], penaltyStarter: 'home',
       rules: { halfDuration: 45, maxSubstitutions: 5, penaltyKicks: 5, summary: '' }
@@ -159,7 +199,8 @@ export function useMatchController(addToast: (title: string, msg: string, type: 
       isPaused: true,
       events: [{
         id: Math.random().toString(36).substr(2, 9), type: 'PERIOD_END', teamId: 'none',
-        minute: prev.currentTime, timestamp: Date.now(), description: 'Fim de Jogo Finalizado', isAnnulled: false
+        minute: Math.floor((prev.timeElapsed + (prev.timerStartedAt ? Date.now() - prev.timerStartedAt : 0)) / 60000), 
+        timestamp: Date.now(), description: 'Fim de Jogo Finalizado', isAnnulled: false
       }, ...(prev.events || [])]
     }));
     addToast("Partida Finalizada", "O jogo foi encerrado e o relatório está pronto.", "success");
@@ -168,10 +209,24 @@ export function useMatchController(addToast: (title: string, msg: string, type: 
   const addEvent = useCallback((eventData: Omit<MatchEvent, 'id' | 'timestamp' | 'minute'> & { manualSub?: { name: string, number: number } }) => {
     saveToHistory();
     setMatchState(prev => {
+      const now = Date.now();
+      const currentMs = prev.timeElapsed + (prev.timerStartedAt ? now - prev.timerStartedAt : 0);
+      const currentMin = Math.floor(currentMs / 60000);
+      
       let finalDescription = eventData.description;
       const teamKey = eventData.teamId === 'home' ? 'homeTeam' : 'awayTeam';
       const team = { ...prev[teamKey] } as Team;
-      const newEvent: MatchEvent = { id: Math.random().toString(36).substr(2, 9), type: eventData.type, teamId: eventData.teamId, playerId: eventData.playerId, relatedPlayerId: eventData.relatedPlayerId, description: eventData.description, minute: prev.currentTime, timestamp: Date.now(), isAnnulled: false };
+      const newEvent: MatchEvent = { 
+        id: Math.random().toString(36).substr(2, 9), 
+        type: eventData.type, 
+        teamId: eventData.teamId, 
+        playerId: eventData.playerId, 
+        relatedPlayerId: eventData.relatedPlayerId, 
+        description: eventData.description, 
+        minute: currentMin, 
+        timestamp: now, 
+        isAnnulled: false 
+      };
       let newState = { ...prev };
 
       let extraEvent: MatchEvent | null = null;
@@ -260,7 +315,7 @@ export function useMatchController(addToast: (title: string, msg: string, type: 
       addToast("Fase Alterada", periodEvent.description, "info");
       
       return {
-        ...prev, period: nextPeriod, currentTime: 0, isPaused: true,
+        ...prev, period: nextPeriod, timeElapsed: 0, timerStartedAt: null, isPaused: true,
         events: [periodEvent, ...(prev.events || [])]
       };
     });

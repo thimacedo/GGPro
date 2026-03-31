@@ -39,11 +39,23 @@ export interface MatchRules {
 }
 
 export interface MatchState {
-  homeTeam: Team; awayTeam: Team; events: MatchEvent[]; startTime: number | null; currentTime: number;
-  isPaused: boolean; period: MatchStatus; competition: string; matchDate: string; stadium: string;
-  referee?: string; observations?: string; penaltyScore: { home: number; away: number };
-  penaltySequence: PenaltyShot[]; penaltyStarter?: 'home' | 'away';
-  rules: MatchRules; // Novo campo
+  homeTeam: Team; 
+  awayTeam: Team; 
+  events: MatchEvent[]; 
+  startTime: number | null; 
+  timerStartedAt: number | null; // Timestamp of the last 'Play'
+  timeElapsed: number; // Accumulated time in ms before the last 'Play'
+  isPaused: boolean; 
+  period: MatchStatus; 
+  competition: string; 
+  matchDate: string; 
+  stadium: string;
+  referee?: string; 
+  observations?: string; 
+  penaltyScore: { home: number; away: number };
+  penaltySequence: PenaltyShot[]; 
+  penaltyStarter?: 'home' | 'away';
+  rules: MatchRules; 
 }
 
 export interface AICommandResponse {
