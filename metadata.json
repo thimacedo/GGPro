@@ -1,0 +1,8 @@
+{
+  "name": "GG PRO",
+  "description": "Assistente de informações para partidas de futebol - Por Thiago Macedo",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
