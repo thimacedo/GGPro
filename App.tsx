@@ -226,7 +226,10 @@ export default function App() {
                     const i = nE.findIndex(e => ['GOAL', 'PENALTY', 'RED_CARD'].includes(e.type) && !e.isAnnulled); 
                     if (i !== -1) { 
                       nE[i] = { ...nE[i], isAnnulled: true, description: `${nE[i].description} (ANULADO)` }; 
-                      nE.unshift({ id: Math.random().toString(36).substr(2, 9), type: 'VAR', teamId: 'none', minute: prev.currentTime, timestamp: Date.now(), description: `VAR anulou lance`, isAnnulled: false }); 
+                      const now = Date.now();
+                      const currentMs = prev.timeElapsed + (prev.timerStartedAt ? now - prev.timerStartedAt : 0);
+                      const currentMin = Math.floor(currentMs / 60000);
+                      nE.unshift({ id: Math.random().toString(36).substr(2, 9), type: 'VAR', teamId: 'none', minute: currentMin, timestamp: now, description: `VAR anulou lance`, isAnnulled: false }); 
                       return { ...prev, events: nE }; 
                     } 
                     return prev; 

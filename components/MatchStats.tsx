@@ -48,6 +48,12 @@ const StatBar = ({
 };
 
 const MatchStats: React.FC<MatchStatsProps> = ({ state }) => {
+  const currentMin = useMemo(() => {
+    const now = Date.now();
+    const elapsed = state.timeElapsed + (state.timerStartedAt && !state.isPaused ? now - state.timerStartedAt : 0);
+    return Math.floor(elapsed / 60000);
+  }, [state.timeElapsed, state.timerStartedAt, state.isPaused]);
+
   const stats = useMemo(() => {
     const safeEvents = state.events || [];
     const getCount = (teamId: 'home'|'away', types: string[]) =>
@@ -90,7 +96,7 @@ const MatchStats: React.FC<MatchStatsProps> = ({ state }) => {
     const homePossession = Math.round((homeActionPoints / totalActionPoints) * 100);
     const awayPossession = 100 - homePossession;
 
-    const minutesPlayed = state.currentTime > 0 ? state.currentTime : 1;
+    const minutesPlayed = currentMin > 0 ? currentMin : 1;
     const generateFakePasses = (possession: number) => {
       const baseVolume = minutesPlayed * 4.5;
       const possessionMultiplier = possession / 50; 
@@ -106,7 +112,7 @@ const MatchStats: React.FC<MatchStatsProps> = ({ state }) => {
       homeSaves, awaySaves, homeYellows, awayYellows, homeReds, awayReds,
       homePossession, awayPossession, homePasses: generateFakePasses(homePossession), awayPasses: generateFakePasses(awayPossession)
     };
-  }, [state.events, state.currentTime]);
+  }, [state.events, currentMin]);
 
   const hColor = state.homeTeam?.color || '#3b82f6';
   const aColor = state.awayTeam?.color || '#ef4444';
@@ -126,7 +132,7 @@ const MatchStats: React.FC<MatchStatsProps> = ({ state }) => {
             {stats.homeGoals} <span className="text-slate-700 text-3xl">-</span> {stats.awayGoals}
           </span>
           <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-2 bg-slate-900 px-3 py-1 rounded-full border border-white/5">
-            {state.period === 'FINISHED' ? 'Encerrado' : `Tempo: ${state.currentTime}'`}
+            {state.period === 'FINISHED' ? 'Encerrado' : `Tempo: ${currentMin}'`}
           </span>
         </div>
         

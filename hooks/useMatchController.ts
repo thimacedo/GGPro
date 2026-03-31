@@ -257,7 +257,7 @@ export function useMatchController(addToast: (title: string, msg: string, type: 
       } else if (newEvent.type === 'GK_8_SECONDS') {
         extraEvent = {
           id: Math.random().toString(36).substr(2, 9), type: 'CORNER', teamId: newEvent.teamId === 'home' ? 'away' : 'home',
-          description: `Escanteio (Infração 8s GK): ${team.name}`, minute: prev.currentTime, timestamp: Date.now() + 1, isAnnulled: false
+          description: `Escanteio (Infração 8s GK): ${team.name}`, minute: currentMin, timestamp: Date.now() + 1, isAnnulled: false
         };
         const updatePlayersInTeam = (t: Team) => ({ ...t, players: t.players.map(p => p.id === newEvent.playerId ? { ...p, events: [...p.events, newEvent] } : p) });
         newState[teamKey] = updatePlayersInTeam(team);
@@ -277,7 +277,7 @@ export function useMatchController(addToast: (title: string, msg: string, type: 
               if (yellowCards >= 1) {
                 extraEvent = {
                   id: Math.random().toString(36).substr(2, 9), type: 'RED_CARD', teamId: newEvent.teamId, playerId: p.id,
-                  description: `Expulsão (2º Amarelo): ${p.name}`, minute: prev.currentTime, timestamp: Date.now() + 1, isAnnulled: false
+                  description: `Expulsão (2º Amarelo): ${p.name}`, minute: currentMin, timestamp: Date.now() + 1, isAnnulled: false
                 };
                 updatedEvents.push(extraEvent);
                 hasLeftGame = true;
