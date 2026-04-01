@@ -21,14 +21,14 @@ export default function DashboardTab({ matchState, ctrl, ui, ai }: Props) {
   return (
     <>
       {matchState.period !== 'PENALTIES' ? (
-        <div className={`grid grid-cols-1 lg:grid-cols-12 gap-4 ${ui.isFullscreen ? 'h-full' : 'lg:h-[700px]'}`}>
-            <div className={`${ui.isFullscreen ? 'lg:col-span-9 flex flex-col h-full min-h-0' : 'lg:col-span-8 flex flex-col h-full min-h-0 gap-4'}`}>
+        <div className={`grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch ${ui.isFullscreen ? 'h-full' : 'h-auto mb-12'}`}>
+            <div className={`${ui.isFullscreen ? 'lg:col-span-9 flex flex-col h-full min-h-0' : 'lg:col-span-8 flex flex-col'}`}>
                 <div className="flex items-center gap-2 mb-1">
                     <button onClick={() => ui.setViewMode('list')} className={`flex-1 py-3 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest border transition-all ${isList ? 'bg-blue-600 border-blue-400 text-white' : 'bg-slate-900 border-white/5 text-slate-500'}`}><ListFilter size={14} /> Lista</button>
                     <button onClick={() => ui.setViewMode('field')} className={`flex-1 py-3 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest border transition-all ${isField ? 'bg-blue-600 border-blue-400 text-white' : 'bg-slate-900 border-white/5 text-slate-500'}`}><LayoutDashboard size={14} /> Mapa Tático</button>
                     <button onClick={() => ui.setIsFullscreen(!ui.isFullscreen)} className={`p-3 rounded-2xl flex items-center justify-center border transition-all ${ui.isFullscreen ? 'bg-blue-600 border-blue-400 text-white' : 'bg-slate-900 border-white/5 text-slate-500'}`}>{ui.isFullscreen ? <Minimize size={14} /> : <Maximize size={14} />}</button>
                 </div>
-                <div className={`relative ${ui.isFullscreen ? 'flex-1 flex flex-col min-h-0' : ''}`}>
+                <div className={`relative ${ui.isFullscreen ? 'flex-1 flex flex-col min-h-0' : 'flex flex-col'}`}>
                     {isField ? (
                         <Field 
                             homeTeam={matchState.homeTeam} 
@@ -45,7 +45,7 @@ export default function DashboardTab({ matchState, ctrl, ui, ai }: Props) {
                             isFullscreen={ui.isFullscreen} 
                         />
                     ) : (
-                        <div className={`flex-1 bg-slate-900/50 rounded-3xl border border-white/5 p-4 flex flex-col ${ui.isFullscreen ? 'h-full min-h-0 overflow-hidden' : 'h-full min-h-0'}`}>
+                        <div className="bg-slate-900/50 rounded-[2.5rem] border border-white/5 p-6 flex flex-col shadow-2xl">
                             <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
                                 <div className="flex flex-col min-h-0">
                                     <div className="sticky top-0 bg-slate-900/90 z-10 py-2 border-b border-white/10 mb-2 cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => ui.setSelectedTeamForAction({ team: matchState.homeTeam, teamId: 'home' })}>
@@ -65,9 +65,9 @@ export default function DashboardTab({ matchState, ctrl, ui, ai }: Props) {
                 </div>
             </div>
             
-            <div className={`${ui.isFullscreen ? 'lg:col-span-3 flex flex-col h-full min-h-0' : 'lg:col-span-4 flex flex-col h-full min-h-0 gap-4'}`}>
+            <div className={`${ui.isFullscreen ? 'lg:col-span-3 flex flex-col h-full min-h-0' : 'lg:col-span-4 flex flex-col h-full min-h-0 content-stretch'}`}>
                 {!ui.isFullscreen && (
-                <div className="grid grid-cols-2 gap-3 flex-none">
+                <div className="grid grid-cols-2 gap-3 flex-none mb-4">
                     <QuickActionsPanel team={matchState.homeTeam} teamId="home" onAddEvent={ctrl.addEvent} />
                     <QuickActionsPanel team={matchState.awayTeam} teamId="away" onAddEvent={ctrl.addEvent} />
                 </div>

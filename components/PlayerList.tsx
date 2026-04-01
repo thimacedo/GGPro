@@ -31,16 +31,16 @@ const PlayerList: React.FC<PlayerListProps> = ({ team, variant, onPlayerClick, o
 
   if (variant === 'compact') {
     return (
-      <div className="bg-[#0c1222] border border-white/5 rounded-3xl p-4 flex flex-col shadow-inner ring-1 ring-white/5 h-full">
-        <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-2">
+      <div className="flex flex-col">
+        <div className="space-y-1.5">
           {starters.map(player => (
             <button 
               key={player.id} 
               onClick={() => onPlayerClick(player)}
-              className={`w-full p-3 rounded-2xl text-left font-bold text-sm flex items-center gap-4 transition-all border border-white/5 bg-slate-900 hover:bg-slate-800`}
-              style={{ borderColor: `${team.color}15`, backgroundColor: `${team.color}05` }}
+              className={`w-full p-2.5 rounded-xl text-left font-bold text-sm flex items-center gap-3 transition-all border border-white/5 bg-slate-900/40 hover:bg-slate-800`}
+              style={{ borderColor: `${team.color}15` }}
             >
-              <div className={`font-mono text-base font-black w-9 h-9 flex items-center justify-center rounded-lg shadow-xl text-white`} style={{ backgroundColor: `${team.color}CC` }}>
+              <div className={`font-mono text-sm font-black w-8 h-8 flex items-center justify-center rounded-lg shadow-xl text-white shrink-0`} style={{ backgroundColor: `${team.color}` }}>
                 {player.number}
               </div>
               <span className={`flex-1 truncate text-white font-black`}>{player.name}</span>

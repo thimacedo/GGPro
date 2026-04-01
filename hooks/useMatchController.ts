@@ -260,7 +260,16 @@ export function useMatchController(addToast: (title: string, msg: string, type: 
 
         const updatedPlayers = players.map(p => {
           if (p.id === newEvent.playerId) return { ...p, isStarter: false, hasLeftGame: true, events: [...p.events, newEvent] };
-          if (p.id === newEvent.relatedPlayerId) return { ...p, isStarter: true, events: [...p.events, newEvent] };
+          if (p.id === newEvent.relatedPlayerId) {
+            return { 
+              ...p, 
+              isStarter: true, 
+              events: [...p.events, newEvent],
+              // Herdar posição do jogador que saiu para manter a organização tática
+              x: playerOut ? playerOut.x : p.x,
+              y: playerOut ? playerOut.y : p.y
+            };
+          }
           return p;
         });
         newState[teamKey] = { ...team, players: updatedPlayers };
