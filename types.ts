@@ -6,16 +6,31 @@ export type EventType =
   | 'GOAL' | 'YELLOW_CARD' | 'RED_CARD' | 'SUBSTITUTION' | 'SHOT' | 'FOUL' | 'CORNER' | 'PENALTY' | 'INJURY' 
   | 'PERIOD_START' | 'PERIOD_END' | 'START_TIMER' | 'VAR' | 'PENALTY_SHOOTOUT'
   | 'OFFSIDE' | 'SAVE' | 'WOODWORK' | 'ANSWER' | 'INVALID' | 'CORRECTION'
-  | 'CONCUSSION_SUBSTITUTION' | 'GK_8_SECONDS' | 'GENERIC';
+  | 'CONCUSSION_SUBSTITUTION' | 'GK_8_SECONDS' | 'SET_GOALKEEPER' | 'GENERIC';
 
 export interface MatchEvent {
-  id: string; type: EventType; minute: number; playerId?: string; relatedPlayerId?: string;
-  teamId: 'home' | 'away' | 'none'; description: string; timestamp: number; isAnnulled?: boolean;
+  id: string; 
+  type: EventType; 
+  minute: number; 
+  playerId?: string; 
+  relatedPlayerId?: string;
+  teamId: 'home' | 'away' | 'none'; 
+  description: string; 
+  timestamp: number; 
+  isAnnulled?: boolean;
 }
 
 export interface Player {
-  id: string; name: string; fullName: string; number: number; position: Position;
-  teamId: 'home' | 'away'; isStarter: boolean; events: MatchEvent[]; x: number; y: number;
+  id: string; 
+  name: string; 
+  fullName: string; 
+  number: number; 
+  position: Position;
+  teamId: 'home' | 'away'; 
+  isStarter: boolean; 
+  events: MatchEvent[]; 
+  x: number; 
+  y: number;
   hasLeftGame?: boolean;
 }
 

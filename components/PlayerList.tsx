@@ -11,9 +11,15 @@ interface PlayerListProps {
 }
 
 const PlayerList: React.FC<PlayerListProps> = ({ team, variant, onPlayerClick, onEditCoach, onEditPlayer }) => {
-  const players = team.players || [];
-  const starters = players.filter(p => p.isStarter);
-  const subs = players.filter(p => !p.isStarter);
+  const sortByGK = (a: Player, b: Player) => {
+    if (a.position === 'GK' && b.position !== 'GK') return -1;
+    if (a.position !== 'GK' && b.position === 'GK') return 1;
+    return a.number - b.number; // secundário: número
+  };
+
+  const players = [...(team.players || [])];
+  const starters = players.filter(p => p.isStarter).sort(sortByGK);
+  const subs = players.filter(p => !p.isStarter).sort(sortByGK);
   const coach = team.coach || 'Comissão Técnica';
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -26,18 +32,18 @@ const PlayerList: React.FC<PlayerListProps> = ({ team, variant, onPlayerClick, o
   if (variant === 'compact') {
     return (
       <div className="bg-[#0c1222] border border-white/5 rounded-3xl p-4 flex flex-col shadow-inner ring-1 ring-white/5 h-full">
-        <div className="pr-1 space-y-2">
+        <div className="flex-1 overflow-y-auto custom-scrollbar pr-1 space-y-2">
           {starters.map(player => (
             <button 
               key={player.id} 
               onClick={() => onPlayerClick(player)}
-              className={`w-full p-3 rounded-2xl text-left font-bold text-sm flex items-center gap-4 transition-all border ${player.isStarter ? 'border-white/5 bg-slate-900 hover:bg-slate-800' : 'border-white/5 bg-slate-900/60 hover:bg-slate-900'}`}
-              style={player.isStarter ? { borderColor: `${team.color}15`, backgroundColor: `${team.color}05` } : {}}
+              className={`w-full p-3 rounded-2xl text-left font-bold text-sm flex items-center gap-4 transition-all border border-white/5 bg-slate-900 hover:bg-slate-800`}
+              style={{ borderColor: `${team.color}15`, backgroundColor: `${team.color}05` }}
             >
-              <div className={`font-mono text-base font-black w-9 h-9 flex items-center justify-center rounded-lg shadow-xl ${player.isStarter ? 'text-white' : 'text-slate-100'}`} style={{ backgroundColor: `${team.color}CC` }}>
+              <div className={`font-mono text-base font-black w-9 h-9 flex items-center justify-center rounded-lg shadow-xl text-white`} style={{ backgroundColor: `${team.color}CC` }}>
                 {player.number}
               </div>
-              <span className={`flex-1 truncate ${player.isStarter ? 'text-white font-black' : 'text-slate-100 font-extrabold'}`}>{player.name}</span>
+              <span className={`flex-1 truncate text-white font-black`}>{player.name}</span>
             </button>
           ))}
           {players.length === 0 && (

@@ -21,8 +21,8 @@ export default function DashboardTab({ matchState, ctrl, ui, ai }: Props) {
   return (
     <>
       {matchState.period !== 'PENALTIES' ? (
-        <div className={`grid grid-cols-1 lg:grid-cols-12 gap-4 ${ui.isFullscreen ? 'h-full' : ''}`}>
-            <div className={`${ui.isFullscreen ? 'lg:col-span-9 flex flex-col h-full min-h-0' : 'lg:col-span-8 flex flex-col gap-4'}`}>
+        <div className={`grid grid-cols-1 lg:grid-cols-12 gap-4 ${ui.isFullscreen ? 'h-full' : 'lg:h-[700px]'}`}>
+            <div className={`${ui.isFullscreen ? 'lg:col-span-9 flex flex-col h-full min-h-0' : 'lg:col-span-8 flex flex-col h-full min-h-0 gap-4'}`}>
                 <div className="flex items-center gap-2 mb-1">
                     <button onClick={() => ui.setViewMode('list')} className={`flex-1 py-3 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest border transition-all ${isList ? 'bg-blue-600 border-blue-400 text-white' : 'bg-slate-900 border-white/5 text-slate-500'}`}><ListFilter size={14} /> Lista</button>
                     <button onClick={() => ui.setViewMode('field')} className={`flex-1 py-3 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest border transition-all ${isField ? 'bg-blue-600 border-blue-400 text-white' : 'bg-slate-900 border-white/5 text-slate-500'}`}><LayoutDashboard size={14} /> Mapa Tático</button>
@@ -45,17 +45,27 @@ export default function DashboardTab({ matchState, ctrl, ui, ai }: Props) {
                             isFullscreen={ui.isFullscreen} 
                         />
                     ) : (
-                        <div className={`flex-1 bg-slate-900/50 rounded-3xl border border-white/5 p-4 flex flex-col ${ui.isFullscreen ? 'h-full min-h-0' : 'h-auto min-h-[600px]'}`}>
-                            <div className="grid grid-cols-2 gap-4 flex-1">
-                                <div><div className="sticky top-0 bg-slate-900/90 z-10 py-2 border-b border-white/10 mb-2 cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => ui.setSelectedTeamForAction({ team: matchState.homeTeam, teamId: 'home' })}><h4 className="text-[10px] font-black uppercase text-center" style={{color: matchState.homeTeam.color}}>{matchState.homeTeam.shortName}</h4></div><PlayerList team={matchState.homeTeam} variant="compact" onPlayerClick={(p) => ui.setSelectedPlayerForAction({ player: p, teamId: 'home' })} /></div>
-                                <div><div className="sticky top-0 bg-slate-900/90 z-10 py-2 border-b border-white/10 mb-2 cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => ui.setSelectedTeamForAction({ team: matchState.awayTeam, teamId: 'away' })}><h4 className="text-[10px] font-black uppercase text-center" style={{color: matchState.awayTeam.color}}>{matchState.awayTeam.shortName}</h4></div><PlayerList team={matchState.awayTeam} variant="compact" onPlayerClick={(p) => ui.setSelectedPlayerForAction({ player: p, teamId: 'away' })} /></div>
+                        <div className={`flex-1 bg-slate-900/50 rounded-3xl border border-white/5 p-4 flex flex-col ${ui.isFullscreen ? 'h-full min-h-0 overflow-hidden' : 'h-full min-h-0'}`}>
+                            <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
+                                <div className="flex flex-col min-h-0">
+                                    <div className="sticky top-0 bg-slate-900/90 z-10 py-2 border-b border-white/10 mb-2 cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => ui.setSelectedTeamForAction({ team: matchState.homeTeam, teamId: 'home' })}>
+                                        <h4 className="text-[10px] font-black uppercase text-center" style={{color: matchState.homeTeam.color}}>{matchState.homeTeam.shortName}</h4>
+                                    </div>
+                                    <PlayerList team={matchState.homeTeam} variant="compact" onPlayerClick={(p) => ui.setSelectedPlayerForAction({ player: p, teamId: 'home' })} />
+                                </div>
+                                <div className="flex flex-col min-h-0">
+                                    <div className="sticky top-0 bg-slate-900/90 z-10 py-2 border-b border-white/10 mb-2 cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => ui.setSelectedTeamForAction({ team: matchState.awayTeam, teamId: 'away' })}>
+                                        <h4 className="text-[10px] font-black uppercase text-center" style={{color: matchState.awayTeam.color}}>{matchState.awayTeam.shortName}</h4>
+                                    </div>
+                                    <PlayerList team={matchState.awayTeam} variant="compact" onPlayerClick={(p) => ui.setSelectedPlayerForAction({ player: p, teamId: 'away' })} />
+                                </div>
                             </div>
                         </div>
                     )}
                 </div>
             </div>
             
-            <div className={`${ui.isFullscreen ? 'lg:col-span-3 flex flex-col h-full min-h-0' : 'lg:col-span-4 flex flex-col gap-4'}`}>
+            <div className={`${ui.isFullscreen ? 'lg:col-span-3 flex flex-col h-full min-h-0' : 'lg:col-span-4 flex flex-col h-full min-h-0 gap-4'}`}>
                 {!ui.isFullscreen && (
                 <div className="grid grid-cols-2 gap-3 flex-none">
                     <QuickActionsPanel team={matchState.homeTeam} teamId="home" onAddEvent={ctrl.addEvent} />
@@ -63,7 +73,7 @@ export default function DashboardTab({ matchState, ctrl, ui, ai }: Props) {
                 </div>
                 )}
 
-                <div className={`bg-slate-900/50 rounded-[2rem] border border-white/5 flex flex-col overflow-hidden shadow-2xl h-full ${ui.isFullscreen ? '' : 'min-h-[500px]'}`}>
+                <div className={`bg-slate-900/50 rounded-[2rem] border border-white/5 flex flex-col overflow-hidden shadow-2xl flex-1 min-h-0`}>
                     <div className="p-6 border-b border-white/5 bg-white/5 flex justify-between items-center">
                         <h3 className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-400 flex items-center gap-2"><History size={16} /> Cronologia</h3>
                         {(matchState.events || []).length > 0 && (
@@ -76,7 +86,22 @@ export default function DashboardTab({ matchState, ctrl, ui, ai }: Props) {
                         )}
                     </div>
                     <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-3">
-                        {(matchState.events || []).map(e => (<div key={e.id} className={`flex gap-3 py-3 border-l-4 mb-1 pl-3 transition-colors rounded-r ${e.isAnnulled ? 'opacity-50' : ''}`} style={{ borderColor: e.isAnnulled ? '#64748b' : (e.teamId === 'home' ? matchState.homeTeam.color : e.teamId === 'away' ? matchState.awayTeam.color : '#475569'), backgroundColor: `${e.teamId === 'home' ? matchState.homeTeam.color : matchState.awayTeam.color}10` }}><span className={`font-mono font-black text-[10px] pt-0.5 min-w-[24px] ${e.isAnnulled ? 'line-through text-slate-600' : 'text-slate-400'}`}>{e.minute}'</span><EventItem event={e} matchState={matchState} formatEventType={ctrl.formatEventType} /></div>))}
+                        {(matchState.events || []).map(e => (
+                            <div 
+                                key={e.id} 
+                                className={`flex gap-3 py-3 border-l-4 mb-1 pl-3 transition-colors rounded-r shadow-lg ${e.isAnnulled ? 'opacity-50 grayscale' : ''}`} 
+                                style={{ 
+                                    borderColor: e.isAnnulled ? '#64748b' : (e.teamId === 'home' ? matchState.homeTeam.color : e.teamId === 'away' ? matchState.awayTeam.color : '#475569'), 
+                                    backgroundColor: e.isAnnulled ? 'transparent' : `${e.teamId === 'home' ? matchState.homeTeam.color : e.teamId === 'away' ? matchState.awayTeam.color : '#ffffff'}08`,
+                                    boxShadow: e.isAnnulled ? 'none' : `inset 4px 0 20px -10px ${e.teamId === 'home' ? matchState.homeTeam.color : matchState.awayTeam.color}30`
+                                }}
+                            >
+                                <span className={`font-mono font-black text-[10px] pt-1 min-w-[28px] ${e.isAnnulled ? 'line-through text-slate-600' : 'text-slate-400'}`}>
+                                    {e.minute}'
+                                </span>
+                                <EventItem event={e} matchState={matchState} formatEventType={ctrl.formatEventType} />
+                            </div>
+                        ))}
                         {(matchState.events || []).length === 0 && (
                             <div className="text-center text-slate-500 text-xs py-2">Nenhum evento registrado</div>
                         )}

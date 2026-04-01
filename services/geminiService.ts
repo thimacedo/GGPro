@@ -8,7 +8,27 @@ const getApiKey = () => {
   return key;
 };
 
-const getAI = () => new GoogleGenerativeAI(getApiKey());
+const getAI = () => new GoogleGenerativeAI(getApiKey()); // SDK padrão
+// Nota: Se o erro persistir, vamos tentar forçar o modelo com o prefixo completo.
+
+const generateContentWithFallback = async (models: string[], content: any) => {
+  const ai = getAI();
+  let lastError: any = null;
+  for (const modelName of models) {
+    try {
+      const model = ai.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent(content);
+      if (result && result.response && result.response.text()) {
+        return result;
+      }
+      console.warn(`Modelo ${modelName} retornou resposta vazia.`);
+    } catch (e) {
+      console.warn(`Falha ao usar modelo ${modelName}:`, e);
+      lastError = e;
+    }
+  }
+  throw lastError || new Error("Todos os modelos falharam.");
+};
 
 const handleAIError = (error: any) => {
   console.error("Erro na API de IA:", error);
@@ -100,14 +120,12 @@ export const parsePlayersFromText = async (textList: string): Promise<any> => {
   });
 };
 
-export const parsePlayersFromImage = async (base64Image: string): Promise<any> => {
+export const parsePlayersFromImage = async (base64Image: string, mimeType: string = "image/jpeg"): Promise<any> => {
   try {
-    const ai = getAI();
-    const model = ai.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const result = await model.generateContent({
+    const content = {
       contents: [
         { role: 'user', parts: [
-          { inlineData: { data: base64Image, mimeType: "image/jpeg" } },
+          { inlineData: { data: base64Image, mimeType: mimeType } },
           { text: `Você é um analista de súmulas de futebol. Extraia TODOS os dados da súmula enviada na imagem para um formato JSON.
           REGRAS INEGOCIÁVEIS:
           1. NOMES: Use APENAS o primeiro nome ou apelido (ex: "João", "Silva"). PROIBIDO nomes completos.
@@ -118,7 +136,8 @@ export const parsePlayersFromImage = async (base64Image: string): Promise<any> =
         ]}
       ],
       generationConfig: { responseMimeType: "application/json" }
-    });
+    };
+    const result = await generateContentWithFallback(["gemini-1.5-flash-001", "gemini-1.5-flash", "gemini-1.5-pro"], content);
     return cleanAndParseJSON(result.response.text() || '{}');
   } catch (error) {
     handleAIError(error);
@@ -127,9 +146,7 @@ export const parsePlayersFromImage = async (base64Image: string): Promise<any> =
 
 export const parseMatchBannerFromImage = async (base64Image: string): Promise<{ matches: any[] } | undefined> => {
   try {
-    const ai = getAI();
-    const model = ai.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const result = await model.generateContent({
+    const content = {
       contents: [
         { role: 'user', parts: [
           { inlineData: { data: base64Image, mimeType: "image/jpeg" } },
@@ -137,7 +154,8 @@ export const parseMatchBannerFromImage = async (base64Image: string): Promise<{ 
         ]}
       ],
       generationConfig: { responseMimeType: "application/json" }
-    });
+    };
+    const result = await generateContentWithFallback(["gemini-1.5-flash-001", "gemini-1.5-flash", "gemini-1.5-pro"], content);
     return cleanAndParseJSON(result.response.text() || '{ "matches": [] }');
   } catch (error) {
     handleAIError(error);
@@ -146,9 +164,7 @@ export const parseMatchBannerFromImage = async (base64Image: string): Promise<{ 
 
 export const parseRegulationDocument = async (base64Data: string, mimeType: string): Promise<any> => {
   try {
-    const ai = getAI();
-    const model = ai.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const result = await model.generateContent({
+    const content = {
       contents: [
         { role: 'user', parts: [
           { inlineData: { data: base64Data, mimeType: mimeType } },
@@ -156,7 +172,8 @@ export const parseRegulationDocument = async (base64Data: string, mimeType: stri
         ]}
       ],
       generationConfig: { responseMimeType: "application/json" }
-    });
+    };
+    const result = await generateContentWithFallback(["gemini-1.5-flash-001", "gemini-1.5-flash", "gemini-1.5-pro"], content);
     return cleanAndParseJSON(result.response.text() || '{}');
   } catch (error) {
     handleAIError(error);
@@ -165,39 +182,40 @@ export const parseRegulationDocument = async (base64Data: string, mimeType: stri
 
 export const processVoiceCommand = async (command: string, homeTeam: any, awayTeam: any, eventsSummary: string): Promise<any> => {
   try {
-    const ai = getAI();
-    const model = ai.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const result = await model.generateContent({
+    const content = {
       contents: [{
         role: 'user', parts: [{ text: `Você é um assistente sênior de narração esportiva.
       COMANDO DE VOZ: "${command}"
       
       DADOS OFICIAIS DA PARTIDA:
-      - MANDANTE (home): ${homeTeam.name} (Jogadores: ${homeTeam.players.map((p:any)=>p.number+':'+p.name).join(', ')})
-      - VISITANTE (away): ${awayTeam.name} (Jogadores: ${awayTeam.players.map((p:any)=>p.number+':'+p.name).join(', ')})
+      - MANDANTE (home): ${homeTeam.name} (${homeTeam.players.map((p:any)=>p.number+':'+p.name).join(', ')})
+      - VISITANTE (away): ${awayTeam.name} (${awayTeam.players.map((p:any)=>p.number+':'+p.name).join(', ')})
       
-      Sua tarefa é interpretar o comando de voz e extrair DADOS ESTRUTURADOS.
-      REGRAS INEGOCIÁVEIS:
-      1. TEAM (Equipe): Retorne APENAS "home" ou "away".
-      2. PLAYER NUMBER: Extraia o número da camisa do jogador (se disponível).
-      3. TYPE: Valores PERMITIDOS rigorosamente: "GOAL", "YELLOW_CARD", "RED_CARD", "SUBSTITUTION", "FOUL", "OFFSIDE", "SHOT", "PENALTY", "START_TIMER", "ANSWER".
-      
-      Se o comando for para rolar a bola, inciar a partida ou voltar do intervalo use "START_TIMER".
-      Se o comando for marcação de penalidade máxima / pênalti, use "PENALTY".
+      Interprete o comando e retorne sempre um ARRAY de objetos JSON, mesmo que haja apenas um comando.
+      REGRAS:
+      1. TEAM: "home" ou "away".
+      2. TYPE: "GOAL", "YELLOW_CARD", "RED_CARD", "SUBSTITUTION", "FOUL", "OFFSIDE", "SHOT", "PENALTY", "START_TIMER", "PAUSE_TIMER", "ANSWER".
+      3. "Falta para o Time X" -> O Time X sofreu a falta. O "team" no JSON deve ser o que sofreu. Adicione "isAwarded": true.
+      4. MÚLTIPLAS AÇÕES: Se o narrador disser "entram 10 e 11, saem 5 e 2", gere DOIS objetos de SUBSTITUTION.
+      5. SUBSTITUTION: Sempre tente parear "playerInNumber" com "playerOutNumber".
 
       Retorne APENAS o JSON no formato:
-      {
-        "type": "GOAL", 
-        "team": "home", 
-        "playerNumber": 10,
-        "playerOutNumber": null,
-        "playerInNumber": null,
-        "customMessage": null
-      }` }]
+      [
+        {
+          "type": "GOAL", 
+          "team": "home", 
+          "playerNumber": 10,
+          "isAwarded": false,
+          "playerOutNumber": null,
+          "playerInNumber": null,
+          "customMessage": null
+        }
+      ]` }]
       }],
       generationConfig: { responseMimeType: "application/json" }
-    });
-    return cleanAndParseJSON(result.response.text() || '{}');
+    };
+    const result = await generateContentWithFallback(["gemini-1.5-flash-001", "gemini-1.5-flash", "gemini-1.5-pro"], content);
+    return cleanAndParseJSON(result.response.text() || '[]');
   } catch (error) {
     handleAIError(error);
   }
@@ -205,10 +223,14 @@ export const processVoiceCommand = async (command: string, homeTeam: any, awayTe
 
 export const generateMatchReport = async (context: string, timeline: string): Promise<string> => {
   try {
-    const ai = getAI();
-    const model = ai.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const prompt = `Contexto do Jogo:\n${context}\n\nEventos:\n${timeline}\n\nEscreva uma breve crônica esportiva sobre esta partida baseada nos eventos.`;
-    const result = await model.generateContent(prompt);
+    const content = {
+      contents: [{
+        role: 'user',
+        parts: [{ text: `Contexto do Jogo:\n${context}\n\nEventos:\n${timeline}\n\nEscreva uma breve crônica esportiva sobre esta partida baseada nos eventos.` }]
+      }],
+      generationConfig: { responseMimeType: "text/plain" }
+    };
+    const result = await generateContentWithFallback(["gemini-1.5-flash-001", "gemini-1.5-flash", "gemini-1.5-pro"], content);
     return result.response.text();
   } catch (error) {
     handleAIError(error);

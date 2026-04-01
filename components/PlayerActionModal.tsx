@@ -63,6 +63,15 @@ const PlayerActionModal: React.FC<PlayerActionModalProps> = ({ player, team, onC
             <button onClick={() => onAction('GOAL', { customDescription: `⚽ Gol do ${team.shortName} - ${player.name} (${player.number})` })} className="w-full mt-2 p-3 rounded-xl bg-emerald-500 text-white hover:bg-emerald-600 font-bold text-sm transition-all flex items-center justify-center">
               Registrar GOL (Bola Rolando)
             </button>
+
+            {player.isStarter && player.position !== 'GK' && (
+              <button 
+                onClick={() => onAction('SET_GOALKEEPER', { customDescription: `🧤 Novo Goleiro: ${player.name} (#${player.number}) assumiu o gol do ${team.shortName}` })} 
+                className="w-full mt-1 p-3 rounded-xl bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600 hover:text-white font-bold text-sm transition-all flex items-center justify-center gap-2 border border-indigo-500/30"
+              >
+                <ShieldAlert size={16} /> Assumir o Gol (Goleiro de Linha)
+              </button>
+            )}
           </div>
         ) : (
           <div className="flex flex-col gap-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-2">

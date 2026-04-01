@@ -68,20 +68,11 @@ export function useMatchController(addToast: (title: string, msg: string, type: 
       'SHOT': 'FINALIZAÇÃO', 'FOUL': 'FALTA', 'CORNER': 'ESCANTEIO', 'PENALTY': 'PÊNALTI',
       'INJURY': 'CONTUSÃO', 'PERIOD_START': 'INÍCIO', 'PERIOD_END': 'FIM', 'START_TIMER': 'CRONÔMETRO',
       'VAR': 'VAR', 'PENALTY_SHOOTOUT': 'PÊNALTIS', 'INVALID': 'INVÁLIDO', 'OFFSIDE': 'IMPEDIMENTO', 'SAVE': 'DEFESA', 'WOODWORK': 'NA TRAVE', 'ANSWER': 'RESPOSTA', 'CORRECTION': 'CORREÇÃO',
-      'CONCUSSION_SUBSTITUTION': 'SUBST. CONCUSSÃO', 'GK_8_SECONDS': 'INFRAÇÃO 8S', 'GENERIC': 'EVENTO'
+      'CONCUSSION_SUBSTITUTION': 'SUBST. CONCUSSÃO', 'GK_8_SECONDS': 'INFRAÇÃO 8S', 'SET_GOALKEEPER': 'NOVO GOLEIRO', 'GENERIC': 'EVENTO'
     };
     return map[type] || type;
   }, []);
 
-  useEffect(() => {
-    const lastEvent = matchState.events[0];
-    if (lastEvent && lastEvent.id !== lastToastEventId.current) {
-      if (lastToastEventId.current !== null) {
-        addToast(formatEventType(lastEvent.type), lastEvent.description, lastEvent.type === 'GOAL' ? 'success' : 'info');
-      }
-      lastToastEventId.current = lastEvent.id;
-    }
-  }, [matchState.events, addToast, formatEventType]);
 
   const handlePlayPauseToggle = useCallback(() => {
     if (matchState.isPaused && (matchState.period === 'PRE_MATCH' || matchState.period === 'INTERVAL')) {
@@ -213,9 +204,28 @@ export function useMatchController(addToast: (title: string, msg: string, type: 
       const currentMs = prev.timeElapsed + (prev.timerStartedAt ? now - prev.timerStartedAt : 0);
       const currentMin = Math.floor(currentMs / 60000);
       
-      let finalDescription = eventData.description;
       const teamKey = eventData.teamId === 'home' ? 'homeTeam' : 'awayTeam';
       const team = { ...prev[teamKey] } as Team;
+      
+      let finalDescription = eventData.description;
+      
+      // Enriquecimento de Descrição (Padrão Transmissão)
+      if (eventData.playerId) {
+        const p = team.players.find(pl => pl.id === eventData.playerId);
+        if (p) {
+          const typeLabel = formatEventType(eventData.type);
+          const icon = eventData.type === 'GOAL' ? '⚽' : 
+                       eventData.type === 'YELLOW_CARD' ? '🟨' : 
+                       eventData.type === 'RED_CARD' ? '🟥' : 
+                       eventData.type === 'FOUL' ? '🛑' : 
+                       eventData.type === 'OFFSIDE' ? '🚩' : '•';
+          
+          // Se a descrição for genérica ou conter apenas o tipo, a gente enriquece
+          if (!finalDescription || finalDescription.toLowerCase().includes('registre') || finalDescription.includes('Lance rápido')) {
+             finalDescription = `${icon} ${typeLabel}: ${p.number} - ${p.name} (${team.shortName})`;
+          }
+        }
+      }
       const newEvent: MatchEvent = { 
         id: Math.random().toString(36).substr(2, 9), 
         type: eventData.type, 
@@ -237,7 +247,8 @@ export function useMatchController(addToast: (title: string, msg: string, type: 
         let playerIn = newEvent.relatedPlayerId ? players.find(p => p.id === newEvent.relatedPlayerId) : null;
         
         if (!playerIn && eventData.manualSub) {
-            const newPlayer: Player = { id: Math.random().toString(36).substr(2, 9), name: eventData.manualSub.name, fullName: eventData.manualSub.name, number: eventData.manualSub.number, teamId: eventData.teamId as 'home' | 'away', isStarter: false, position: 'MF', events: [], x: 50, y: 50 };
+            const randomOffset = (Math.random() - 0.5) * 5; // offset de +- 2.5%
+            const newPlayer: Player = { id: Math.random().toString(36).substr(2, 9), name: eventData.manualSub.name, fullName: eventData.manualSub.name, number: eventData.manualSub.number, teamId: eventData.teamId as 'home' | 'away', isStarter: false, position: 'MF', events: [], x: 50 + randomOffset, y: 50 + randomOffset };
             players.push(newPlayer);
             playerIn = newPlayer;
             newEvent.relatedPlayerId = newPlayer.id;
@@ -263,6 +274,15 @@ export function useMatchController(addToast: (title: string, msg: string, type: 
         newState[teamKey] = updatePlayersInTeam(team);
         addToast("Infração 8s", "Goleiro segurou a bola por mais de 8s. Escanteio concedido.", "warning");
         
+      } else if (newEvent.type === 'SET_GOALKEEPER') {
+        const updatePlayers = team.players.map(p => {
+            if (p.id === newEvent.playerId) return { ...p, position: 'GK' as const, events: [...p.events, newEvent] };
+            if (p.isStarter && p.position === 'GK') return { ...p, position: 'MF' as const }; // Anterior vira linha
+            return p;
+        });
+        newState[teamKey] = { ...team, players: updatePlayers };
+        addToast("Novo Goleiro", `${team.players.find(p => p.id === newEvent.playerId)?.name} assumiu a meta.`, "info");
+
       } else if (newEvent.playerId) {
         const tKey = newEvent.teamId === 'home' ? 'homeTeam' : 'awayTeam';
         const teamToUpdate = { ...prev[tKey] } as Team;
@@ -293,6 +313,14 @@ export function useMatchController(addToast: (title: string, msg: string, type: 
         });
 
         newState[tKey] = { ...teamToUpdate, players: updatedPlayers };
+
+        // PÓS-PROCESSAMENTO: Verificação de Goleiro em Campo
+        const teamAfter = newState[tKey] as Team;
+        const hasGKInField = teamAfter.players.some(p => p.isStarter && p.position === 'GK');
+        if (!hasGKInField) {
+            addToast("⚠️ Time sem Goleiro!", `O ${teamAfter.shortName} está sem goleiro em campo após esta ação. Defina um novo goleiro abrindo as ações de um jogador de linha.`, "warning");
+        }
+
         if (extraEvent) {
           newState.events = [extraEvent, newEvent, ...(prev.events || [])];
           return newState;
@@ -312,7 +340,7 @@ export function useMatchController(addToast: (title: string, msg: string, type: 
       setResetSignal(s => s + 1);
       
       const periodEvent: MatchEvent = { id: Math.random().toString(36).substr(2, 9), type: 'PERIOD_START', teamId: 'none', minute: 0, timestamp: Date.now(), description: `Início de Fase: ${nextPeriod}`, isAnnulled: false };
-      addToast("Fase Alterada", periodEvent.description, "info");
+
       
       return {
         ...prev, period: nextPeriod, timeElapsed: 0, timerStartedAt: null, isPaused: true,

@@ -143,14 +143,20 @@ const PreMatchSetup: React.FC<PreMatchSetupProps> = ({ matchState, setMatchState
                             <input type="text" placeholder="Ex: Copa Trampolim" value={matchState.competition} onChange={(e) => handleInputChange('competition', e.target.value)} className="w-full bg-slate-950/50 border border-white/5 rounded-2xl py-4 px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-bold text-sm" />
                         </div>
                         <div>
-                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-1 block">Data</label>
-                            <input type="date" value={matchState.matchDate} onChange={(e) => handleInputChange('matchDate', e.target.value)} className="w-full bg-slate-950/50 border border-white/5 rounded-2xl py-4 px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-bold text-sm" />
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-1 block">Árbitro / Arbitragem</label>
+                            <input type="text" placeholder="Ex: Wilton P. Sampaio" value={matchState.referee || ''} onChange={(e) => handleInputChange('referee', e.target.value)} className="w-full bg-slate-950/50 border border-white/5 rounded-2xl py-4 px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-bold text-sm" />
                         </div>
                     </div>
 
-                    <div>
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-1 block">Estádio / Local</label>
-                        <input type="text" placeholder="Ex: Maracanã" value={matchState.stadium} onChange={(e) => handleInputChange('stadium', e.target.value)} className="w-full bg-slate-950/50 border border-white/5 rounded-2xl py-4 px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-bold text-sm" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-1 block">Estádio / Local</label>
+                            <input type="text" placeholder="Ex: Maracanã" value={matchState.stadium} onChange={(e) => handleInputChange('stadium', e.target.value)} className="w-full bg-slate-950/50 border border-white/5 rounded-2xl py-4 px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-bold text-sm" />
+                        </div>
+                        <div>
+                            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-1 block">Data</label>
+                            <input type="date" value={matchState.matchDate} onChange={(e) => handleInputChange('matchDate', e.target.value)} className="w-full bg-slate-950/50 border border-white/5 rounded-2xl py-4 px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-bold text-sm" />
+                        </div>
                     </div>
 
                     <div>

@@ -131,7 +131,7 @@ export default function App() {
       <ToastContainer toasts={toasts} removeToast={removeToast} />
       <input type="file" ref={fileInputRef} className="hidden" accept=".json" onChange={backup.handleImportLog} />
       
-      <div className="absolute top-2 right-2 md:top-4 md:right-4 z-[60] flex gap-2">
+        <div className="absolute top-2 right-2 md:top-4 md:right-4 z-[70] flex gap-2">
         {!hasApiKey && (
            <button onClick={handleOpenKeySelector} className="px-3 py-2 rounded-full bg-red-600/80 text-white text-[10px] font-black uppercase tracking-wider border border-red-500 shadow-xl opacity-90 hover:opacity-100 flex items-center gap-1 animate-pulse">
              ⚠ Configurar API Gemini
@@ -196,16 +196,42 @@ export default function App() {
       <div className="fixed bottom-0 left-0 right-0 z-[70] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent">
         <div className="max-w-4xl mx-auto flex items-center gap-2">
           <button onClick={ctrl.handlePlayPauseToggle} className={`p-4 rounded-2xl shadow-xl transition-all shrink-0 ${ctrl.matchState.isPaused ? 'bg-emerald-600 text-white' : 'bg-yellow-500 text-slate-900'} flex items-center justify-center active:scale-90`}>{ctrl.matchState.isPaused ? <Play size={22} fill="currentColor"/> : <Pause size={22} fill="currentColor"/>}</button>
-          <form onSubmit={(e) => { e.preventDefault(); processCommand(commandText); }} className="flex-1 bg-slate-900/95 p-1.5 rounded-2xl shadow-2xl border border-white/10 flex items-center gap-1.5 backdrop-blur-3xl ring-1 ring-white/5">
+          <div className="flex-1 bg-slate-900/95 p-1.5 rounded-2xl shadow-2xl border border-white/10 flex items-center gap-1.5 backdrop-blur-3xl ring-1 ring-white/5 relative">
             <button type="button" onClick={toggleRecording} className={`p-3 rounded-xl transition-all active:scale-90 shrink-0 ${isRecording ? 'bg-red-600 animate-pulse' : 'bg-slate-800 hover:bg-slate-700'}`}><Mic size={18} className="text-white" /></button>
             <div className="flex-1 relative min-w-0">
-              <input type="text" placeholder={isRecording ? "Ouvindo..." : "Lance ou pergunta..."} className="w-full bg-transparent border-none py-2.5 px-1 font-bold text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-0" value={commandText} onChange={(e) => setCommandText(e.target.value)} />
-              {isProcessing && <Loader2 className="absolute right-0 top-1/2 -translate-y-1/2 animate-spin text-blue-500 mr-1" size={14} />}
+              <input 
+                type="text" 
+                placeholder={isRecording ? "Ouvindo..." : (isProcessing ? "Interpretando..." : "Lance ou pergunta...")} 
+                disabled={isProcessing}
+                className="w-full bg-transparent border-none py-2.5 px-1 font-bold text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-0" 
+                value={commandText} 
+                onChange={(e) => setCommandText(e.target.value)} 
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); processCommand(commandText); } }}
+              />
+              {isProcessing && <Loader2 className="absolute right-0 top-1/2 -translate-y-1/2 animate-spin text-blue-500 mr-2" size={16} />}
             </div>
-            <button type="submit" className="p-3 bg-blue-600 rounded-xl text-white font-black hover:bg-blue-500 transition-colors active:scale-95 shadow-lg shrink-0"><Send size={18} /></button>
-          </form>
+            <button type="button" onClick={() => processCommand(commandText)} disabled={isProcessing || !commandText.trim()} className="p-3 bg-blue-600 rounded-xl text-white font-black hover:bg-blue-500 transition-colors active:scale-95 shadow-lg shrink-0 disabled:opacity-50"><Send size={18} /></button>
+          </div>
         </div>
       </div>
+
+      {/* Premium AI Processing Overlay */}
+      {isProcessing && (
+        <div className="fixed inset-0 z-[100] bg-slate-950/40 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-300">
+          <div className="bg-slate-900/90 p-8 rounded-[2.5rem] border border-blue-500/20 shadow-[0_0_50px_rgba(59,130,246,0.2)] flex flex-col items-center gap-4 max-w-xs w-full">
+            <div className="relative">
+              <div className="w-16 h-16 rounded-full border-4 border-blue-500/20 border-t-blue-500 animate-spin"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <Mic size={24} className="text-blue-400 animate-pulse" />
+              </div>
+            </div>
+            <div className="text-center">
+              <h3 className="text-lg font-black text-white uppercase tracking-tighter">Gemini está PENSANDO</h3>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mt-1">Sincronizando com a Narração...</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ÁREA DE MODAIS E INFORMATIVOS */}
       {ui.isContextModalOpen && <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[100] flex items-center justify-center p-4"><PreMatchSetup matchState={ctrl.matchState} setMatchState={ctrl.setMatchState} onSave={() => { ui.setIsContextModalOpen(false); addToast("Partida Iniciada", "Configurações salvas e cronômetro pronto.", "success"); }} onClose={() => ui.setIsContextModalOpen(false)} handleGeminiError={handleGeminiError} /></div>}
@@ -252,9 +278,16 @@ export default function App() {
       {ui.coachModal.isOpen && <EditCoachModal isOpen={ui.coachModal.isOpen} initialName={ui.coachModal.teamId === 'home' ? (ctrl.matchState.homeTeam.coach || '') : (ctrl.matchState.awayTeam.coach || '')} onClose={() => ui.setCoachModal({isOpen: false, teamId: 'home'})} onSave={(name) => { ctrl.saveToHistory(); ctrl.setMatchState((prev: MatchState) => { const k = ui.coachModal.teamId === 'home' ? 'homeTeam' : 'awayTeam'; return { ...prev, [k]: { ...prev[k], coach: name } }; }); ui.setCoachModal({isOpen: false, teamId: 'home'}); addToast("Treinador Atualizado", "Nome salvo com sucesso", "success"); }} />}
       {ui.playerModal.isOpen && ui.playerModal.player && <EditPlayerModal isOpen={ui.playerModal.isOpen} player={ui.playerModal.player} onClose={() => ui.setPlayerModal({isOpen: false, teamId: 'home', player: null})} onSave={(name, number, isStarter) => { ctrl.saveToHistory(); ctrl.setMatchState((prev: MatchState) => { const k = ui.playerModal.teamId === 'home' ? 'homeTeam' : 'awayTeam'; return { ...prev, [k]: { ...prev[k], players: prev[k].players.map(pl => pl.id === ui.playerModal.player!.id ? { ...pl, name, number, isStarter } : pl) } }; }); ui.setPlayerModal({isOpen: false, teamId: 'home', player: null}); }} />}
       {ui.importListModal.isOpen && <ImportListModal isOpen={ui.importListModal.isOpen} onClose={() => ui.setImportListModal({ isOpen: false, teamId: 'home'})} onProcess={async (text) => { await ai.handlePasteProcess(text, ui.importListModal.teamId); ui.setImportListModal({ isOpen: false, teamId: 'home'}); }} />}
-      {ui.selectedPlayerForAction && <PlayerActionModal player={ui.selectedPlayerForAction.player} team={ui.selectedPlayerForAction.teamId === 'home' ? ctrl.matchState.homeTeam : ctrl.matchState.awayTeam} onClose={() => ui.setSelectedPlayerForAction(null)} onSelectAction={ctrl.addEvent} />}
+      {ui.selectedPlayerForAction && (
+        <PlayerActionModal 
+          player={ui.selectedPlayerForAction.player} 
+          team={ui.selectedPlayerForAction.teamId === 'home' ? ctrl.matchState.homeTeam : ctrl.matchState.awayTeam} 
+          onClose={() => ui.setSelectedPlayerForAction(null)} 
+          onAction={handleActionFromModal} 
+        />
+      )}
 
-      {ui.selectedTeamForAction && <TeamActionModal team={ui.selectedTeamForAction.team} onClose={() => ui.setSelectedTeamForAction(null)} onSelectAction={handleTeamActionFromModal} />}
+      {ui.selectedTeamForAction && <TeamActionModal team={ui.selectedTeamForAction.team} teamId={ui.selectedTeamForAction.teamId} onClose={() => ui.setSelectedTeamForAction(null)} onAction={handleTeamActionFromModal} />}
     </div>
   );
 }
