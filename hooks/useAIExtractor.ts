@@ -35,9 +35,20 @@ export function useAIExtractor({ matchState, setMatchState, addToast, ui }: { ma
       const processTeam = (teamData: any, target: 'homeTeam' | 'awayTeam') => {
         const formationKey = p[target].formation as keyof typeof FORMATIONS || '4-4-2';
         const coords = FORMATIONS[formationKey];
-        let sC = 0, rC = 0;
         
-        const nL = (teamData.players || []).map((pl: any) => {
+        let rawPlayers = Array.isArray(teamData.players) ? teamData.players : [];
+        
+        // Regra: se ninguém estiver marcado como reserva (isStarter: false), 
+        // ou se todos forem true, pegamos os 11 de menor numeração.
+        const hasReserves = rawPlayers.some((pl: any) => pl.isStarter === false);
+        
+        if (!hasReserves && rawPlayers.length > 11) {
+          rawPlayers = [...rawPlayers].sort((a: any, b: any) => (a.number || 0) - (b.number || 0));
+          rawPlayers = rawPlayers.map((pl, idx) => ({ ...pl, isStarter: idx < 11 }));
+        }
+
+        let sC = 0, rC = 0;
+        const nL = rawPlayers.map((pl: any) => {
           const isStarter = pl.isStarter !== false;
           let x = 50, y = 50;
           if (isStarter) {
@@ -138,8 +149,19 @@ export function useAIExtractor({ matchState, setMatchState, addToast, ui }: { ma
             const targetKey = tId === 'home' ? 'homeTeam' : 'awayTeam';
             const formationKey = p[targetKey].formation as keyof typeof FORMATIONS || '4-4-2';
             const coords = FORMATIONS[formationKey];
+            
+            let rawPlayers = Array.isArray(d.players) ? d.players : [];
+            
+            // Regra: se ninguém estiver marcado como reserva ou se todos forem true, 
+            // e tiver mais de 11, pegamos os 11 de menor numeração.
+            const hasReserves = rawPlayers.some((pl: any) => pl.isStarter === false);
+            if (!hasReserves && rawPlayers.length > 11) {
+                rawPlayers = [...rawPlayers].sort((a: any, b: any) => (a.number || 0) - (b.number || 0));
+                rawPlayers = rawPlayers.map((pl, idx) => ({ ...pl, isStarter: idx < 11 }));
+            }
+
             let sc=0, rc=0;
-            const plist = d.players.map((pl:any) => {
+            const plist = rawPlayers.map((pl:any) => {
                 let x=50, y=50;
                 if(pl.isStarter){ if(sc<coords.length){ x=coords[sc].x; y=coords[sc].y;} sc++; }
                 else{ x=110; y=20+rc*5; rc++; }

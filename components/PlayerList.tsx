@@ -33,7 +33,7 @@ const PlayerList: React.FC<PlayerListProps> = ({ team, variant, onPlayerClick, o
     return (
       <div className="flex flex-col">
         <div className="space-y-1.5">
-          {starters.map(player => (
+          {starters.slice(0, 11).map(player => (
             <button 
               key={player.id} 
               onClick={() => onPlayerClick(player)}
