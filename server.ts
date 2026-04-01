@@ -2,6 +2,7 @@ import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
 import cors from "cors";
+import { exec } from "child_process";
 
 const app = express();
 const PORT = 3000;
@@ -43,6 +44,13 @@ async function startServer() {
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
+    
+    // Abre o navegador automaticamente em modo desenvolvimento (Windows)
+    if (process.env.NODE_ENV !== "production") {
+      const url = `http://localhost:${PORT}`;
+      const command = process.platform === 'win32' ? `start ${url}` : process.platform === 'darwin' ? `open ${url}` : `xdg-open ${url}`;
+      exec(command);
+    }
   });
 }
 
