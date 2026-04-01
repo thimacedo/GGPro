@@ -38,12 +38,25 @@ export function useAIExtractor({ matchState, setMatchState, addToast, ui }: { ma
         
         let rawPlayers = Array.isArray(teamData.players) ? teamData.players : [];
         
-        // Regra: se ninguém estiver marcado como reserva (isStarter: false), 
-        // ou se todos forem true, pegamos os 11 de menor numeração.
+        // Normaliza números e posições antes de qualquer lógica
+        rawPlayers = rawPlayers.map(pl => {
+          const num = parseInt(String(pl.number)) || 0;
+          let pos = pl.position || 'MF';
+          if (/goleiro|gk|gol/i.test(pos) || num === 1 || num === 12) pos = 'GK';
+          return { ...pl, number: num, position: pos };
+        });
+
+        // Regra de Ouro: Se a IA não identificar reservas ou se marcar mais de 11 como titular,
+        // forçamos os 11 de menor numeração como titulares (com GK no topo).
+        const explicitStarters = rawPlayers.filter((pl: any) => pl.isStarter === true);
         const hasReserves = rawPlayers.some((pl: any) => pl.isStarter === false);
         
-        if (!hasReserves && rawPlayers.length > 11) {
-          rawPlayers = [...rawPlayers].sort((a: any, b: any) => (a.number || 0) - (b.number || 0));
+        if (!hasReserves || explicitStarters.length > 11) {
+          rawPlayers = [...rawPlayers].sort((a: any, b: any) => {
+            if (a.position === 'GK' && b.position !== 'GK') return -1;
+            if (a.position !== 'GK' && b.position === 'GK') return 1;
+            return a.number - b.number;
+          });
           rawPlayers = rawPlayers.map((pl, idx) => ({ ...pl, isStarter: idx < 11 }));
         }
 
@@ -58,14 +71,10 @@ export function useAIExtractor({ matchState, setMatchState, addToast, ui }: { ma
             x = 110; y = 20 + rC * 5; rC++;
           }
 
-          let pos = pl.position || 'MF';
-          const num = parseInt(String(pl.number));
-          if (/goleiro|gk|gol/i.test(pos) || num === 1 || num === 12) pos = 'GK';
-
           return { 
             id: Math.random().toString(36).substr(2, 9), 
             fullName: pl.name, name: pl.name, number: pl.number, 
-            position: pos, teamId: target === 'homeTeam' ? 'home' : 'away', 
+            position: pl.position, teamId: target === 'homeTeam' ? 'home' : 'away', 
             isStarter, events: [], x, y 
           };
         });
@@ -152,27 +161,44 @@ export function useAIExtractor({ matchState, setMatchState, addToast, ui }: { ma
             
             let rawPlayers = Array.isArray(d.players) ? d.players : [];
             
+            // Normaliza números e posições
+            rawPlayers = rawPlayers.map(pl => {
+              const num = parseInt(String(pl.number)) || 0;
+              let pos = pl.position || 'MF';
+              if (/goleiro|gk|gol/i.test(pos) || num === 1 || num === 12) pos = 'GK';
+              return { ...pl, number: num, position: pos };
+            });
+
             // Regra: se ninguém estiver marcado como reserva ou se todos forem true, 
-            // e tiver mais de 11, pegamos os 11 de menor numeração.
+            // e tiver mais de 11, pegamos os 11 de menor numeração (GK primeiro).
+            const explicitStarters = rawPlayers.filter((pl: any) => pl.isStarter === true);
             const hasReserves = rawPlayers.some((pl: any) => pl.isStarter === false);
-            if (!hasReserves && rawPlayers.length > 11) {
-                rawPlayers = [...rawPlayers].sort((a: any, b: any) => (a.number || 0) - (b.number || 0));
+
+            if (!hasReserves || explicitStarters.length > 11) {
+                rawPlayers = [...rawPlayers].sort((a: any, b: any) => {
+                  if (a.position === 'GK' && b.position !== 'GK') return -1;
+                  if (a.position !== 'GK' && b.position === 'GK') return 1;
+                  return a.number - b.number;
+                });
                 rawPlayers = rawPlayers.map((pl, idx) => ({ ...pl, isStarter: idx < 11 }));
             }
 
             let sc=0, rc=0;
             const plist = rawPlayers.map((pl:any) => {
                 let x=50, y=50;
-                if(pl.isStarter){ if(sc<coords.length){ x=coords[sc].x; y=coords[sc].y;} sc++; }
-                else{ x=110; y=20+rc*5; rc++; }
-
-                let pos = pl.position || 'MF';
-                const num = parseInt(String(pl.number));
-                if (/goleiro|gk|gol/i.test(pos) || num === 1 || num === 12) {
-                   pos = 'GK';
+                if(pl.isStarter){ 
+                  if(sc < coords.length){ x=coords[sc].x; y=coords[sc].y; } 
+                  sc++; 
+                } else { 
+                  x=110; y=20+rc*5; rc++; 
                 }
 
-                return { id: Math.random().toString(36).substr(2,9), fullName: pl.name, name: pl.name, number: pl.number, position: pos, teamId: tId, isStarter: pl.isStarter, events: [], x, y };
+                return { 
+                  id: Math.random().toString(36).substr(2,9), 
+                  fullName: pl.name, name: pl.name, number: pl.number, 
+                  position: pl.position, teamId: tId, 
+                  isStarter: pl.isStarter, events: [], x, y 
+                };
             });
             const otherKey = targetKey === 'homeTeam' ? 'awayTeam' : 'homeTeam';
             const finalShortName = generateDistinctShortName(p[targetKey].name, p[otherKey].shortName);
