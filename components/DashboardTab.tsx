@@ -48,16 +48,16 @@ export default function DashboardTab({ matchState, ctrl, ui, ai }: Props) {
                         <div className="bg-slate-900/50 rounded-[2.5rem] border border-white/5 p-6 flex flex-col shadow-2xl">
                             <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
                                 <div className="flex flex-col min-h-0">
-                                    <div className="sticky top-0 bg-slate-900/90 z-10 py-2 border-b border-white/10 mb-2 cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => ui.setSelectedTeamForAction({ team: matchState.homeTeam, teamId: 'home' })}>
+                                    <div className="sticky top-0 bg-slate-900/90 z-10 py-1.5 md:py-2 border-b border-white/10 mb-2 cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => ui.setSelectedTeamForAction({ team: matchState.homeTeam, teamId: 'home' })}>
                                         <h4 className="text-[10px] font-black uppercase text-center" style={{color: matchState.homeTeam.color}}>{matchState.homeTeam.shortName}</h4>
                                     </div>
-                                    <PlayerList team={matchState.homeTeam} variant="compact" onPlayerClick={(p) => ui.setSelectedPlayerForAction({ player: p, teamId: 'home' })} />
+                                    <PlayerList team={matchState.homeTeam} variant="compact" onPlayerClick={(p) => ui.setSelectedPlayerForAction({ player: p, teamId: 'home' })} isFullscreen={ui.isFullscreen} />
                                 </div>
                                 <div className="flex flex-col min-h-0">
-                                    <div className="sticky top-0 bg-slate-900/90 z-10 py-2 border-b border-white/10 mb-2 cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => ui.setSelectedTeamForAction({ team: matchState.awayTeam, teamId: 'away' })}>
+                                    <div className="sticky top-0 bg-slate-900/90 z-10 py-1.5 md:py-2 border-b border-white/10 mb-2 cursor-pointer hover:bg-slate-800 transition-colors" onClick={() => ui.setSelectedTeamForAction({ team: matchState.awayTeam, teamId: 'away' })}>
                                         <h4 className="text-[10px] font-black uppercase text-center" style={{color: matchState.awayTeam.color}}>{matchState.awayTeam.shortName}</h4>
                                     </div>
-                                    <PlayerList team={matchState.awayTeam} variant="compact" onPlayerClick={(p) => ui.setSelectedPlayerForAction({ player: p, teamId: 'away' })} />
+                                    <PlayerList team={matchState.awayTeam} variant="compact" onPlayerClick={(p) => ui.setSelectedPlayerForAction({ player: p, teamId: 'away' })} isFullscreen={ui.isFullscreen} />
                                 </div>
                             </div>
                         </div>

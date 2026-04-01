@@ -8,9 +8,10 @@ interface PlayerListProps {
   onPlayerClick: (player: Player) => void;
   onEditCoach?: () => void;
   onEditPlayer?: (player: Player) => void;
+  isFullscreen?: boolean;
 }
 
-const PlayerList: React.FC<PlayerListProps> = ({ team, variant, onPlayerClick, onEditCoach, onEditPlayer }) => {
+const PlayerList: React.FC<PlayerListProps> = ({ team, variant, onPlayerClick, onEditCoach, onEditPlayer, isFullscreen }) => {
   const sortByGK = (a: Player, b: Player) => {
     if (a.position === 'GK' && b.position !== 'GK') return -1;
     if (a.position !== 'GK' && b.position === 'GK') return 1;
@@ -31,19 +32,19 @@ const PlayerList: React.FC<PlayerListProps> = ({ team, variant, onPlayerClick, o
 
   if (variant === 'compact') {
     return (
-      <div className="flex flex-col">
-        <div className="space-y-1.5">
+      <div className="flex flex-col min-h-0 flex-1">
+        <div className={isFullscreen ? 'space-y-0.5' : 'space-y-1.5'}>
           {starters.slice(0, 11).map(player => (
             <button 
               key={player.id} 
               onClick={() => onPlayerClick(player)}
-              className={`w-full p-2.5 rounded-xl text-left font-bold text-sm flex items-center gap-3 transition-all border border-white/5 bg-slate-900/40 hover:bg-slate-800`}
+              className={`w-full ${isFullscreen ? 'p-1.5 md:p-2' : 'p-2.5'} rounded-xl text-left font-bold text-sm flex items-center gap-3 transition-all border border-white/5 bg-slate-900/40 hover:bg-slate-800`}
               style={{ borderColor: `${team.color}15` }}
             >
-              <div className={`font-mono text-sm font-black w-8 h-8 flex items-center justify-center rounded-lg shadow-xl text-white shrink-0`} style={{ backgroundColor: `${team.color}` }}>
+              <div className={`font-mono ${isFullscreen ? 'text-[10px] w-6 h-6 md:w-8 md:h-8' : 'text-sm w-8 h-8'} font-black flex items-center justify-center rounded-lg shadow-xl text-white shrink-0`} style={{ backgroundColor: `${team.color}` }}>
                 {player.number}
               </div>
-              <span className={`flex-1 truncate text-white font-black`}>{player.name}</span>
+              <span className={`flex-1 truncate text-white font-black ${isFullscreen ? 'text-[11px] md:text-sm' : 'text-sm'}`}>{player.name}</span>
             </button>
           ))}
           {players.length === 0 && (

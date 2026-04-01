@@ -33,8 +33,8 @@ const Header: React.FC<HeaderProps> = ({ matchState, resetSignal, onPlayPauseTog
   const safeEventsCountAway = (matchState.events || []).filter(e => e.teamId === 'away' && e.type === 'GOAL' && !e.isAnnulled).length;
 
   return (
-    <header className="bg-slate-900 border-b border-white/10 shadow-2xl relative z-50">
-      <div className="max-w-7xl mx-auto px-2 md:px-4 py-2 md:py-4 flex justify-between items-center">
+    <header className={`bg-slate-900 border-b border-white/10 shadow-2xl relative z-50 transition-all duration-500 ${isFullscreen ? 'py-0' : 'py-0'}`}>
+      <div className={`max-w-7xl mx-auto px-2 md:px-4 ${isFullscreen ? 'py-1.5 md:py-2' : 'py-2 md:py-4'} flex justify-between items-center transition-all`}>
         {/* HOME TEAM */}
         <div className="flex flex-1 items-center justify-end gap-1 md:gap-4 min-w-0">
           <div className="flex flex-col items-end min-w-0 group">
@@ -53,28 +53,28 @@ const Header: React.FC<HeaderProps> = ({ matchState, resetSignal, onPlayPauseTog
             ) : (
               <h2 
                 onClick={() => { setTempHomeName(matchState.homeTeam.name); setIsEditingHomeName(true); }}
-                className="text-[10px] md:text-xl font-black truncate text-white uppercase tracking-tighter cursor-pointer hover:text-blue-400 transition-colors flex items-center gap-1 md:gap-2"
+                className={`${isFullscreen ? 'text-[9px] md:text-lg' : 'text-[10px] md:text-xl'} font-black truncate text-white uppercase tracking-tighter cursor-pointer hover:text-blue-400 transition-colors flex items-center gap-1 md:gap-2`}
               >
-                <Pencil size={10} className="opacity-100 md:opacity-0 md:group-hover:opacity-100 shrink-0" />
+                <Pencil size={isFullscreen ? 8 : 10} className="opacity-100 md:opacity-0 md:group-hover:opacity-100 shrink-0" />
                 {matchState.homeTeam.shortName}
               </h2>
             )}
-            <span className="text-[7px] md:text-[8px] font-black text-slate-500 uppercase tracking-widest">{matchState.homeTeam.formation}</span>
+            <span className={`text-[7px] ${isFullscreen ? 'md:text-[7px]' : 'md:text-[8px]'} font-black text-slate-500 uppercase tracking-widest`}>{matchState.homeTeam.formation}</span>
           </div>
           
           <div className="flex flex-col items-center">
-            <div className={`w-8 h-8 md:w-14 md:h-14 rounded-lg md:rounded-2xl flex items-center justify-center text-sm md:text-3xl font-black shadow-xl ${homeContrast}`} style={{ backgroundColor: matchState.homeTeam.color }}>
+            <div className={`rounded-lg md:rounded-2xl flex items-center justify-center font-black shadow-xl transition-all ${isFullscreen ? 'w-8 h-8 md:w-11 md:h-11 text-sm md:text-2xl' : 'w-8 h-8 md:w-14 md:h-14 text-sm md:text-3xl'} ${homeContrast}`} style={{ backgroundColor: matchState.homeTeam.color }}>
               {safeEventsCountHome}
             </div>
           </div>
         </div>
 
         {/* CLOCK (isolated re-renders) */}
-        <div className="flex flex-col items-center justify-center min-w-[80px] md:min-w-[180px]">
-           <div className="flex items-center gap-1 md:gap-2 mb-0.5 md:mb-1">
-              <div className="text-[7px] md:text-[9px] font-black text-blue-500 uppercase tracking-[0.2em] md:tracking-[0.3em]">{matchState.period}</div>
+        <div className={`flex flex-col items-center justify-center min-w-[80px] ${isFullscreen ? 'md:min-w-[140px]' : 'md:min-w-[180px]'} transition-all`}>
+           <div className={`flex items-center gap-1 md:gap-2 ${isFullscreen ? 'mb-0' : 'mb-0.5 md:mb-1'}`}>
+              <div className={`text-[7px] ${isFullscreen ? 'md:text-[8px]' : 'md:text-[9px]'} font-black text-blue-500 uppercase tracking-[0.2em] md:tracking-[0.3em]`}>{matchState.period}</div>
               <button onClick={onPlayPauseToggle} className={`p-0.5 md:p-1 rounded-md ${matchState.isPaused ? 'text-emerald-500' : 'text-yellow-500'}`}>
-                {matchState.isPaused ? <Play size={10} fill="currentColor" /> : <Pause size={10} fill="currentColor" />}
+                {matchState.isPaused ? <Play size={isFullscreen ? 8 : 10} fill="currentColor" /> : <Pause size={isFullscreen ? 8 : 10} fill="currentColor" />}
               </button>
            </div>
            <TimerDisplay 
@@ -84,16 +84,17 @@ const Header: React.FC<HeaderProps> = ({ matchState, resetSignal, onPlayPauseTog
              period={matchState.period}
              onMinuteChange={onMinuteChange}
              resetSignal={resetSignal}
+             isFullscreen={isFullscreen}
            />
-           <button onClick={onNextPeriodClick} className="mt-0.5 md:mt-1 text-[6px] md:text-[7px] font-black text-slate-500 hover:text-white uppercase tracking-widest flex items-center gap-1">
-              Próximo <ChevronRight size={6} />
+           <button onClick={onNextPeriodClick} className={`${isFullscreen ? 'mt-0' : 'mt-0.5 md:mt-1'} text-[6px] md:text-[7px] font-black text-slate-500 hover:text-white uppercase tracking-widest flex items-center gap-1`}>
+              Próximo <ChevronRight size={isFullscreen ? 5 : 6} />
            </button>
         </div>
 
         {/* AWAY TEAM */}
         <div className="flex flex-1 items-center justify-start gap-1 md:gap-4 min-w-0">
           <div className="flex flex-col items-center">
-            <div className={`w-8 h-8 md:w-14 md:h-14 rounded-lg md:rounded-2xl flex items-center justify-center text-sm md:text-3xl font-black shadow-xl ${awayContrast}`} style={{ backgroundColor: matchState.awayTeam.color }}>
+            <div className={`rounded-lg md:rounded-2xl flex items-center justify-center font-black shadow-xl transition-all ${isFullscreen ? 'w-8 h-8 md:w-11 md:h-11 text-sm md:text-2xl' : 'w-8 h-8 md:w-14 md:h-14 text-sm md:text-3xl'} ${awayContrast}`} style={{ backgroundColor: matchState.awayTeam.color }}>
               {safeEventsCountAway}
             </div>
           </div>
@@ -114,13 +115,13 @@ const Header: React.FC<HeaderProps> = ({ matchState, resetSignal, onPlayPauseTog
             ) : (
               <h2 
                 onClick={() => { setTempAwayName(matchState.awayTeam.name); setIsEditingAwayName(true); }}
-                className="text-[10px] md:text-xl font-black truncate text-white uppercase tracking-tighter cursor-pointer hover:text-blue-400 transition-colors flex items-center gap-1 md:gap-2"
+                className={`${isFullscreen ? 'text-[9px] md:text-lg' : 'text-[10px] md:text-xl'} font-black truncate text-white uppercase tracking-tighter cursor-pointer hover:text-blue-400 transition-colors flex items-center gap-1 md:gap-2`}
               >
                 {matchState.awayTeam.shortName}
-                <Pencil size={10} className="opacity-100 md:opacity-0 md:group-hover:opacity-100 shrink-0" />
+                <Pencil size={isFullscreen ? 8 : 10} className="opacity-100 md:opacity-0 md:group-hover:opacity-100 shrink-0" />
               </h2>
             )}
-            <span className="text-[7px] md:text-[8px] font-black text-slate-500 uppercase tracking-widest">{matchState.awayTeam.formation}</span>
+            <span className={`text-[7px] ${isFullscreen ? 'md:text-[7px]' : 'md:text-[8px]'} font-black text-slate-500 uppercase tracking-widest`}>{matchState.awayTeam.formation}</span>
           </div>
         </div>
       </div>

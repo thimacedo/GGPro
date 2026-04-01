@@ -177,8 +177,8 @@ export default function App() {
         }}
       />
 
-      <main className={`flex-1 flex flex-col px-4 min-h-0 ${ui.isFullscreen ? 'overflow-hidden pb-28 pt-4' : 'overflow-y-auto pb-40 pt-4'} custom-scrollbar`}>
-        <div className={`w-full max-w-7xl mx-auto flex flex-col ${ui.isFullscreen ? 'h-full' : 'gap-6'}`}>
+      <main className={`flex-1 flex flex-col px-2 md:px-4 min-h-0 ${ui.isFullscreen ? 'overflow-hidden pb-24 pt-2 md:pt-4' : 'overflow-y-auto pb-40 pt-4'} custom-scrollbar transition-all`}>
+        <div className={`w-full max-w-7xl mx-auto flex flex-col min-h-0 ${ui.isFullscreen ? 'h-full' : 'gap-4 md:gap-6'}`}>
             {!ui.isFullscreen && (
             <div className="flex justify-center gap-4">
                {(['main', 'stats'] as const).map((tab) => (
