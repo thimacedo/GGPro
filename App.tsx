@@ -31,7 +31,7 @@ export default function App() {
   const ui = useUIController();
   const ctrl = useMatchController(addToast);
   const backup = useBackupSystem({ matchState: ctrl.matchState, setMatchState: ctrl.setMatchState, addToast, formatEventType: ctrl.formatEventType, setIsSettingsOpen: ui.setIsSettingsOpen });
-  const ai = useAIExtractor({ matchState: ctrl.matchState, setMatchState: ctrl.setMatchState, addToast });
+  const ai = useAIExtractor({ matchState: ctrl.matchState, setMatchState: ctrl.setMatchState, addToast, ui });
 
   const [hasApiKey, setHasApiKey] = useState(true);
   const [billingError, setBillingError] = useState(false);

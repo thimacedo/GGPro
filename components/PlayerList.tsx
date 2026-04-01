@@ -20,7 +20,7 @@ const PlayerList: React.FC<PlayerListProps> = ({ team, variant, onPlayerClick, o
   const players = [...(team.players || [])];
   const starters = players.filter(p => p.isStarter).sort(sortByGK);
   const subs = players.filter(p => !p.isStarter).sort(sortByGK);
-  const coach = team.coach || 'Comissão Técnica';
+  const coach = team.commission || team.coach || 'Comissão Técnica';
 
   const [searchTerm, setSearchTerm] = useState('');
 
