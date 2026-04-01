@@ -18,6 +18,9 @@ export default function ReportTab({ matchState, backup, handleGeminiError }: Pro
     const now = Date.now();
     const elapsed = matchState.timeElapsed + (matchState.timerStartedAt && !matchState.isPaused ? now - matchState.timerStartedAt : 0);
     const currentMin = Math.floor(elapsed / 60000);
+    const summary = (matchState.events || []).map(e => `[${e.minute}'] ${e.description}`).join('\n');
+    const homeGoals = (matchState.events || []).filter(e => e.teamId === 'home' && e.type === 'GOAL').length;
+    const awayGoals = (matchState.events || []).filter(e => e.teamId === 'away' && e.type === 'GOAL').length;
     const status = matchState.period === 'FINISHED' ? 'Finalizada' : `Em andamento (${matchState.period} - ${currentMin}')`;
     const context = `Partida: ${matchState.homeTeam.name} ${homeGoals} x ${awayGoals} ${matchState.awayTeam.name}. Status: ${status}. Competição: ${matchState.competition}.`;
     try {
