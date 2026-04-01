@@ -21,124 +21,139 @@ export function useAIExtractor({ matchState, setMatchState, addToast, ui }: { ma
     if (!d || !d.teams) return;
     const warnings: string[] = [];
 
-    setMatchState((p: MatchState) => {
-      let newState = { ...p };
-      
-      // Se tiver detalhes da partida, tenta preencher os campos vazios
-      if (d.matchDetails) {
-        newState.competition = newState.competition || d.matchDetails.competition || '';
-        newState.stadium = newState.stadium || d.matchDetails.stadium || '';
-        newState.referee = newState.referee || d.matchDetails.referee || '';
-        newState.matchDate = newState.matchDate || d.matchDetails.date || '';
-      }
-
-      const processTeam = (teamData: any, target: 'homeTeam' | 'awayTeam') => {
-        const formationKey = p[target].formation as keyof typeof FORMATIONS || '4-4-2';
-        const coords = FORMATIONS[formationKey];
+    try {
+      setMatchState((p: MatchState) => {
+        let newState = { ...p };
         
-        let rawPlayers = Array.isArray(teamData.players) ? teamData.players : [];
-        const usedNumbers = new Set<number>();
-        let duplicatesFound = false;
+        // Se tiver detalhes da partida, tenta preencher os campos vazios
+        if (d.matchDetails) {
+          newState.competition = newState.competition || d.matchDetails.competition || '';
+          newState.stadium = newState.stadium || d.matchDetails.stadium || '';
+          newState.referee = newState.referee || d.matchDetails.referee || '';
+          newState.matchDate = newState.matchDate || d.matchDetails.date || '';
+        }
 
-        // Normaliza números e posições garantindo unicidade
-        rawPlayers = rawPlayers.map(pl => {
-          let num = parseInt(String(pl.number)) || 0;
-          let pos = pl.position || 'MF';
-          if (/goleiro|gk|gol/i.test(pos) || num === 1 || num === 12) pos = 'GK';
-
-          // Resolução imediata de duplicatas: busca o próximo livre
-          if (num > 0) {
-            if (usedNumbers.has(num)) {
-              duplicatesFound = true;
-              while (usedNumbers.has(num)) num++;
-            }
-            usedNumbers.add(num);
+        const safeString = (val: any): string => {
+          if (typeof val === 'string') return val;
+          if (Array.isArray(val)) {
+            return val.map(item => safeString(item)).filter(Boolean).join(', ');
           }
-
-          return { ...pl, number: num, position: pos };
-        });
-
-        if (duplicatesFound) {
-           setTimeout(() => addToast("Números Duplicados", `Corrigimos números repetidos no ${target === 'homeTeam' ? 'Mandante' : 'Visitante'}.`, "warning"), 150);
-        }
-
-        // Regra de Ouro: Se a IA não identificar reservas ou se marcar mais de 11 como titular,
-        // forçamos os 11 de menor numeração como titulares (com GK no topo).
-        const explicitStarters = rawPlayers.filter((pl: any) => pl.isStarter === true);
-        const hasReserves = rawPlayers.some((pl: any) => pl.isStarter === false);
-        
-        if (!hasReserves || explicitStarters.length > 11) {
-          const sorted = [...rawPlayers].sort((a: any, b: any) => {
-            if (a.position === 'GK' && b.position !== 'GK') return -1;
-            if (a.position !== 'GK' && b.position === 'GK') return 1;
-            return a.number - b.number;
-          });
-
-          let gksFound = 0;
-          let startersCount = 0;
-          rawPlayers = sorted.map((pl) => {
-            let isStarter = false;
-            if (pl.position === 'GK') {
-              if (gksFound === 0) { isStarter = true; gksFound++; startersCount++; }
-              else { isStarter = false; }
-            } else if (startersCount < 11) {
-              isStarter = true; startersCount++;
-            }
-            return { ...pl, isStarter };
-          });
-        }
-
-        let sC = 0, rC = 0;
-        const nL = rawPlayers.map((pl: any) => {
-          const isStarter = pl.isStarter !== false;
-          let x = 50, y = 50;
-          if (isStarter) {
-            if (sC < coords.length) { x = coords[sC].x; y = coords[sC].y; }
-            sC++;
-          } else {
-            x = 110; y = 20 + rC * 5; rC++;
-          }
-
-          return { 
-            id: Math.random().toString(36).substr(2, 9), 
-            fullName: pl.name, name: pl.name, number: pl.number, 
-            position: pl.position, teamId: target === 'homeTeam' ? 'home' : 'away', 
-            isStarter, events: [], x, y 
-          };
-        });
-
-        if (!nL.some((pl: any) => pl.position === 'GK')) {
-          warnings.push(`Sem goleiro para: ${teamData.teamName || target}`);
-        }
-
-        const updatedName = teamData.teamName || p[target].name;
-        const otherKey = target === 'homeTeam' ? 'awayTeam' : 'homeTeam';
-        const finalShort = generateDistinctShortName(updatedName, newState[otherKey]?.shortName || p[otherKey].shortName);
-
-        newState[target] = { 
-          ...p[target], 
-          name: updatedName, 
-          shortName: finalShort, 
-          coach: teamData.coach || p[target].coach,
-          commission: teamData.commission || p[target].commission,
-          players: nL 
+          if (val && typeof val === 'object') return val.name || val.shortName || val.fullName || val.text || JSON.stringify(val);
+          return '';
         };
-      };
 
-      if (mode === 'both' && d.teams.length >= 2) {
-        processTeam(d.teams[0], 'homeTeam'); // Esquerda = Mandante
-        processTeam(d.teams[1], 'awayTeam'); // Direita = Visitante
-      } else if (mode === 'home_only') {
-        processTeam(d.teams[0], 'homeTeam');
-      } else if (mode === 'away_only') {
-        const teamIdx = d.teams.length > 1 ? 1 : 0;
-        processTeam(d.teams[teamIdx], 'awayTeam');
-      } else if (tId) {
-         processTeam(d.teams[0], tId === 'home' ? 'homeTeam' : 'awayTeam');
-      }
+        const processTeam = (teamData: any, target: 'homeTeam' | 'awayTeam') => {
+          if (!teamData) return;
+          
+          const formationKey = p[target].formation as keyof typeof FORMATIONS || '4-4-2';
+          const coords = FORMATIONS[formationKey];
+          
+          let rawPlayers = Array.isArray(teamData.players) ? teamData.players : [];
+          const usedNumbers = new Set<number>();
+          let duplicatesFound = false;
 
-      return newState;
-    });
+          // Normaliza números e posições garantindo unicidade
+          rawPlayers = rawPlayers.map(pl => {
+            let num = parseInt(String(pl.number)) || 0;
+            let pos = pl.position || 'MF';
+            if (/goleiro|gk|gol/i.test(pos) || num === 1 || num === 12) pos = 'GK';
+
+            // Resolução imediata de duplicatas: busca o próximo livre
+            if (num > 0) {
+              if (usedNumbers.has(num)) {
+                duplicatesFound = true;
+                while (usedNumbers.has(num)) num++;
+              }
+              usedNumbers.add(num);
+            }
+
+            return { ...pl, number: num, position: pos };
+          });
+
+          if (duplicatesFound) {
+             setTimeout(() => addToast("Números Duplicados", `Corrigimos números repetidos no ${target === 'homeTeam' ? 'Mandante' : 'Visitante'}.`, "warning"), 150);
+          }
+
+          // Regra de Ouro: Se a IA não identificar reservas ou se marcar mais de 11 como titular,
+          // forçamos os 11 de menor numeração como titulares (com GK no topo).
+          const explicitStarters = rawPlayers.filter((pl: any) => pl.isStarter === true);
+          const hasReserves = rawPlayers.some((pl: any) => pl.isStarter === false);
+          
+          if (!hasReserves || explicitStarters.length > 11) {
+            const sorted = [...rawPlayers].sort((a: any, b: any) => {
+              if (a.position === 'GK' && b.position !== 'GK') return -1;
+              if (a.position !== 'GK' && b.position === 'GK') return 1;
+              return a.number - b.number;
+            });
+
+            let gksFound = 0;
+            let startersCount = 0;
+            rawPlayers = sorted.map((pl) => {
+              let isStarter = false;
+              if (pl.position === 'GK') {
+                if (gksFound === 0) { isStarter = true; gksFound++; startersCount++; }
+                else { isStarter = false; }
+              } else if (startersCount < 11) {
+                isStarter = true; startersCount++;
+              }
+              return { ...pl, isStarter };
+            });
+          }
+
+          let sC = 0, rC = 0;
+          const nL = rawPlayers.map((pl: any) => {
+            const isStarter = pl.isStarter !== false;
+            let x = 50, y = 50;
+            if (isStarter) {
+              if (sC < coords.length) { x = coords[sC].x; y = coords[sC].y; }
+              sC++;
+            } else {
+              x = 110; y = 20 + rC * 5; rC++;
+            }
+
+            return { 
+              id: Math.random().toString(36).substr(2, 9), 
+              fullName: safeString(pl.name), name: safeString(pl.name), number: pl.number, 
+              position: pl.position, teamId: target === 'homeTeam' ? 'home' : 'away', 
+              isStarter, events: [], x, y 
+            };
+          });
+
+          if (!nL.some((pl: any) => pl.position === 'GK')) {
+            warnings.push(`Sem goleiro para: ${safeString(teamData.teamName) || target}`);
+          }
+
+          const updatedName = safeString(teamData.teamName) || p[target].name;
+          const otherKey = target === 'homeTeam' ? 'awayTeam' : 'homeTeam';
+          const finalShort = generateDistinctShortName(updatedName, newState[otherKey]?.shortName || p[otherKey].shortName);
+
+          newState[target] = { 
+            ...p[target], 
+            name: updatedName, 
+            shortName: finalShort, 
+            coach: safeString(teamData.commission || teamData.coach || p[target].coach),
+            commission: safeString(teamData.commission || p[target].commission),
+            players: nL 
+          };
+        };
+
+        if (mode === 'both' && d.teams.length >= 2) {
+          processTeam(d.teams[0], 'homeTeam'); // Esquerda = Mandante
+          processTeam(d.teams[1], 'awayTeam'); // Direita = Visitante
+        } else if (tId === 'away' || mode === 'away_only') {
+          const teamIdx = (mode === 'away_only' && d.teams.length > 1) ? 1 : 0;
+          processTeam(d.teams[teamIdx], 'awayTeam');
+        } else {
+          // Default: home_only ou tId === 'home'
+          processTeam(d.teams[0], 'homeTeam');
+        }
+
+
+        return newState;
+      });
+    } catch (error: any) {
+      addToast("Erro de Processamento", `Falha ao organizar times: ${error.message}`, "error");
+    }
 
     setTimeout(() => {
       if (warnings.length > 0) warnings.forEach(w => addToast("IA", w, "warning"));
