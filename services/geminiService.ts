@@ -1,4 +1,5 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+// Motor de IA Geradora - Versão REST Estável (v1)
+// Bypassing the SDK to resolve persistent 404/v1beta issues.
 
 const getApiKey = () => {
   // @ts-ignore
@@ -8,34 +9,53 @@ const getApiKey = () => {
   return key;
 };
 
-const getAI = () => new GoogleGenerativeAI(getApiKey()); // SDK padrão
-// Nota: Se o erro persistir, vamos tentar forçar o modelo com o prefixo completo.
-
-const generateContentWithFallback = async (models: string[], content: any) => {
-  const ai = getAI();
+// 🛠️ MOTOR DE ENGENHARIA: Conexão direta via REST para evitar bugs de SDK
+async function callGeminiREST(modelNames: string[], payload: any) {
+  const apiKey = getApiKey();
   let lastError: any = null;
-  for (const modelName of models) {
+
+  for (const model of modelNames) {
     try {
-      const model = ai.getGenerativeModel({ model: modelName });
-      const result = await model.generateContent(content);
-      if (result && result.response && result.response.text()) {
-        return result;
+      const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.warn(`Modelo ${model} falhou (v1):`, data.error || 'Erro desconhecido');
+        lastError = new Error(data.error?.message || `Erro ${response.status}`);
+        continue;
       }
-      console.warn(`Modelo ${modelName} retornou resposta vazia.`);
-    } catch (e) {
-      console.warn(`Falha ao usar modelo ${modelName}:`, e);
+
+      if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+        return {
+          response: {
+            text: () => data.candidates[0].content.parts[0].text
+          }
+        };
+      }
+      
+      throw new Error("Resposta da IA vazia ou malformada.");
+    } catch (e: any) {
       lastError = e;
+      if (e.message?.includes('404')) {
+        console.warn(`Modelo ${model} não encontrado no v1, tentando próximo...`);
+        continue;
+      }
+      throw e;
     }
   }
-  throw lastError || new Error("Todos os modelos falharam.");
-};
+  throw lastError || new Error("Todos os modelos (REST) falharam.");
+}
 
 const handleAIError = (error: any) => {
-  console.error("Erro na API de IA:", error);
+  console.error("Erro na API de IA (REST):", error);
   throw error;
 };
-
-const sanitizeString = (str: string) => str ? str.trim() : '';
 
 const cleanAndParseJSON = (text: string): any => {
   try {
@@ -48,23 +68,6 @@ const cleanAndParseJSON = (text: string): any => {
   } catch (e) {
     console.warn("Falha no JSON parse primário", e);
   }
-  
-  // Extrator de fallback usando regex
-  try {
-    const playerRegex = /([a-zA-ZÀ-ÿ\.\s]+)(?:\s*[\(#]\s*|\s+)(\d+)(?:\s*\))?/g;
-    const players = [];
-    let match;
-    const playersSection = text.split(/(?:PLAYERS|JOGADORES|ESCALAÇÃO|TITULARES)[:\s]/i)[1] || text;
-    while ((match = playerRegex.exec(playersSection)) !== null) {
-      const name = match[1].trim();
-      const number = parseInt(match[2]);
-      if (name.length > 2 && !isNaN(number) && name.toLowerCase() !== 'page') {
-        players.push({ name, number, isStarter: players.length < 11 }); // defaults to starter for first 11
-      }
-    }
-    if (players.length > 0) return { teams: [{ teamName: "Time Recuperado", players }] };
-  } catch (err) {}
-  
   return { teams: [] };
 };
 
@@ -83,7 +86,6 @@ export const parsePlayersFromText = async (textList: string): Promise<any> => {
         if (/titulares|reservas|banco|comissão|técnico|coach|elenco/i.test(line)) continue;
 
         const match = line.match(/^[\D]*(\d{1,2})[\s\-\.\,:]+(.+)$/);
-        
         let num = 0;
         let name = '';
 
@@ -111,7 +113,6 @@ export const parsePlayersFromText = async (textList: string): Promise<any> => {
             starterCount++;
         }
       }
-      
       resolve({ players });
     } catch (e) {
       console.error("Erro no parser local:", e);
@@ -122,59 +123,24 @@ export const parsePlayersFromText = async (textList: string): Promise<any> => {
 
 export const parsePlayersFromImage = async (base64Image: string, mimeType: string = "image/jpeg"): Promise<any> => {
   try {
-    const content = {
-      contents: [
-        { role: 'user', parts: [
-          { inlineData: { data: base64Image, mimeType: mimeType } },
+    const payload = {
+      contents: [{
+        parts: [
+          { inline_data: { mime_type: mimeType, data: base64Image } },
           { text: `Você é um analista de súmulas de futebol. Extraia TODOS os dados da súmula enviada na imagem para um formato JSON.
           REGRAS INEGOCIÁVEIS:
-          1. NOMES: Use APENAS o primeiro nome ou apelido (ex: "João", "Silva"). PROIBIDO nomes completos.
-          2. EXTRAÇÃO DE TODOS OS ATLETAS (CRÍTICO): A súmula é dividida em Titulares e Suplentes (Reservas). VOCÊ DEVE EXTRAIR TODOS, SEM EXCEÇÃO. Mantenha os titulares com a tag "isStarter": true, e TODOS os reservas com a tag "isStarter": false. Se a foto não separar, os 11 primeiros são titulares e o resto é reserva. Nunca retorne apenas os titulares se existirem reservas visíveis na listagem.
-          3. POSIÇÃO: Apenas um goleiro recebe "position": "GK". Os demais atletas recebem "position": "MF".
-          4. INFORMAÇÕES ADICIONAIS: Identifique a cor principal do clube ("primaryColor" em HEX), a cor secundária ("secondaryColor" em HEX), o nome do treinador ("coach") e o nome do Árbitro ("referee"). Crie uma sigla clássica de 3 letras ("shortName", ex: FLA para Flamengo, nunca repita entre times).
-          A saída DEVE ser estritamente esse JSON: { teams: [{ teamName, shortName, primaryColor, secondaryColor, coach, players: [{ name, number, isStarter, position }] }], referee: "Nome do Árbitro" }` }
-        ]}
-      ],
+          1. NOMES: Use APENAS o primeiro nome ou apelido.
+          2. EXTRAÇÃO: Mantenha os titulares com "isStarter": true, e reservas com "isStarter": false.
+          3. POSIÇÃO: Apenas um goleiro recebe "GK", o restante "MF".
+          Saída JSON: { teams: [{ teamName, shortName, primaryColor, secondaryColor, coach, players: [{ name, number, isStarter, position }] }], referee: "Nome do Árbitro" }` }
+        ]
+      }],
       generationConfig: { responseMimeType: "application/json" }
     };
-    const result = await generateContentWithFallback(["gemini-1.5-flash-001", "gemini-1.5-flash", "gemini-1.5-pro"], content);
-    return cleanAndParseJSON(result.response.text() || '{}');
-  } catch (error) {
-    handleAIError(error);
-  }
-};
-
-export const parseMatchBannerFromImage = async (base64Image: string): Promise<{ matches: any[] } | undefined> => {
-  try {
-    const content = {
-      contents: [
-        { role: 'user', parts: [
-          { inlineData: { data: base64Image, mimeType: "image/jpeg" } },
-          { text: `Retorne um JSON: { "matches": [ { "homeTeam": "Mandante", "awayTeam": "Visitante", "competition": "Campeonato", "stadium": "Local", "date": "Data", "time": "Horário" } ] }` }
-        ]}
-      ],
-      generationConfig: { responseMimeType: "application/json" }
-    };
-    const result = await generateContentWithFallback(["gemini-1.5-flash-001", "gemini-1.5-flash", "gemini-1.5-pro"], content);
-    return cleanAndParseJSON(result.response.text() || '{ "matches": [] }');
-  } catch (error) {
-    handleAIError(error);
-  }
-};
-
-export const parseRegulationDocument = async (base64Data: string, mimeType: string): Promise<any> => {
-  try {
-    const content = {
-      contents: [
-        { role: 'user', parts: [
-          { inlineData: { data: base64Data, mimeType: mimeType } },
-          { text: `Extraia as regras em JSON: { "halfDuration": 30, "maxSubstitutions": 5, "penaltyKicks": 3, "summary": "Resumo..." }` }
-        ]}
-      ],
-      generationConfig: { responseMimeType: "application/json" }
-    };
-    const result = await generateContentWithFallback(["gemini-1.5-flash-001", "gemini-1.5-flash", "gemini-1.5-pro"], content);
-    return cleanAndParseJSON(result.response.text() || '{}');
+    
+    // Lista de modelos na ordem de prioridade para REST v1
+    const result = await callGeminiREST(["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.0-pro-vision-latest"], payload);
+    return cleanAndParseJSON(result.response.text());
   } catch (error) {
     handleAIError(error);
   }
@@ -182,40 +148,16 @@ export const parseRegulationDocument = async (base64Data: string, mimeType: stri
 
 export const processVoiceCommand = async (command: string, homeTeam: any, awayTeam: any, eventsSummary: string): Promise<any> => {
   try {
-    const content = {
+    const payload = {
       contents: [{
-        role: 'user', parts: [{ text: `Você é um assistente sênior de narração esportiva.
-      COMANDO DE VOZ: "${command}"
-      
-      DADOS OFICIAIS DA PARTIDA:
-      - MANDANTE (home): ${homeTeam.name} (${homeTeam.players.map((p:any)=>p.number+':'+p.name).join(', ')})
-      - VISITANTE (away): ${awayTeam.name} (${awayTeam.players.map((p:any)=>p.number+':'+p.name).join(', ')})
-      
-      Interprete o comando e retorne sempre um ARRAY de objetos JSON, mesmo que haja apenas um comando.
-      REGRAS:
-      1. TEAM: "home" ou "away".
-      2. TYPE: "GOAL", "YELLOW_CARD", "RED_CARD", "SUBSTITUTION", "FOUL", "OFFSIDE", "SHOT", "PENALTY", "START_TIMER", "PAUSE_TIMER", "ANSWER".
-      3. "Falta para o Time X" -> O Time X sofreu a falta. O "team" no JSON deve ser o que sofreu. Adicione "isAwarded": true.
-      4. MÚLTIPLAS AÇÕES: Se o narrador disser "entram 10 e 11, saem 5 e 2", gere DOIS objetos de SUBSTITUTION.
-      5. SUBSTITUTION: Sempre tente parear "playerInNumber" com "playerOutNumber".
-
-      Retorne APENAS o JSON no formato:
-      [
-        {
-          "type": "GOAL", 
-          "team": "home", 
-          "playerNumber": 10,
-          "isAwarded": false,
-          "playerOutNumber": null,
-          "playerInNumber": null,
-          "customMessage": null
-        }
-      ]` }]
+        parts: [{ text: `DADOS: home: ${homeTeam.name}, away: ${awayTeam.name}. COMANDO: "${command}". 
+        Retorne ARRAY JSON de ações {type, team, playerNumber, isAwarded, playerOutNumber, playerInNumber}.` }]
       }],
       generationConfig: { responseMimeType: "application/json" }
     };
-    const result = await generateContentWithFallback(["gemini-1.5-flash-001", "gemini-1.5-flash", "gemini-1.5-pro"], content);
-    return cleanAndParseJSON(result.response.text() || '[]');
+
+    const result = await callGeminiREST(["gemini-1.5-flash", "gemini-1.5-pro"], payload);
+    return cleanAndParseJSON(result.response.text());
   } catch (error) {
     handleAIError(error);
   }
@@ -223,14 +165,12 @@ export const processVoiceCommand = async (command: string, homeTeam: any, awayTe
 
 export const generateMatchReport = async (context: string, timeline: string): Promise<string> => {
   try {
-    const content = {
+    const payload = {
       contents: [{
-        role: 'user',
-        parts: [{ text: `Contexto do Jogo:\n${context}\n\nEventos:\n${timeline}\n\nEscreva uma breve crônica esportiva sobre esta partida baseada nos eventos.` }]
-      }],
-      generationConfig: { responseMimeType: "text/plain" }
+        parts: [{ text: `Cronica do jogo:\nContexto: ${context}\nEventos: ${timeline}` }]
+      }]
     };
-    const result = await generateContentWithFallback(["gemini-1.5-flash-001", "gemini-1.5-flash", "gemini-1.5-pro"], content);
+    const result = await callGeminiREST(["gemini-1.5-flash"], payload);
     return result.response.text();
   } catch (error) {
     handleAIError(error);
