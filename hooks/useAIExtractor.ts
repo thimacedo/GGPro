@@ -1,5 +1,5 @@
 import React, { useCallback } from 'react';
-import { parsePlayersFromImage, parsePlayersFromText } from '../services/geminiService';
+import { parsePlayersFromImage, parsePlayersFromText } from '../services/geminiServiceV6';
 import { MatchState, Player } from '../types';
 import { FORMATIONS } from '../constants';
 import { generateDistinctShortName, ensureDistinctColors } from '../utils/teamUtils';
@@ -18,18 +18,24 @@ export function useAIExtractor({ matchState, setMatchState, addToast }: { matchS
           try {
             addToast("IA", "Processando foto da Súmula...", "info");
             const d = await parsePlayersFromImage(b64, mimeType);
+            
             if (d && d.teams && d.teams.length > 0) {
+              const warnings: string[] = [];
+              let finalReferee = d.referee || '';
+
               setMatchState((p: MatchState) => {
-                let newState = { ...p, referee: d.referee || p.referee };
+                let newState = { ...p, referee: finalReferee || p.referee };
+                
                 d.teams.forEach((teamData: any, idx: number) => {
                   let targetKey: 'homeTeam' | 'awayTeam' = 'homeTeam';
+                  
                   if (d.teams.length === 1) {
-                    // Se o usuário clicou no botão de um time específico, respeita isso
                     targetKey = tId === 'home' ? 'homeTeam' : 'awayTeam';
                   } else {
-                    // Se a IA retornou dois times, tenta identificar mandante/visitante
-                    const isManualHome = teamData.isHome === true || (teamData.teamName && teamData.teamName.toLowerCase().includes('mandante')) || (teamData.teamName && teamData.teamName.toLowerCase().includes('casa'));
-                    const isManualAway = teamData.isHome === false || (teamData.teamName && teamData.teamName.toLowerCase().includes('visitante')) || (teamData.teamName && teamData.teamName.toLowerCase().includes('fora'));
+                    const isManualHome = teamData.isHome === true || 
+                                       (teamData.teamName && /mandante|casa|home/i.test(teamData.teamName));
+                    const isManualAway = teamData.isHome === false || 
+                                       (teamData.teamName && /visitante|fora|away/i.test(teamData.teamName));
                     
                     if (isManualHome) targetKey = 'homeTeam';
                     else if (isManualAway) targetKey = 'awayTeam';
@@ -42,8 +48,7 @@ export function useAIExtractor({ matchState, setMatchState, addToast }: { matchS
                   let reserveCount = 0;
                   
                   const safePlayers = Array.isArray(teamData.players) ? teamData.players : [];
-                  const nL = safePlayers
-                    .map((pl:any) => {
+                  const nL = safePlayers.map((pl:any) => {
                       const isStarter = pl.isStarter !== false;
                       let x = 50, y = 50;
                       if (isStarter) {
@@ -54,29 +59,39 @@ export function useAIExtractor({ matchState, setMatchState, addToast }: { matchS
                       } else {
                         x = 110; y = 20 + reserveCount * 5; reserveCount++;
                       }
+
+                      let pos = pl.position || 'MF';
+                      if (/goleiro|gk|gol/i.test(pos)) pos = 'GK';
+
                       return { 
                         id: Math.random().toString(36).substr(2,9), 
                         fullName: pl.name, 
                         name: pl.name, 
                         number: pl.number, 
-                        position: pl.position || 'MF', 
+                        position: pos, 
                         teamId: targetKey === 'homeTeam' ? 'home' : 'away', 
                         isStarter, 
                         events: [], 
                         x, y 
                       };
-                    });
+                  });
+
+                  const hasGK = nL.some(pl => pl.position === 'GK');
+                  if (!hasGK) {
+                    warnings.push(`A IA não identificou um goleiro para o ${teamData.teamName || (targetKey === 'homeTeam' ? 'Mandante' : 'Visitante')}.`);
+                  }
+
                   const updatedName = teamData.teamName || p[targetKey].name;
                   const otherKey = targetKey === 'homeTeam' ? 'awayTeam' : 'homeTeam';
                   
                   let finalShortName = generateDistinctShortName(updatedName, newState[otherKey]?.shortName || p[otherKey].shortName);
-                  if (teamData.shortName && finalShortName.includes('UND')) finalShortName = teamData.shortName.substring(0, 3).toUpperCase();
+                  if (teamData.shortName && (finalShortName.includes('UND') || finalShortName.length < 2)) {
+                      finalShortName = teamData.shortName.substring(0, 3).toUpperCase();
+                  }
 
                   let finalColor = teamData.primaryColor || p[targetKey].color;
                   if (targetKey === 'awayTeam') {
                       finalColor = ensureDistinctColors(finalColor, newState.homeTeam?.color || p.homeTeam.color);
-                  } else if (targetKey === 'homeTeam' && d.teams.length === 1) {
-                      finalColor = ensureDistinctColors(finalColor, p.awayTeam.color);
                   }
 
                   newState[targetKey] = { 
@@ -89,29 +104,27 @@ export function useAIExtractor({ matchState, setMatchState, addToast }: { matchS
                       players: nL 
                   };
                 });
-                // VERIFICAÇÃO DE GOLEIRO
-                d.teams.forEach((teamData: any) => {
-                  const targetKey = d.teams.length === 1 ? (tId === 'home' ? 'homeTeam' : 'awayTeam') : (teamData.isHome ? 'homeTeam' : 'awayTeam');
-                  const hasGK = newState[targetKey].players.some(p => p.position === 'GK');
-                  if (!hasGK) {
-                    addToast("Atenção: Sem Goleiro", `A IA não identificou um goleiro para o ${newState[targetKey].shortName}. Por favor, edite um jogador e defina-o como Goleiro (GK).`, "warning");
-                  }
-                });
 
                 return newState;
               });
-              addToast("IA", "Elenco carregado com sucesso!", "success");
+
+              setTimeout(() => {
+                if (warnings.length > 0) {
+                  warnings.forEach(w => addToast("Equipe Sem Goleiro", w, "warning"));
+                }
+                addToast("IA", "Elenco carregado com sucesso!", "success");
+              }, 100);
+
             } else {
               addToast("IA", "Nenhum dado encontrado na imagem.", "warning");
             }
           } catch(err: any) {
-            addToast("IA", `Erro ao processar imagem: ${err.message || "Verifique sua chave de API"}`, "error");
+            addToast("IA", `Processamento falhou: ${err.message}`, "error");
           }
         }
       };
       r.readAsDataURL(file);
     }
-    // Reseta o input para permitir enviar o mesmo arquivo novamente se necessário
     e.target.value = '';
   }, [setMatchState, addToast]);
 
@@ -128,17 +141,23 @@ export function useAIExtractor({ matchState, setMatchState, addToast }: { matchS
                 let x=50, y=50;
                 if(pl.isStarter){ if(sc<coords.length){ x=coords[sc].x; y=coords[sc].y;} sc++; }
                 else{ x=110; y=20+rc*5; rc++; }
-                return { id: Math.random().toString(36).substr(2,9), fullName: pl.name, name: pl.name, number: pl.number, position: pl.position || 'MF', teamId: tId, isStarter: pl.isStarter, events: [], x, y };
+
+                let pos = pl.position || 'MF';
+                if (/goleiro|gk|gol/i.test(pos)) pos = 'GK';
+
+                return { id: Math.random().toString(36).substr(2,9), fullName: pl.name, name: pl.name, number: pl.number, position: pos, teamId: tId, isStarter: pl.isStarter, events: [], x, y };
             });
             const otherKey = targetKey === 'homeTeam' ? 'awayTeam' : 'homeTeam';
             const finalShortName = generateDistinctShortName(p[targetKey].name, p[otherKey].shortName);
-            const hasGK = plist.some(p => p.position === 'GK');
+            
+            const hasGK = plist.some(pl => pl.position === 'GK');
             if (!hasGK) {
-              addToast("Atenção: Sem Goleiro", `Nenhum goleiro foi detectado na lista. Defina um jogador como Goleiro (GK) manualmente.`, "warning");
+              setTimeout(() => addToast("Atenção", "Nenhum goleiro (GK) detectado.", "warning"), 100);
             }
+
             return { ...p, [targetKey]: { ...p[targetKey], players: plist, shortName: finalShortName } };
         });
-        addToast("Sucesso", "Lista importada (Modo Local)!", "success");
+        addToast("Sucesso", "Lista importada!", "success");
     }
   }, [setMatchState, addToast]);
 
