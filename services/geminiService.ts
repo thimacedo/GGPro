@@ -1,5 +1,5 @@
-// Motor de IA Geradora - Versão REST Estável (v1)
-// Bypassing the SDK to resolve persistent 404/v1beta issues.
+// Motor de IA Geradora - Versão REST Direta (Engenharia de Missão Crítica)
+// Bypassing SDK errors and endpoint mismatches.
 
 const getApiKey = () => {
   // @ts-ignore
@@ -9,51 +9,59 @@ const getApiKey = () => {
   return key;
 };
 
-// 🛠️ MOTOR DE ENGENHARIA: Conexão direta via REST para evitar bugs de SDK
-async function callGeminiREST(modelNames: string[], payload: any) {
+/**
+ * 🛠️ MOTOR DE ENGENHARIA v3: Conexão direta via REST com fallback de versão e modelo.
+ * Resolve erros 400 (Bad Request), 404 (Not Found) e 500 (Internal).
+ */
+async function callGeminiREST(modelNames: string[], contents: any) {
   const apiKey = getApiKey();
   let lastError: any = null;
 
+  const apiVersions = ['v1', 'v1beta']; // Tenta v1 (estável) e depois v1beta (novos modelos)
+
   for (const model of modelNames) {
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+    for (const v of apiVersions) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/${v}/models/${model}:generateContent?key=${apiKey}`;
+        
+        // Payload Ultraliviano: Removida generationConfig para evitar erros 400 em certas regiões
+        const payload = { contents };
 
-      const data = await response.json();
+        console.log(`Tentando IA: ${model} [${v}]...`);
+        
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
 
-      if (!response.ok) {
-        console.warn(`Modelo ${model} falhou (v1):`, data.error || 'Erro desconhecido');
-        lastError = new Error(data.error?.message || `Erro ${response.status}`);
-        continue;
-      }
+        const data = await response.json();
 
-      if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
-        return {
-          response: {
-            text: () => data.candidates[0].content.parts[0].text
-          }
-        };
+        if (!response.ok) {
+          const msg = data.error?.message || "Erro desconhecido";
+          console.warn(`Falha no modelo ${model} [${v}]:`, msg);
+          lastError = new Error(msg);
+          continue; // Tenta a próxima versão ou próximo modelo
+        }
+
+        if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+          return {
+            response: {
+              text: () => data.candidates[0].content.parts[0].text
+            }
+          };
+        }
+      } catch (e: any) {
+        console.error(`Erro de rede no modelo ${model} [${v}]:`, e.message);
+        lastError = e;
       }
-      
-      throw new Error("Resposta da IA vazia ou malformada.");
-    } catch (e: any) {
-      lastError = e;
-      if (e.message?.includes('404')) {
-        console.warn(`Modelo ${model} não encontrado no v1, tentando próximo...`);
-        continue;
-      }
-      throw e;
     }
   }
-  throw lastError || new Error("Todos os modelos (REST) falharam.");
+  throw lastError || new Error("Todos os modelos e versões de API falharam.");
 }
 
 const handleAIError = (error: any) => {
-  console.error("Erro na API de IA (REST):", error);
+  console.error("ERRO CRÍTICO IA:", error);
   throw error;
 };
 
@@ -66,7 +74,7 @@ const cleanAndParseJSON = (text: string): any => {
       return JSON.parse(clean.substring(firstBrace, lastBrace + 1));
     }
   } catch (e) {
-    console.warn("Falha no JSON parse primário", e);
+    console.warn("Falha no parse JSON, tentando recuperação de texto...", e);
   }
   return { teams: [] };
 };
@@ -78,17 +86,13 @@ export const parsePlayersFromText = async (textList: string): Promise<any> => {
       const lines = textList.split(/\r?\n/);
       const players: any[] = [];
       let starterCount = 0;
-
       for (let line of lines) {
         line = line.trim();
         if (!line || line.length < 3) continue;
-
         if (/titulares|reservas|banco|comissão|técnico|coach|elenco/i.test(line)) continue;
-
         const match = line.match(/^[\D]*(\d{1,2})[\s\-\.\,:]+(.+)$/);
         let num = 0;
         let name = '';
-
         if (match) {
           num = parseInt(match[1], 10);
           name = match[2].trim().replace(/[\*\-\_]/g, '').trim(); 
@@ -96,26 +100,23 @@ export const parsePlayersFromText = async (textList: string): Promise<any> => {
           name = line.replace(/^[\d\s\-\.\,:]+/, '').replace(/[\*\-\_]/g, '').trim();
           num = players.length + 1; 
         }
-
         if (name.length > 2 && !name.toLowerCase().includes('treinador')) {
-            let isGK = false;
-            if (/(\(gol\)|\(gk\)|goleiro)/i.test(name) || (num === 1 && starterCount === 0)) {
-                isGK = true;
-                name = name.replace(/\(gol\)|\(gk\)|goleiro|\(\)/ig, '').trim();
-            }
-
-            players.push({
-              name: name.substring(0, 20),
-              number: num,
-              position: isGK ? 'GK' : 'MF',
-              isStarter: starterCount < 11 
-            });
-            starterCount++;
+          let isGK = false;
+          if (/(\(gol\)|\(gk\)|goleiro)/i.test(name) || (num === 1 && starterCount === 0)) {
+            isGK = true;
+            name = name.replace(/\(gol\)|\(gk\)|goleiro|\(\)/ig, '').trim();
+          }
+          players.push({
+            name: name.substring(0, 20),
+            number: num,
+            position: isGK ? 'GK' : 'MF',
+            isStarter: starterCount < 11 
+          });
+          starterCount++;
         }
       }
       resolve({ players });
     } catch (e) {
-      console.error("Erro no parser local:", e);
       resolve({ players: [] });
     }
   });
@@ -123,23 +124,15 @@ export const parsePlayersFromText = async (textList: string): Promise<any> => {
 
 export const parsePlayersFromImage = async (base64Image: string, mimeType: string = "image/jpeg"): Promise<any> => {
   try {
-    const payload = {
-      contents: [{
-        parts: [
-          { inline_data: { mime_type: mimeType, data: base64Image } },
-          { text: `Você é um analista de súmulas de futebol. Extraia TODOS os dados da súmula enviada na imagem para um formato JSON.
-          REGRAS INEGOCIÁVEIS:
-          1. NOMES: Use APENAS o primeiro nome ou apelido.
-          2. EXTRAÇÃO: Mantenha os titulares com "isStarter": true, e reservas com "isStarter": false.
-          3. POSIÇÃO: Apenas um goleiro recebe "GK", o restante "MF".
-          Saída JSON: { teams: [{ teamName, shortName, primaryColor, secondaryColor, coach, players: [{ name, number, isStarter, position }] }], referee: "Nome do Árbitro" }` }
-        ]
-      }],
-      generationConfig: { response_mime_type: "application/json" }
-    };
-    
-    // Lista de modelos na ordem de prioridade para REST v1
-    const result = await callGeminiREST(["gemini-1.5-flash", "gemini-1.5-pro", "gemini-1.0-pro-vision-latest"], payload);
+    const contents = [{
+      parts: [
+        { inline_data: { mime_type: mimeType, data: base64Image } },
+        { text: `Extraia os dados da súmula enviada na imagem para um formato JSON estritamente conforme o exemplo:
+        { "teams": [{ "teamName": "Nome", "players": [{ "name": "Nome", "number": 10, "isStarter": true, "position": "MF" }] }], "referee": "Nome" }
+        Use apenas o primeiro nome/apelido dos jogadores.` }
+      ]
+    }];
+    const result = await callGeminiREST(["gemini-1.5-flash", "gemini-1.5-pro", "gemini-pro-vision"], contents);
     return cleanAndParseJSON(result.response.text());
   } catch (error) {
     handleAIError(error);
@@ -148,16 +141,13 @@ export const parsePlayersFromImage = async (base64Image: string, mimeType: strin
 
 export const parseMatchBannerFromImage = async (base64Image: string): Promise<{ matches: any[] } | undefined> => {
   try {
-    const payload = {
-      contents: [
-        { role: 'user', parts: [
-          { inline_data: { data: base64Image, mime_type: "image/jpeg" } },
-          { text: `Retorne um JSON: { "matches": [ { "homeTeam": "Mandante", "awayTeam": "Visitante", "competition": "Campeonato", "stadium": "Local", "date": "Data", "time": "Horário" } ] }` }
-        ]}
-      ],
-      generationConfig: { response_mime_type: "application/json" }
-    };
-    const result = await callGeminiREST(["gemini-1.5-flash", "gemini-1.5-pro"], payload);
+    const contents = [{
+      parts: [
+        { inline_data: { mime_type: "image/jpeg", data: base64Image } },
+        { text: `Retorne JSON: { "matches": [ { "homeTeam": "A", "awayTeam": "B", "competition": "X", "stadium": "Y", "date": "Z", "time": "W" } ] }` }
+      ]
+    }];
+    const result = await callGeminiREST(["gemini-1.5-flash", "gemini-1.5-pro"], contents);
     return cleanAndParseJSON(result.response.text() || '{ "matches": [] }');
   } catch (error) {
     handleAIError(error);
@@ -166,16 +156,13 @@ export const parseMatchBannerFromImage = async (base64Image: string): Promise<{ 
 
 export const parseRegulationDocument = async (base64Data: string, mimeType: string): Promise<any> => {
   try {
-    const payload = {
-      contents: [
-        { role: 'user', parts: [
-          { inline_data: { data: base64Data, mime_type: mimeType } },
-          { text: `Extraia as regras em JSON: { "halfDuration": 30, "maxSubstitutions": 5, "penaltyKicks": 3, "summary": "Resumo..." }` }
-        ]}
-      ],
-      generationConfig: { response_mime_type: "application/json" }
-    };
-    const result = await callGeminiREST(["gemini-1.5-flash", "gemini-1.5-pro"], payload);
+    const contents = [{
+      parts: [
+        { inline_data: { mime_type: mimeType, data: base64Data } },
+        { text: `Extraia JSON de regras: { "halfDuration": 30, "maxSubstitutions": 5, "penaltyKicks": 3, "summary": "..." }` }
+      ]
+    }];
+    const result = await callGeminiREST(["gemini-1.5-flash", "gemini-1.5-pro"], contents);
     return cleanAndParseJSON(result.response.text() || '{}');
   } catch (error) {
     handleAIError(error);
@@ -184,15 +171,11 @@ export const parseRegulationDocument = async (base64Data: string, mimeType: stri
 
 export const processVoiceCommand = async (command: string, homeTeam: any, awayTeam: any, eventsSummary: string): Promise<any> => {
   try {
-    const payload = {
-      contents: [{
-        parts: [{ text: `DADOS: home: ${homeTeam.name}, away: ${awayTeam.name}. COMANDO: "${command}". 
-        Retorne ARRAY JSON de ações {type, team, playerNumber, isAwarded, playerOutNumber, playerInNumber}.` }]
-      }],
-      generationConfig: { response_mime_type: "application/json" }
-    };
-
-    const result = await callGeminiREST(["gemini-1.5-flash", "gemini-1.5-pro"], payload);
+    const contents = [{
+      parts: [{ text: `DADOS: home: ${homeTeam.name}, away: ${awayTeam.name}. COMANDO: "${command}". 
+      Retorne ARRAY JSON de ações [{type, team, playerNumber, isAwarded, playerOutNumber, playerInNumber}].` }]
+    }];
+    const result = await callGeminiREST(["gemini-1.5-flash", "gemini-1.5-pro"], contents);
     return cleanAndParseJSON(result.response.text());
   } catch (error) {
     handleAIError(error);
@@ -201,12 +184,10 @@ export const processVoiceCommand = async (command: string, homeTeam: any, awayTe
 
 export const generateMatchReport = async (context: string, timeline: string): Promise<string> => {
   try {
-    const payload = {
-      contents: [{
-        parts: [{ text: `Cronica do jogo:\nContexto: ${context}\nEventos: ${timeline}` }]
-      }]
-    };
-    const result = await callGeminiREST(["gemini-1.5-flash"], payload);
+    const contents = [{
+      parts: [{ text: `Escreva uma cronica esportiva:\nContexto: ${context}\nEventos: ${timeline}` }]
+    }];
+    const result = await callGeminiREST(["gemini-1.5-flash"], contents);
     return result.response.text();
   } catch (error) {
     handleAIError(error);
