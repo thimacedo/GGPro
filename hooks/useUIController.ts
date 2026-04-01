@@ -20,6 +20,8 @@ export function useUIController() {
   const [coachModal, setCoachModal] = useState<{isOpen: boolean, teamId: 'home'|'away'}>({isOpen: false, teamId: 'home'});
   const [playerModal, setPlayerModal] = useState<{isOpen: boolean, teamId: 'home'|'away', player: Player | null}>({isOpen: false, teamId: 'home', player: null});
   const [importListModal, setImportListModal] = useState<{isOpen: boolean, teamId: 'home'|'away'}>({isOpen: false, teamId: 'home'});
+  const [showAISelectionModal, setShowAISelectionModal] = useState(false);
+  const [pendingAIResult, setPendingAIResult] = useState<any>(null);
 
   // Ações Rápidas - Temporárias para Modais
   const [selectedPlayerForAction, setSelectedPlayerForAction] = useState<{ player: Player, teamId: 'home' | 'away' } | null>(null);
@@ -47,6 +49,8 @@ export function useUIController() {
     coachModal, setCoachModal,
     playerModal, setPlayerModal,
     importListModal, setImportListModal,
+    showAISelectionModal, setShowAISelectionModal,
+    pendingAIResult, setPendingAIResult,
 
     selectedPlayerForAction, setSelectedPlayerForAction,
     selectedTeamForAction, setSelectedTeamForAction,

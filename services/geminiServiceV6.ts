@@ -92,15 +92,26 @@ export const parsePlayersFromImage = async (base64Image: string, mimeType: strin
 3. IDENTIFICAÇÃO DE GOLEIROS:
    - Identifique goleiros (GK) pelos números 1 ou 12, ou pelas marcações (G), (GK), "Gol" ou "Goleiro".
 
+4. DADOS COMPLEMENTARES:
+   - Extraia a COMISSÃO TÉCNICA (Treinadores, Auxiliares, etc.) de cada equipe.
+   - Extraia DETALHES DA PARTIDA: Campeonato, Árbitro, Estádio, Data e Hora.
+
 EXTRAIA O JSON NESTE FORMATO:
 { 
   "teams": [
     { 
       "teamName": "Nome do Time", 
-      "players": [{ "name": "Nome formatado", "number": 10, "isStarter": true, "position": "MF" ou "GK" }] 
+      "players": [{ "name": "Nome formatado", "number": 10, "isStarter": true, "position": "MF" ou "GK" }],
+      "commission": "Lista de técnicos e auxiliares"
     }
   ], 
-  "referee": "Nome do Árbitro se disponível" 
+  "matchDetails": {
+    "competition": "Nome da Competição",
+    "referee": "Nome do Árbitro",
+    "stadium": "Local/Campo",
+    "date": "DD/MM/AAAA",
+    "time": "HH:MM"
+  }
 }` }
     ]
   }];

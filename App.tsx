@@ -1,13 +1,13 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { 
-  Play, Pause, Settings, Info, ChevronRight, Flag, History, Loader2, Mic, Send
+  Play, Pause, Settings, Info, ChevronRight, Flag, History, Loader2, Mic, Send, Users
 } from 'lucide-react';
 import { MatchState, Player, Team, EventType } from './types';
 import ToastContainer from './components/ToastContainer';
 import Header from './components/Header';
 import PreMatchSetup from './components/PreMatchSetup';
 import { 
-  EditTeamModal, EditPlayerModal, EditCoachModal, EndGameOptionsModal, PenaltyStarterModal, ImportListModal, ResetConfirmModal 
+  EditTeamModal, EditPlayerModal, EditCoachModal, EndGameOptionsModal, PenaltyStarterModal, ImportListModal, ResetConfirmModal, AISelectionModal 
 } from './components/MatchModals';
 import PlayerActionModal from './components/PlayerActionModal';
 import TeamActionModal from './components/TeamActionModal';
@@ -288,6 +288,17 @@ export default function App() {
       )}
 
       {ui.selectedTeamForAction && <TeamActionModal team={ui.selectedTeamForAction.team} teamId={ui.selectedTeamForAction.teamId} onClose={() => ui.setSelectedTeamForAction(null)} onAction={handleTeamActionFromModal} />}
+      
+      <AISelectionModal 
+        isOpen={ui.showAISelectionModal} 
+        result={ui.pendingAIResult} 
+        onClose={() => { ui.setShowAISelectionModal(false); ui.setPendingAIResult(null); }}
+        onSelect={(mode) => {
+          ai.processAIResult(ui.pendingAIResult, mode);
+          ui.setShowAISelectionModal(false);
+          ui.setPendingAIResult(null);
+        }}
+      />
     </div>
   );
 }

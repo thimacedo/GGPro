@@ -40,7 +40,7 @@ export interface PenaltyShot {
 
 export interface Team {
   id: 'home' | 'away'; name: string; shortName: string; color: string; secondaryColor: string;
-  players: Player[]; formation: TacticalFormation; coach?: string;
+  players: Player[]; formation: TacticalFormation; coach?: string; commission?: string;
 }
 
 export type MatchStatus = 'PRE_MATCH' | '1T' | 'INTERVAL' | '2T' | '1ET' | '2ET' | 'PENALTIES' | 'FINISHED';

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Flag, Plus, AlertOctagon, Target, Hand, Check, Loader2 } from 'lucide-react';
+import { X, Flag, Plus, AlertOctagon, Target, Hand, Check, Loader2, Users } from 'lucide-react';
 import { Team, Player } from '../types';
 import { generateDistinctShortName } from '../utils/teamUtils';
 
@@ -190,6 +190,64 @@ export const InGamePenaltyModal: React.FC<{ isOpen: boolean; team?: Team; onSave
                         <button onClick={() => setSelectedPlayer(null)} className="mt-2 text-slate-500 text-xs font-bold underline">Trocar Batedor</button>
                     </div>
                 )}
+            </div>
+        </div>
+    );
+};
+
+export const AISelectionModal: React.FC<{ 
+    isOpen: boolean; 
+    result: any; 
+    onSelect: (mode: 'home_only' | 'away_only' | 'both') => void; 
+    onClose: () => void; 
+}> = ({ isOpen, result, onSelect, onClose }) => {
+    if (!isOpen || !result) return null;
+
+    const team1Name = result.teams?.[0]?.teamName || "Time 1";
+    const team2Name = result.teams?.[1]?.teamName || "Time 2";
+
+    return (
+        <div className="fixed inset-0 bg-black/95 z-[110] flex items-center justify-center p-4 backdrop-blur-md">
+            <div className="bg-slate-900 border border-white/10 p-8 rounded-[3rem] max-w-md w-full shadow-2xl animate-in zoom-in-95">
+                <div className="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center mx-auto mb-6 text-blue-500">
+                    <Users size={32} />
+                </div>
+                <h3 className="text-xl font-black text-center text-white uppercase tracking-tight mb-2">Súmula Identificada</h3>
+                <p className="text-slate-400 text-center text-sm mb-8 px-4">Detectamos duas equipes. Como deseja carregar os dados?</p>
+                
+                <div className="flex flex-col gap-3">
+                    <button 
+                        onClick={() => onSelect('both')}
+                        className="w-full p-5 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl flex flex-col items-center gap-1 transition-all group"
+                    >
+                        <span className="font-black text-xs uppercase tracking-widest">Carregar Ambas</span>
+                        <span className="text-[10px] opacity-70 group-hover:opacity-100 font-bold">{team1Name} vs {team2Name}</span>
+                    </button>
+
+                    <div className="grid grid-cols-2 gap-3">
+                        <button 
+                            onClick={() => onSelect('home_only')}
+                            className="p-4 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl flex flex-col items-center gap-1 border border-white/5"
+                        >
+                            <span className="font-black text-[10px] uppercase">Apenas Mandante</span>
+                            <span className="text-[9px] opacity-60 truncate w-full text-center">{team1Name}</span>
+                        </button>
+                        <button 
+                            onClick={() => onSelect('away_only')}
+                            className="p-4 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl flex flex-col items-center gap-1 border border-white/5"
+                        >
+                            <span className="font-black text-[10px] uppercase">Apenas Visitante</span>
+                            <span className="text-[9px] opacity-60 truncate w-full text-center">{team2Name}</span>
+                        </button>
+                    </div>
+
+                    <button 
+                        onClick={onClose}
+                        className="mt-4 text-slate-500 hover:text-white text-xs font-bold uppercase transition-colors"
+                    >
+                        Cancelar
+                    </button>
+                </div>
             </div>
         </div>
     );
