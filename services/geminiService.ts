@@ -1,5 +1,5 @@
-// Motor de IA Geradora - Versão Restaurada ("O que funcionava ontem")
-// Estabilizada com REST API v1 para evitar erros de SDK.
+// Motor de IA Geradora - Versão Experimental de Alta Resiliência (v5)
+// Priorizando modelos Gemini 2.5 e 3.1 detectados na conta do usuário.
 
 const getApiKey = () => {
   // @ts-ignore
@@ -9,28 +9,48 @@ const getApiKey = () => {
   return key;
 };
 
-// 🛠️ MOTOR DE ENGENHARIA: Conexão direta via REST v1
-async function callGeminiREST(modelName: string, contents: any) {
+/**
+ * 🛠️ MOTOR DE ENGENHARIA v5: Suporte a modelos experimentais (2.5+) e fallback v1beta.
+ */
+async function callGeminiREST(modelNames: string[], contents: any) {
   const apiKey = getApiKey();
-  const url = `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${apiKey}`;
-  
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contents })
-  });
+  let lastError: any = null;
 
-  const data = await response.json();
+  // v1beta é onde os novos modelos (2.5, 3.1) e previews residem.
+  for (const model of modelNames) {
+    const apiVersions = ['v1beta', 'v1'];
+    for (const v of apiVersions) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/${v}/models/${model}:generateContent?key=${apiKey}`;
+        const payload = { contents };
 
-  if (!response.ok) {
-    throw new Error(data.error?.message || "Erro na API do Google");
+        console.log(`Tentando IA: ${model} [${v}]...`);
+        
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          const msg = data.error?.message || "Erro desconhecido";
+          console.warn(`Indisponível: ${model} [${v}]:`, msg);
+          lastError = new Error(msg);
+          continue; 
+        }
+
+        if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+          return data.candidates[0].content.parts[0].text;
+        }
+      } catch (e: any) {
+        console.error(`Erro de rede: ${model} [${v}]:`, e.message);
+        lastError = e;
+      }
+    }
   }
-
-  if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
-    return data.candidates[0].content.parts[0].text;
-  }
-  
-  throw new Error("Resposta da IA vazia.");
+  throw lastError || new Error("Todos os modelos avançados e versões falharam.");
 }
 
 const cleanAndParseJSON = (text: string): any => {
@@ -84,6 +104,15 @@ export const parsePlayersFromText = async (textList: string): Promise<any> => {
   });
 };
 
+// 📋 LISTA DE MODELOS DETECTADOS NA CONTA DO USUÁRIO (ORDEM DE PRIORIDADE)
+const EXPERIMENTAL_MODELS = [
+  "gemini-2.5-flash",
+  "gemini-2.5-flash-native-audio-latest",
+  "gemini-3.1-flash-live-preview",
+  "gemini-1.5-flash", // Fallback padrão
+  "gemini-1.5-pro"
+];
+
 export const parsePlayersFromImage = async (base64Image: string, mimeType: string = "image/jpeg"): Promise<any> => {
   const contents = [{
     parts: [
@@ -91,7 +120,7 @@ export const parsePlayersFromImage = async (base64Image: string, mimeType: strin
       { text: `Extraia JSON: { "teams": [{ "teamName": "Nome", "players": [{ "name": "Nome", "number": 10, "isStarter": true, "position": "MF" }] }], "referee": "Nome" }` }
     ]
   }];
-  const text = await callGeminiREST("gemini-1.5-flash", contents);
+  const text = await callGeminiREST(EXPERIMENTAL_MODELS, contents);
   return cleanAndParseJSON(text);
 };
 
@@ -102,7 +131,7 @@ export const parseMatchBannerFromImage = async (base64Image: string): Promise<{ 
       { text: `Retorne JSON: { "matches": [ { "homeTeam": "A", "awayTeam": "B", "competition": "X", "stadium": "Y", "date": "Z", "time": "W" } ] }` }
     ]
   }];
-  const text = await callGeminiREST("gemini-1.5-flash", contents);
+  const text = await callGeminiREST(EXPERIMENTAL_MODELS, contents);
   const data = cleanAndParseJSON(text);
   return data.matches ? data : { matches: [] };
 };
@@ -110,11 +139,11 @@ export const parseMatchBannerFromImage = async (base64Image: string): Promise<{ 
 export const parseRegulationDocument = async (base64Data: string, mimeType: string): Promise<any> => {
   const contents = [{
     parts: [
-      { inline_data: { mime_type: mimeType, data: base64Data } },
-      { text: `Extraia JSON: { "halfDuration": 30, "maxSubstitutions": 5, "penaltyKicks": 3, "summary": "..." }` }
+      { inline_data: { data: base64Data, mime_type: mimeType } },
+      { text: `Extraia JSON de regras: { "halfDuration": 30, "maxSubstitutions": 5, "penaltyKicks": 3, "summary": "..." }` }
     ]
   }];
-  const text = await callGeminiREST("gemini-1.5-flash", contents);
+  const text = await callGeminiREST(EXPERIMENTAL_MODELS, contents);
   return cleanAndParseJSON(text);
 };
 
@@ -122,13 +151,13 @@ export const processVoiceCommand = async (command: string, homeTeam: any, awayTe
   const contents = [{
     parts: [{ text: `DADOS: home: ${homeTeam.name}, away: ${awayTeam.name}. COMANDO: "${command}". Retorne ARRAY JSON de ações [{type, team, playerNumber, isAwarded, playerOutNumber, playerInNumber}].` }]
   }];
-  const text = await callGeminiREST("gemini-1.5-flash", contents);
+  const text = await callGeminiREST(EXPERIMENTAL_MODELS, contents);
   return cleanAndParseJSON(text);
 };
 
 export const generateMatchReport = async (context: string, timeline: string): Promise<string> => {
   const contents = [{
-    parts: [{ text: `Cronica: Contexto: ${context}, Eventos: ${timeline}` }]
+    parts: [{ text: `Escreva uma cronica esportiva: Contexto: ${context}, Eventos: ${timeline}` }]
   }];
-  return await callGeminiREST("gemini-1.5-flash", contents);
+  return await callGeminiREST(EXPERIMENTAL_MODELS, contents);
 };
