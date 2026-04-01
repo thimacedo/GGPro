@@ -37,14 +37,30 @@ export function useAIExtractor({ matchState, setMatchState, addToast, ui }: { ma
         const coords = FORMATIONS[formationKey];
         
         let rawPlayers = Array.isArray(teamData.players) ? teamData.players : [];
-        
-        // Normaliza números e posições antes de qualquer lógica
+        const usedNumbers = new Set<number>();
+        let duplicatesFound = false;
+
+        // Normaliza números e posições garantindo unicidade
         rawPlayers = rawPlayers.map(pl => {
-          const num = parseInt(String(pl.number)) || 0;
+          let num = parseInt(String(pl.number)) || 0;
           let pos = pl.position || 'MF';
           if (/goleiro|gk|gol/i.test(pos) || num === 1 || num === 12) pos = 'GK';
+
+          // Resolução imediata de duplicatas: busca o próximo livre
+          if (num > 0) {
+            if (usedNumbers.has(num)) {
+              duplicatesFound = true;
+              while (usedNumbers.has(num)) num++;
+            }
+            usedNumbers.add(num);
+          }
+
           return { ...pl, number: num, position: pos };
         });
+
+        if (duplicatesFound) {
+           setTimeout(() => addToast("Números Duplicados", `Corrigimos números repetidos no ${target === 'homeTeam' ? 'Mandante' : 'Visitante'}.`, "warning"), 150);
+        }
 
         // Regra de Ouro: Se a IA não identificar reservas ou se marcar mais de 11 como titular,
         // forçamos os 11 de menor numeração como titulares (com GK no topo).
@@ -52,12 +68,24 @@ export function useAIExtractor({ matchState, setMatchState, addToast, ui }: { ma
         const hasReserves = rawPlayers.some((pl: any) => pl.isStarter === false);
         
         if (!hasReserves || explicitStarters.length > 11) {
-          rawPlayers = [...rawPlayers].sort((a: any, b: any) => {
+          const sorted = [...rawPlayers].sort((a: any, b: any) => {
             if (a.position === 'GK' && b.position !== 'GK') return -1;
             if (a.position !== 'GK' && b.position === 'GK') return 1;
             return a.number - b.number;
           });
-          rawPlayers = rawPlayers.map((pl, idx) => ({ ...pl, isStarter: idx < 11 }));
+
+          let gksFound = 0;
+          let startersCount = 0;
+          rawPlayers = sorted.map((pl) => {
+            let isStarter = false;
+            if (pl.position === 'GK') {
+              if (gksFound === 0) { isStarter = true; gksFound++; startersCount++; }
+              else { isStarter = false; }
+            } else if (startersCount < 11) {
+              isStarter = true; startersCount++;
+            }
+            return { ...pl, isStarter };
+          });
         }
 
         let sC = 0, rC = 0;
@@ -160,14 +188,28 @@ export function useAIExtractor({ matchState, setMatchState, addToast, ui }: { ma
             const coords = FORMATIONS[formationKey];
             
             let rawPlayers = Array.isArray(d.players) ? d.players : [];
-            
+            const usedNumbers = new Set<number>();
+            let duplicatesFound = false;
+
             // Normaliza números e posições
             rawPlayers = rawPlayers.map(pl => {
-              const num = parseInt(String(pl.number)) || 0;
+              let num = parseInt(String(pl.number)) || 0;
               let pos = pl.position || 'MF';
               if (/goleiro|gk|gol/i.test(pos) || num === 1 || num === 12) pos = 'GK';
+
+              if (num > 0) {
+                  if (usedNumbers.has(num)) {
+                      duplicatesFound = true;
+                      while (usedNumbers.has(num)) num++;
+                  }
+                  usedNumbers.add(num);
+              }
               return { ...pl, number: num, position: pos };
             });
+
+            if (duplicatesFound) {
+                setTimeout(() => addToast("Números Duplicados", `Corrigimos números repetidos no ${tId === 'home' ? 'Mandante' : 'Visitante'}.`, "warning"), 150);
+            }
 
             // Regra: se ninguém estiver marcado como reserva ou se todos forem true, 
             // e tiver mais de 11, pegamos os 11 de menor numeração (GK primeiro).
@@ -175,12 +217,24 @@ export function useAIExtractor({ matchState, setMatchState, addToast, ui }: { ma
             const hasReserves = rawPlayers.some((pl: any) => pl.isStarter === false);
 
             if (!hasReserves || explicitStarters.length > 11) {
-                rawPlayers = [...rawPlayers].sort((a: any, b: any) => {
+                const sorted = [...rawPlayers].sort((a: any, b: any) => {
                   if (a.position === 'GK' && b.position !== 'GK') return -1;
                   if (a.position !== 'GK' && b.position === 'GK') return 1;
                   return a.number - b.number;
                 });
-                rawPlayers = rawPlayers.map((pl, idx) => ({ ...pl, isStarter: idx < 11 }));
+
+                let gksFound = 0;
+                let startersCount = 0;
+                rawPlayers = sorted.map((pl) => {
+                  let isStarter = false;
+                  if (pl.position === 'GK') {
+                    if (gksFound === 0) { isStarter = true; gksFound++; startersCount++; }
+                    else { isStarter = false; }
+                  } else if (startersCount < 11) {
+                    isStarter = true; startersCount++;
+                  }
+                  return { ...pl, isStarter };
+                });
             }
 
             let sc=0, rc=0;
