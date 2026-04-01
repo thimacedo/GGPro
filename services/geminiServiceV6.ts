@@ -77,7 +77,31 @@ export const parsePlayersFromImage = async (base64Image: string, mimeType: strin
   const contents = [{
     parts: [
       { inline_data: { mime_type: mimeType, data: base64Image } },
-      { text: `Extraia JSON de jogadores da súmula: { "teams": [{ "teamName": "Nome", "players": [{ "name": "Nome", "number": 10, "isStarter": true, "position": "MF" }] }], "referee": "Nome" }` }
+      { text: `Sua tarefa é extrair os dados de jogadores desta súmula em formato JSON, seguindo REGRAS ESTRITAS de formatação de nomes:
+
+1. IDENTIFICAÇÃO DE TITULARES E RESERVAS:
+   - A marcação é variada: observe cabeçalhos "TITU"/"TITULARES" e "RES"/"RESERVAS", abreviações como "T" e "R", ou apenas um "T" marcado, ou até um asterisco (*) ao lado do nome dos titulares.
+   - Jogadores identificados como titulares devem ter "isStarter": true.
+   - Jogadores identificados como reservas devem ter "isStarter": false.
+
+2. FORMATAÇÃO DO NOME DO JOGADOR (MUITO IMPORTANTE):
+   - SE houver uma coluna "APELIDO" ou uma indicação clara de um nome curto/chamamento ao lado do nome completo, USE O APELIDO.
+   - CASO CONTRÁRIO (se tiver o nome completo), use apenas o PRIMEIRO NOME do jogador.
+   - EXCEÇÃO DE REPETIÇÃO: Se o primeiro nome se repetir no mesmo time, use o PRIMEIRO E O SEGUNDO NOME para diferenciar (Ex: "João Pedro" e "João Lucas").
+   
+3. IDENTIFICAÇÃO DE GOLEIROS:
+   - Identifique goleiros (GK) pelos números 1 ou 12, ou pelas marcações (G), (GK), "Gol" ou "Goleiro".
+
+EXTRAIA O JSON NESTE FORMATO:
+{ 
+  "teams": [
+    { 
+      "teamName": "Nome do Time", 
+      "players": [{ "name": "Nome formatado", "number": 10, "isStarter": true, "position": "MF" ou "GK" }] 
+    }
+  ], 
+  "referee": "Nome do Árbitro se disponível" 
+}` }
     ]
   }];
   const text = await callGeminiREST(NEXT_GEN_MODELS, contents);
