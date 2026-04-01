@@ -135,7 +135,7 @@ export const parsePlayersFromImage = async (base64Image: string, mimeType: strin
           Saída JSON: { teams: [{ teamName, shortName, primaryColor, secondaryColor, coach, players: [{ name, number, isStarter, position }] }], referee: "Nome do Árbitro" }` }
         ]
       }],
-      generationConfig: { responseMimeType: "application/json" }
+      generationConfig: { response_mime_type: "application/json" }
     };
     
     // Lista de modelos na ordem de prioridade para REST v1
@@ -155,7 +155,7 @@ export const parseMatchBannerFromImage = async (base64Image: string): Promise<{ 
           { text: `Retorne um JSON: { "matches": [ { "homeTeam": "Mandante", "awayTeam": "Visitante", "competition": "Campeonato", "stadium": "Local", "date": "Data", "time": "Horário" } ] }` }
         ]}
       ],
-      generationConfig: { responseMimeType: "application/json" }
+      generationConfig: { response_mime_type: "application/json" }
     };
     const result = await callGeminiREST(["gemini-1.5-flash", "gemini-1.5-pro"], payload);
     return cleanAndParseJSON(result.response.text() || '{ "matches": [] }');
@@ -173,7 +173,7 @@ export const parseRegulationDocument = async (base64Data: string, mimeType: stri
           { text: `Extraia as regras em JSON: { "halfDuration": 30, "maxSubstitutions": 5, "penaltyKicks": 3, "summary": "Resumo..." }` }
         ]}
       ],
-      generationConfig: { responseMimeType: "application/json" }
+      generationConfig: { response_mime_type: "application/json" }
     };
     const result = await callGeminiREST(["gemini-1.5-flash", "gemini-1.5-pro"], payload);
     return cleanAndParseJSON(result.response.text() || '{}');
@@ -189,7 +189,7 @@ export const processVoiceCommand = async (command: string, homeTeam: any, awayTe
         parts: [{ text: `DADOS: home: ${homeTeam.name}, away: ${awayTeam.name}. COMANDO: "${command}". 
         Retorne ARRAY JSON de ações {type, team, playerNumber, isAwarded, playerOutNumber, playerInNumber}.` }]
       }],
-      generationConfig: { responseMimeType: "application/json" }
+      generationConfig: { response_mime_type: "application/json" }
     };
 
     const result = await callGeminiREST(["gemini-1.5-flash", "gemini-1.5-pro"], payload);
