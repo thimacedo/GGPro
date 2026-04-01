@@ -146,6 +146,42 @@ export const parsePlayersFromImage = async (base64Image: string, mimeType: strin
   }
 };
 
+export const parseMatchBannerFromImage = async (base64Image: string): Promise<{ matches: any[] } | undefined> => {
+  try {
+    const payload = {
+      contents: [
+        { role: 'user', parts: [
+          { inline_data: { data: base64Image, mime_type: "image/jpeg" } },
+          { text: `Retorne um JSON: { "matches": [ { "homeTeam": "Mandante", "awayTeam": "Visitante", "competition": "Campeonato", "stadium": "Local", "date": "Data", "time": "Horário" } ] }` }
+        ]}
+      ],
+      generationConfig: { responseMimeType: "application/json" }
+    };
+    const result = await callGeminiREST(["gemini-1.5-flash", "gemini-1.5-pro"], payload);
+    return cleanAndParseJSON(result.response.text() || '{ "matches": [] }');
+  } catch (error) {
+    handleAIError(error);
+  }
+};
+
+export const parseRegulationDocument = async (base64Data: string, mimeType: string): Promise<any> => {
+  try {
+    const payload = {
+      contents: [
+        { role: 'user', parts: [
+          { inline_data: { data: base64Data, mime_type: mimeType } },
+          { text: `Extraia as regras em JSON: { "halfDuration": 30, "maxSubstitutions": 5, "penaltyKicks": 3, "summary": "Resumo..." }` }
+        ]}
+      ],
+      generationConfig: { responseMimeType: "application/json" }
+    };
+    const result = await callGeminiREST(["gemini-1.5-flash", "gemini-1.5-pro"], payload);
+    return cleanAndParseJSON(result.response.text() || '{}');
+  } catch (error) {
+    handleAIError(error);
+  }
+};
+
 export const processVoiceCommand = async (command: string, homeTeam: any, awayTeam: any, eventsSummary: string): Promise<any> => {
   try {
     const payload = {
