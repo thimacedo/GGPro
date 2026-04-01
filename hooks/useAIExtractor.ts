@@ -60,8 +60,12 @@ export function useAIExtractor({ matchState, setMatchState, addToast }: { matchS
                         x = 110; y = 20 + reserveCount * 5; reserveCount++;
                       }
 
+                      // Normalização de Posição (Incluindo Sugestão por Número 1/12)
                       let pos = pl.position || 'MF';
-                      if (/goleiro|gk|gol/i.test(pos)) pos = 'GK';
+                      const num = parseInt(String(pl.number));
+                      if (/goleiro|gk|gol/i.test(pos) || num === 1 || num === 12) {
+                        pos = 'GK';
+                      }
 
                       return { 
                         id: Math.random().toString(36).substr(2,9), 
@@ -143,7 +147,10 @@ export function useAIExtractor({ matchState, setMatchState, addToast }: { matchS
                 else{ x=110; y=20+rc*5; rc++; }
 
                 let pos = pl.position || 'MF';
-                if (/goleiro|gk|gol/i.test(pos)) pos = 'GK';
+                const num = parseInt(String(pl.number));
+                if (/goleiro|gk|gol/i.test(pos) || num === 1 || num === 12) {
+                   pos = 'GK';
+                }
 
                 return { id: Math.random().toString(36).substr(2,9), fullName: pl.name, name: pl.name, number: pl.number, position: pos, teamId: tId, isStarter: pl.isStarter, events: [], x, y };
             });
