@@ -2,8 +2,8 @@ import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { 
   Play, Pause, Settings, Info, ChevronRight, Flag, History, Loader2, Mic, Send, Users
 } from 'lucide-react';
-import { Analytics } from "@vercel/analytics/react"
-import { SpeedInsights } from "@vercel/speed-insights/react"
+// import { Analytics } from "@vercel/analytics/react"
+// import { SpeedInsights } from "@vercel/speed-insights/react"
 import { MatchState, Player, Team, EventType } from './types';
 import ToastContainer from './components/ToastContainer';
 import Header from './components/Header';
@@ -302,8 +302,8 @@ export default function App() {
           ui.setPendingAIResult(null);
         }}
       />
-      <Analytics />
-      <SpeedInsights />
+      {/* <Analytics /> */}
+      {/* <SpeedInsights /> */}
     </div>
   );
 }

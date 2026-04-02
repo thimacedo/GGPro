@@ -53,13 +53,22 @@ export default defineConfig(({ mode }) => {
           '@': path.resolve(__dirname, '.'),
           'next/navigation': path.resolve(__dirname, 'utils/empty.ts'),
           'next/headers': path.resolve(__dirname, 'utils/empty.ts'),
-          'next/cache': path.resolve(__dirname, 'utils/empty.ts')
+          'next/cache': path.resolve(__dirname, 'utils/empty.ts'),
         }
       },
       build: {
         rollupOptions: {
-          external: ['next/navigation', 'next/headers', 'next/cache']
+          external: ['next/navigation', 'next/headers', 'next/cache'],
+          output: {
+            manualChunks: {
+              'vendor-react': ['react', 'react-dom'],
+              'vendor-charts': ['recharts']
+            }
+          }
         }
+      },
+      optimizeDeps: {
+        include: ['react', 'react-dom', 'lucide-react']
       }
     };
 });
