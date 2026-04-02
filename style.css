@@ -274,10 +274,12 @@ body {
   border-radius: 1rem;
   border: none;
   cursor: pointer;
-  transition: transform 0.2s;
+  transition: transform 0.2s, background-color 0.3s;
   display: flex;
   align-items: center;
   justify-content: center;
+  background-color: var(--emerald-600); /* Cor inicial */
+  color: white;
 }
 
 .btn-play-pause:active { transform: scale(0.9); }

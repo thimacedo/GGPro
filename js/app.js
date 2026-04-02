@@ -9,6 +9,7 @@ import { parseMatchBannerFromImage } from './services/gemini.js';
 
 class App {
   constructor() {
+    window.app = this; // Define imediatamente para que componentes possam acessar durante o init/render
     this.root = document.getElementById('root');
     this.viewMode = 'list';
     this.activeTab = 'main'; // 'main' ou 'stats'
@@ -262,7 +263,7 @@ class App {
 
     const newEvent = {
         id: generateId(),
-        type,
+        type: type.toUpperCase(), // Normaliza para garantir match no Header/Stats
         teamId,
         minute: minute,
         timestamp: now,
@@ -311,4 +312,4 @@ class App {
   }
 }
 
-window.app = new App();
+new App();
