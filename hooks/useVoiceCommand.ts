@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { processVoiceCommand } from '../services/geminiServiceV6';
+import { processVoiceCommand } from '../services/geminiService';
 import { Team, MatchState, EventType } from '../types';
 
 interface UseVoiceCommandProps {

@@ -27,6 +27,7 @@ import DashboardTab from './components/DashboardTab';
 import MatchStats from './components/MatchStats';
 
 import { generateDistinctShortName } from './utils/teamUtils';
+import { getApiKey } from './services/config';
 
 export default function App() {
   const { toasts, addToast, removeToast } = useToasts();
@@ -41,23 +42,12 @@ export default function App() {
   const [invalidKeyError, setInvalidKeyError] = useState(false);
 
   useEffect(() => {
-    const checkApiKey = async () => {
-      // @ts-ignore
-      if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
-        // @ts-ignore
-        const hasKey = await window.aistudio.hasSelectedApiKey();
-        setHasApiKey(hasKey);
-      } else {
-        // @ts-ignore - Tenta o padrão Vite
-        const viteKey = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_GEMINI_API_KEY : undefined;
-        // @ts-ignore - Tenta injeção via define do Vite
-        const processKey = typeof process !== 'undefined' && process.env ? (process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY) : undefined;
-        
-        const hasKey = !!viteKey || !!processKey || !!localStorage.getItem('VITE_GEMINI_API_KEY') || !!localStorage.getItem('GEMINI_API_KEY');
-        setHasApiKey(hasKey);
-      }
-    };
-    checkApiKey();
+    try {
+      getApiKey();
+      setHasApiKey(true);
+    } catch (e) {
+      setHasApiKey(false);
+    }
   }, []);
 
   const handleOpenKeySelector = async () => {
