@@ -36,7 +36,7 @@ export const Field = (state) => {
           style="top: ${displayY}%; left: ${displayX}%;"
           onmousedown="app.handlePlayerDragStart(event, '${team.id}', '${player.id}')"
           ontouchstart="app.handlePlayerDragStart(event, '${team.id}', '${player.id}')"
-          onclick="event.stopPropagation(); app.selectPlayer('${player.id}', '${team.id}')"
+          onclick="event.stopPropagation(); app.openPlayerActions('${player.id}', '${team.id}')"
         >
           <div class="player-circle" style="background-color: ${team.color}; color: ${contrast};">
             ${player.number}
