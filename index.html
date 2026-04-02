@@ -1,45 +1,22 @@
 <!DOCTYPE html>
-<html lang="pt-BR" class="dark">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Narrador Pro - Dashboard Vanilla</title>
+    <title>Narrador Pro - Pure Vanilla</title>
     
-    <!-- Design System (Tailwind Play CDN for now) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        darkMode: 'class',
-        theme: {
-          extend: {
-            fontFamily: {
-              sans: ['Inter', 'system-ui', 'sans-serif'],
-            },
-          }
-        }
-      }
-    </script>
+    <!-- Pure CSS Design System -->
+    <link rel="stylesheet" href="./style.css">
     
     <!-- Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     
-    <style>
-      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-      
-      body {
-        margin: 0;
-        overflow-x: hidden;
-        overscroll-behavior-y: none;
-        -webkit-tap-highlight-color: transparent;
-      }
-      
-      .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-      .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-      .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-      .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
-    </style>
+    <!-- Meta tags for PWA/Mobile -->
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 </head>
-<body class="bg-slate-950 text-slate-50 font-sans selection:bg-blue-500/20">
+<body>
     <div id="root"></div>
 
     <!-- Application Entry Point -->

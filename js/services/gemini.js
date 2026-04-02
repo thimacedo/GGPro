@@ -1,38 +1,26 @@
-import { getApiKey } from './config.js';
+async function callGeminiProxy(modelName, contents) {
+  console.log(`%c🚀 Chamando Proxy: ${modelName}`, "color: #3b82f6; font-weight: bold;");
+  
+  try {
+    const response = await fetch('/api/ai/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents, model: modelName })
+    });
 
-async function callGeminiREST(modelNames, contents) {
-  console.log("%c🚀 Motor de IA Vanilla Ativo", "color: #00ff00; font-weight: bold; font-size: 14px;");
-  const apiKey = getApiKey();
-  let lastError = null;
-  const apiVersions = ['v1beta', 'v1']; 
-
-  for (const model of modelNames) {
-    for (const v of apiVersions) {
-      try {
-        const url = `https://generativelanguage.googleapis.com/${v}/models/${model}:generateContent?key=${apiKey}`;
-        const payload = { contents };
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        const data = await response.json();
-        if (!response.ok) {
-          const msg = data.error?.message || "Indisponível";
-          lastError = new Error(msg);
-          continue; 
-        }
-
-        if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
-          return data.candidates[0].content.parts[0].text;
-        }
-      } catch (e) {
-        lastError = e;
-      }
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.error || "Erro no Proxy AI");
     }
+
+    if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+      return data.candidates[0].content.parts[0].text;
+    }
+    throw new Error("Resposta inválida da IA.");
+  } catch (e) {
+    console.error("Falha no Proxy AI:", e.message);
+    throw e;
   }
-  throw lastError || new Error("Todos os motores falharam.");
 }
 
 const cleanAndParseJSON = (text) => {
@@ -51,7 +39,6 @@ const cleanAndParseJSON = (text) => {
 
 const ULTRA_GEN_MODELS = [
   "gemini-2.0-flash",
-  "gemini-2.0-flash-lite-preview-02-05",
   "gemini-1.5-flash",
   "gemini-flash-latest"
 ];
@@ -92,8 +79,16 @@ export const parsePlayersFromImage = async (base64Image, mimeType = "image/jpeg"
       { text: `Extraia JSON de jogadores: { "teams": [{ "teamName": "X", "players": [{ "name": "Y", "number": 1, "isStarter": true, "position": "GK" }], "commission": "..." }], "matchDetails": {...} }` }
     ]
   }];
-  const text = await callGeminiREST(ULTRA_GEN_MODELS, contents);
-  return cleanAndParseJSON(text);
+  
+  for (const model of ULTRA_GEN_MODELS) {
+    try {
+      const text = await callGeminiProxy(model, contents);
+      return cleanAndParseJSON(text);
+    } catch (e) {
+      console.warn(`Próximo modelo: ${model} falhou.`);
+    }
+  }
+  throw new Error("Todos os modelos de IA falharam.");
 };
 
 export const parseMatchBannerFromImage = async (base64Image) => {
@@ -103,15 +98,31 @@ export const parseMatchBannerFromImage = async (base64Image) => {
       { text: `Extraia JSON dos jogos: { "matches": [ { "homeTeam": "A", "awayTeam": "B", "competition": "X", "stadium": "Y", "date": "Z", "time": "W" } ] }` }
     ]
   }];
-  const text = await callGeminiREST(ULTRA_GEN_MODELS, contents);
-  const data = cleanAndParseJSON(text);
-  return data.matches ? data : { matches: [] };
+  
+  for (const model of ULTRA_GEN_MODELS) {
+    try {
+      const text = await callGeminiProxy(model, contents);
+      const data = cleanAndParseJSON(text);
+      return data.matches ? data : { matches: [] };
+    } catch (e) {
+      console.warn(`Próximo modelo: ${model} falhou.`);
+    }
+  }
+  return { matches: [] };
 };
 
 export const processVoiceCommand = async (command, homeTeam, awayTeam, eventsSummary) => {
   const contents = [{
     parts: [{ text: `Comando: "${command}". Equipes: ${homeTeam.name} vs ${awayTeam.name}. Retorne ARRAY JSON: [{type, team, playerNumber, description}].` }]
   }];
-  const text = await callGeminiREST(ULTRA_GEN_MODELS, contents);
-  return cleanAndParseJSON(text);
+  
+  for (const model of ULTRA_GEN_MODELS) {
+    try {
+      const text = await callGeminiProxy(model, contents);
+      return cleanAndParseJSON(text);
+    } catch (e) {
+      console.warn(`Próximo modelo: ${model} falhou.`);
+    }
+  }
+  return [];
 };

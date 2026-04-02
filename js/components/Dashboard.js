@@ -4,14 +4,15 @@ export const Dashboard = (state, viewMode = 'list') => {
 
   const renderEvent = (e) => {
     return `
-      <div class="flex gap-3 py-3 border-l-4 mb-1 pl-3 transition-colors rounded-r shadow-lg ${e.isAnnulled ? 'opacity-50 grayscale' : ''}" 
-           style="border-color: ${e.isAnnulled ? '#64748b' : (e.teamId === 'home' ? state.homeTeam.color : e.teamId === 'away' ? state.awayTeam.color : '#475569')}; 
-                  background-color: ${e.isAnnulled ? 'transparent' : (e.teamId === 'home' ? state.homeTeam.color : e.teamId === 'away' ? state.awayTeam.color : '#ffffff')}08;">
-        <span class="font-mono font-black text-[10px] pt-1 min-w-[28px] ${e.isAnnulled ? 'line-through text-slate-600' : 'text-slate-400'}">
+      <div class="event-item" 
+           style="display: flex; gap: 0.75rem; padding: 0.75rem; border-left: 4px solid ${e.isAnnulled ? '#64748b' : (e.teamId === 'home' ? state.homeTeam.color : e.teamId === 'away' ? state.awayTeam.color : '#475569')}; 
+                  background: ${e.isAnnulled ? 'transparent' : (e.teamId === 'home' ? state.homeTeam.color : e.teamId === 'away' ? state.awayTeam.color : '#ffffff')}08;
+                  border-radius: 0 0.5rem 0.5rem 0; margin-bottom: 0.5rem; opacity: ${e.isAnnulled ? '0.5' : '1'};">
+        <span style="font-family: monospace; font-weight: 900; font-size: 0.625rem; min-width: 1.5rem; color: var(--slate-400); ${e.isAnnulled ? 'text-decoration: line-through;' : ''}">
           ${e.minute}'
         </span>
-        <div class="flex-1">
-          <div class="text-[10px] font-black uppercase text-white">${e.description}</div>
+        <div style="flex: 1;">
+          <div style="font-size: 0.625rem; font-weight: 900; text-transform: uppercase; color: white;">${e.description}</div>
         </div>
       </div>
     `;
@@ -19,14 +20,14 @@ export const Dashboard = (state, viewMode = 'list') => {
 
   const renderPlayerList = (team) => {
     return `
-      <div class="flex flex-col gap-1">
+      <div class="player-list-container" style="display: flex; flex-direction: column; gap: 0.25rem;">
         ${team.players.map(p => `
-          <div class="flex items-center justify-between p-2 rounded-xl hover:bg-white/5 transition-colors cursor-pointer" onclick="app.selectPlayer('${p.id}', '${team.id}')">
-            <div class="flex items-center gap-3">
-              <span class="w-6 h-6 rounded bg-slate-800 flex items-center justify-center text-[10px] font-black text-slate-400">${p.number}</span>
-              <span class="text-xs font-bold text-slate-200">${p.name}</span>
+          <div class="player-item" onclick="app.selectPlayer('${p.id}', '${team.id}')" style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem; border-radius: 0.75rem; cursor: pointer; transition: background 0.2s;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <span class="num-tag" style="width: 1.5rem; height: 1.5rem; background: var(--slate-800); color: var(--slate-400); border-radius: 0.25rem; display: flex; align-items: center; justify-content: center; font-size: 0.625rem;">${p.number}</span>
+              <span style="font-size: 0.75rem; font-weight: 700; color: var(--slate-200);">${p.name}</span>
             </div>
-            ${p.isStarter ? '<span class="text-[8px] font-black text-blue-500 uppercase">T</span>' : ''}
+            ${p.isStarter ? '<span style="font-size: 0.5rem; font-weight: 900; color: var(--blue-500); text-transform: uppercase;">T</span>' : ''}
           </div>
         `).join('')}
       </div>
@@ -34,34 +35,34 @@ export const Dashboard = (state, viewMode = 'list') => {
   };
 
   return `
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
-        <div class="lg:col-span-8 flex flex-col">
-            <div class="flex items-center gap-2 mb-1">
-                <button onclick="app.setViewMode('list')" class="flex-1 py-3 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest border transition-all ${isList ? 'bg-blue-600 border-blue-400 text-white' : 'bg-slate-900 border-white/5 text-slate-500'}">
-                    <i data-lucide="list-filter" class="w-3.5 h-3.5"></i> Lista
+    <div class="dashboard-grid">
+        <div class="view-panel">
+            <div class="view-selector">
+                <button onclick="app.setViewMode('list')" class="btn-view ${isList ? 'active' : ''}">
+                    <i data-lucide="list-filter" style="width: 0.875rem; height: 0.875rem;"></i> LISTA
                 </button>
-                <button onclick="app.setViewMode('field')" class="flex-1 py-3 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest border transition-all ${isField ? 'bg-blue-600 border-blue-400 text-white' : 'bg-slate-900 border-white/5 text-slate-500'}">
-                    <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i> Mapa Tático
+                <button onclick="app.setViewMode('field')" class="btn-view ${isField ? 'active' : ''}">
+                    <i data-lucide="layout-dashboard" style="width: 0.875rem; height: 0.875rem;"></i> MAPA TÁTICO
                 </button>
             </div>
             
-            <div class="relative flex flex-col">
+            <div class="content-display">
                 ${isField ? `
-                    <div class="aspect-[4/3] bg-emerald-900/20 rounded-[2.5rem] border border-emerald-500/10 flex items-center justify-center">
-                        <p class="text-emerald-500/50 font-black uppercase tracking-widest text-xs">Campo Tático em Breve</p>
+                    <div class="card" style="aspect-ratio: 4/3; display: flex; items-center: center; justify-content: center; background: rgba(5, 150, 105, 0.05); border-color: rgba(5, 150, 105, 0.1);">
+                        <p style="color: var(--emerald-500); font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.75rem; opacity: 0.5;">Campo Tático em Breve</p>
                     </div>
                 ` : `
-                    <div class="bg-slate-900/50 rounded-[2.5rem] border border-white/5 p-6 flex flex-col shadow-2xl">
-                        <div class="grid grid-cols-2 gap-4">
+                    <div class="card" style="padding: 1.5rem;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                             <div>
-                                <div class="bg-slate-900/90 z-10 py-2 border-b border-white/10 mb-2">
-                                    <h4 class="text-[10px] font-black uppercase text-center" style="color: ${state.homeTeam.color}">${state.homeTeam.shortName}</h4>
+                                <div style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color); margin-bottom: 0.5rem;">
+                                    <h4 style="font-size: 0.625rem; font-weight: 900; text-transform: uppercase; text-align: center; color: ${state.homeTeam.color}">${state.homeTeam.shortName}</h4>
                                 </div>
                                 ${renderPlayerList(state.homeTeam)}
                             </div>
                             <div>
-                                <div class="bg-slate-900/90 z-10 py-2 border-b border-white/10 mb-2">
-                                    <h4 class="text-[10px] font-black uppercase text-center" style="color: ${state.awayTeam.color}">${state.awayTeam.shortName}</h4>
+                                <div style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color); margin-bottom: 0.5rem;">
+                                    <h4 style="font-size: 0.625rem; font-weight: 900; text-transform: uppercase; text-align: center; color: ${state.awayTeam.color}">${state.awayTeam.shortName}</h4>
                                 </div>
                                 ${renderPlayerList(state.awayTeam)}
                             </div>
@@ -71,17 +72,17 @@ export const Dashboard = (state, viewMode = 'list') => {
             </div>
         </div>
         
-        <div class="lg:col-span-4 flex flex-col h-full min-h-0">
-            <div class="bg-slate-900/50 rounded-[2rem] border border-white/5 flex flex-col overflow-hidden shadow-2xl flex-1 min-h-[400px]">
-                <div class="p-6 border-b border-white/5 bg-white/5 flex justify-between items-center">
-                    <h3 class="text-[11px] font-black uppercase tracking-[0.3em] text-slate-400 flex items-center gap-2"><i data-lucide="history" class="w-4 h-4"></i> Cronologia</h3>
+        <div class="stats-panel">
+            <div class="card" style="height: 100%; min-height: 400px; display: flex; flex-direction: column;">
+                <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-color); background: rgba(255,255,255,0.02); display: flex; justify-content: space-between; align-items: center;">
+                    <h3 style="font-size: 0.6875rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; color: var(--slate-400); display: flex; align-items: center; gap: 0.5rem;"><i data-lucide="history" style="width: 1rem; height: 1rem;"></i> CRONOLOGIA</h3>
                     ${state.events.length > 0 ? `
-                        <button onclick="app.undoLastEvent()" class="text-[9px] font-black text-slate-500 hover:text-red-400 uppercase">Desfazer Último</button>
+                        <button onclick="app.undoLastEvent()" style="font-size: 0.5625rem; font-weight: 900; color: var(--slate-500); text-transform: uppercase; background: transparent; border: none; cursor: pointer;">DESFAZER ÚLTIMO</button>
                     ` : ''}
                 </div>
-                <div class="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-3">
+                <div class="custom-scrollbar" style="flex: 1; overflow-y: auto; padding: 1.5rem;">
                     ${state.events.map(renderEvent).join('')}
-                    ${state.events.length === 0 ? '<div class="text-center text-slate-500 text-xs py-10 uppercase font-black tracking-widest opacity-30">Sem Eventos</div>' : ''}
+                    ${state.events.length === 0 ? '<div style="text-align: center; padding: 2.5rem 0; font-size: 0.75rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: var(--slate-500); opacity: 0.3;">Sem Eventos</div>' : ''}
                 </div>
             </div>
         </div>

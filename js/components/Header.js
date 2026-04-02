@@ -1,5 +1,3 @@
-import { formatDuration } from '../utils.js';
-
 export const Header = (state) => {
   const homeGoals = state.events.filter(e => e.teamId === 'home' && e.type === 'GOAL' && !e.isAnnulled).length;
   const awayGoals = state.events.filter(e => e.teamId === 'away' && e.type === 'GOAL' && !e.isAnnulled).length;
@@ -16,61 +14,55 @@ export const Header = (state) => {
   const awayContrast = getContrastColor(state.awayTeam.color);
 
   return `
-    <header class="bg-slate-900 border-b border-white/10 shadow-2xl relative z-50 py-2 md:py-4">
-      <div class="max-w-7xl mx-auto px-2 md:px-4 flex justify-between items-center">
+    <header class="app-header">
+      <div class="top-bar">
         <!-- HOME TEAM -->
-        <div class="flex flex-1 items-center justify-end gap-1 md:gap-4 min-w-0">
-          <div class="flex flex-col items-end min-w-0 group">
-            <h2 class="text-[10px] md:text-xl font-black truncate text-white uppercase tracking-tighter cursor-pointer hover:text-blue-400 transition-colors flex items-center gap-1 md:gap-2" onclick="app.editTeamName('home')">
-              <i data-lucide="pencil" class="w-2.5 h-2.5 md:w-3 md:h-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 shrink-0"></i>
+        <div class="team-info home">
+          <div class="team-titles home">
+            <h2 class="team-name-h2 font-black uppercase tracking-tighter" onclick="app.editTeamName('home')">
+              <i data-lucide="pencil" style="width: 0.75rem; height: 0.75rem;"></i>
               ${state.homeTeam.shortName}
             </h2>
-            <span class="text-[7px] md:text-[8px] font-black text-slate-500 uppercase tracking-widest">${state.homeTeam.formation}</span>
+            <span class="formation-badge font-black uppercase tracking-widest">${state.homeTeam.formation}</span>
           </div>
-          <div class="flex flex-col items-center">
-            <div class="rounded-lg md:rounded-2xl flex items-center justify-center font-black shadow-xl transition-all w-8 h-8 md:w-14 md:h-14 text-sm md:text-3xl ${homeContrast}" style="background-color: ${state.homeTeam.color}">
-              ${homeGoals}
-            </div>
+          <div class="score-badge ${homeContrast}" style="background-color: ${state.homeTeam.color}">
+            ${homeGoals}
           </div>
         </div>
 
         <!-- CLOCK -->
-        <div class="flex flex-col items-center justify-center min-w-[80px] md:min-w-[180px]">
-           <div class="flex items-center gap-1 md:gap-2 mb-0.5 md:mb-1">
-              <div class="text-[7px] md:text-[9px] font-black text-blue-500 uppercase tracking-[0.2em] md:tracking-[0.3em]">${state.period}</div>
-              <button onclick="app.togglePlayPause()" class="p-0.5 md:p-1 rounded-md ${state.isPaused ? 'text-emerald-500' : 'text-yellow-500'}">
-                <i data-lucide="${state.isPaused ? 'play' : 'pause'}" class="w-2.5 h-2.5 md:w-3 md:h-3" fill="currentColor"></i>
+        <div class="clock-container">
+           <div class="header-controls" style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+              <div class="period-badge font-black uppercase tracking-widest-xl">${state.period}</div>
+              <button onclick="app.togglePlayPause()" style="background: transparent; border: none; cursor: pointer; color: ${state.isPaused ? 'var(--emerald-500)' : 'var(--yellow-500)'}">
+                <i data-lucide="${state.isPaused ? 'play' : 'pause'}" style="width: 0.75rem; height: 0.75rem;" fill="currentColor"></i>
               </button>
            </div>
-           <div id="timer-display" class="text-xl md:text-5xl font-black tabular-nums tracking-tighter text-white">
-              00:00
-           </div>
-           <button onclick="app.nextPeriod()" class="mt-0.5 md:mt-1 text-[6px] md:text-[7px] font-black text-slate-500 hover:text-white uppercase tracking-widest flex items-center gap-1">
-              Próximo <i data-lucide="chevron-right" class="w-1.5 h-1.5 md:w-2 md:h-2"></i>
+           <div id="timer-display" class="timer-text font-black tracking-tighter">00:00</div>
+           <button onclick="app.nextPeriod()" style="background: transparent; border: none; cursor: pointer; color: var(--slate-500); font-size: 0.5rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; display: flex; align-items: center; gap: 0.25rem; margin-top: 0.25rem;">
+              PRÓXIMO <i data-lucide="chevron-right" style="width: 0.5rem; height: 0.5rem;"></i>
            </button>
         </div>
 
         <!-- AWAY TEAM -->
-        <div class="flex flex-1 items-center justify-start gap-1 md:gap-4 min-w-0">
-          <div class="flex flex-col items-center">
-            <div class="rounded-lg md:rounded-2xl flex items-center justify-center font-black shadow-xl transition-all w-8 h-8 md:w-14 md:h-14 text-sm md:text-3xl ${awayContrast}" style="background-color: ${state.awayTeam.color}">
-              ${awayGoals}
-            </div>
+        <div class="team-info away">
+          <div class="score-badge ${awayContrast}" style="background-color: ${state.awayTeam.color}">
+            ${awayGoals}
           </div>
-          <div class="flex flex-col items-start min-w-0 group">
-            <h2 class="text-[10px] md:text-xl font-black truncate text-white uppercase tracking-tighter cursor-pointer hover:text-blue-400 transition-colors flex items-center gap-1 md:gap-2" onclick="app.editTeamName('away')">
+          <div class="team-titles">
+            <h2 class="team-name-h2 font-black uppercase tracking-tighter" onclick="app.editTeamName('away')">
               ${state.awayTeam.shortName}
-              <i data-lucide="pencil" class="w-2.5 h-2.5 md:w-3 md:h-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 shrink-0"></i>
+              <i data-lucide="pencil" style="width: 0.75rem; height: 0.75rem;"></i>
             </h2>
-            <span class="text-[7px] md:text-[8px] font-black text-slate-500 uppercase tracking-widest">${state.awayTeam.formation}</span>
+            <span class="formation-badge font-black uppercase tracking-widest">${state.awayTeam.formation}</span>
           </div>
         </div>
       </div>
       
-      <div class="w-full bg-slate-950/50 border-t border-white/5 py-1 px-4 flex justify-center items-center gap-4 md:gap-8 text-[8px] md:text-[10px] text-slate-400 uppercase tracking-widest font-bold">
-          <span class="flex items-center gap-1"><i data-lucide="trophy" class="w-2.5 h-2.5 md:w-3 md:h-3 text-yellow-500"></i> ${state.competition || "Camp. Não Definido"}</span>
-          <span class="hidden sm:flex items-center gap-1"><i data-lucide="map-pin" class="w-2.5 h-2.5 md:w-3 md:h-3"></i> ${state.stadium || "Local"}</span>
-          <span class="hidden sm:flex items-center gap-1"><i data-lucide="user" class="w-2.5 h-2.5 md:w-3 md:h-3"></i> ${state.referee || "Árbitro"}</span>
+      <div class="match-info-bar" style="width: 100%; background: rgba(0,0,0,0.2); border-top: 1px solid var(--border-color); padding: 0.25rem 1rem; display: flex; justify-content: center; gap: 2rem; font-size: 0.625rem; color: var(--slate-400); font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;">
+          <span style="display: flex; align-items: center; gap: 0.25rem;"><i data-lucide="trophy" style="width: 0.75rem; height: 0.75rem; color: var(--yellow-500);"></i> ${state.competition || "Camp. Não Definido"}</span>
+          <span style="display: flex; align-items: center; gap: 0.25rem;"><i data-lucide="map-pin" style="width: 0.75rem; height: 0.75rem;"></i> ${state.stadium || "Local"}</span>
+          <span style="display: flex; align-items: center; gap: 0.25rem;"><i data-lucide="user" style="width: 0.75rem; height: 0.75rem;"></i> ${state.referee || "Árbitro"}</span>
       </div>
     </header>
   `;

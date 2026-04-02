@@ -1,13 +1,13 @@
-export const Modal = (content, title, onClose) => {
+export const Modal = (content, title) => {
   return `
-    <div id="modal-overlay" class="fixed inset-0 bg-black/90 backdrop-blur-md z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
-      <div class="w-full max-w-2xl max-h-[90vh] flex flex-col bg-slate-900 border border-slate-700 rounded-[2.5rem] shadow-2xl relative ring-1 ring-white/10 overflow-hidden">
-        <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-blue-400 to-blue-600 z-10"></div>
-        <button onclick="app.closeModal()" class="absolute top-4 right-4 p-3 text-slate-500 hover:text-white hover:bg-white/10 rounded-full transition-all z-20">
-          <i data-lucide="x" class="w-6 h-6"></i>
+    <div id="modal-overlay" class="modal-overlay animate-in fade-in duration-300">
+      <div class="modal-card">
+        <div class="modal-header-accent" id="modal-accent"></div>
+        <button onclick="app.closeModal()" class="btn-close">
+          <i data-lucide="x" style="width: 1.5rem; height: 1.5rem;"></i>
         </button>
-        <div class="p-8 overflow-y-auto custom-scrollbar flex-1">
-          ${title ? `<h2 class="text-2xl font-black text-white uppercase tracking-tighter mb-6 text-center">${title}</h2>` : ''}
+        <div class="modal-content custom-scrollbar">
+          ${title ? `<h2 style="font-size: 1.5rem; font-weight: 900; color: white; text-transform: uppercase; letter-spacing: -0.05em; margin-bottom: 2rem; text-align: center;">${title}</h2>` : ''}
           ${content}
         </div>
       </div>
@@ -17,30 +17,30 @@ export const Modal = (content, title, onClose) => {
 
 export const PreMatchSetupContent = (state) => {
   return `
-    <div class="flex flex-col items-center mb-8">
-        <div class="w-16 h-16 bg-blue-600/20 border border-blue-500/30 rounded-3xl flex items-center justify-center mb-4 text-blue-400">
-            <i data-lucide="file-text" class="w-8 h-8"></i>
+    <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 2rem;">
+        <div style="width: 4rem; height: 4rem; background: rgba(37, 99, 235, 0.2); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 1.5rem; display: flex; align-items: center; justify-content: center; margin-bottom: 1rem; color: var(--blue-400);">
+            <i data-lucide="file-text" style="width: 2rem; height: 2rem;"></i>
         </div>
-        <h1 class="text-3xl font-black text-center text-white uppercase tracking-tighter">Súmula da Partida</h1>
+        <h1 style="font-size: 1.875rem; font-weight: 900; text-align: center; color: white; text-transform: uppercase; letter-spacing: -0.05em;">Súmula da Partida</h1>
     </div>
     
-    <div class="space-y-5">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div>
-                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-1 block">Competição</label>
-                <input type="text" id="setup-competition" placeholder="Ex: Copa Trampolim" value="${state.competition}" class="w-full bg-slate-950/50 border border-white/5 rounded-2xl py-4 px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-bold text-sm">
+    <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
+            <div class="input-group">
+                <label class="input-label">Competição</label>
+                <input type="text" id="setup-competition" placeholder="Ex: Copa Trampolim" value="${state.competition}" class="text-input">
             </div>
-            <div>
-                <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-1 block">Árbitro</label>
-                <input type="text" id="setup-referee" placeholder="Ex: Wilton P. Sampaio" value="${state.referee || ''}" class="w-full bg-slate-950/50 border border-white/5 rounded-2xl py-4 px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-bold text-sm">
+            <div class="input-group">
+                <label class="input-label">Árbitro</label>
+                <input type="text" id="setup-referee" placeholder="Ex: Wilton P. Sampaio" value="${state.referee || ''}" class="text-input">
             </div>
         </div>
-        <div>
-            <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-1 block">Estádio / Local</label>
-            <input type="text" id="setup-stadium" placeholder="Ex: Maracanã" value="${state.stadium}" class="w-full bg-slate-950/50 border border-white/5 rounded-2xl py-4 px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all font-bold text-sm">
+        <div class="input-group">
+            <label class="input-label">Estádio / Local</label>
+            <input type="text" id="setup-stadium" placeholder="Ex: Maracanã" value="${state.stadium}" class="text-input">
         </div>
-        <button onclick="app.saveSetup()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-5 rounded-2xl flex items-center justify-center gap-3 transition-all active:scale-95 shadow-xl shadow-blue-900/20 uppercase tracking-[0.2em] text-xs mt-6">
-            <i data-lucide="save" class="w-4.5 h-4.5"></i> Confirmar e Iniciar
+        <button onclick="app.saveSetup()" class="btn-submit">
+            <i data-lucide="save" style="width: 1.125rem; height: 1.125rem; vertical-align: middle; margin-right: 0.5rem;"></i> CONFIRMAR E INICIAR
         </button>
     </div>
   `;
