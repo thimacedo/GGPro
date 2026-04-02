@@ -1,20 +1,7 @@
 // Motor de IA Geradora - Versão Ultra-Flash (Engine v6)
 // Otimizado para modelos de Próxima e Ultra Geração (Gemini 2.5, 3.0 e 3.1).
 
-const getApiKey = () => {
-  const viteKey = (import.meta as any).env?.VITE_GEMINI_API_KEY;
-  const processKey = (typeof process !== 'undefined' ? process.env?.VITE_GEMINI_API_KEY || process.env?.GEMINI_API_KEY : undefined);
-  const localKey = typeof localStorage !== 'undefined' ? localStorage.getItem('VITE_GEMINI_API_KEY') || localStorage.getItem('GEMINI_API_KEY') : undefined;
-  
-  const key = viteKey || processKey || localKey || '';
-  const cleanKey = key.toString().trim().replace(/^["']|["']$/g, '');
-
-  if (!cleanKey) {
-    console.error("❌ Erro: Chave de API não encontrada.");
-    throw new Error("INVALID_API_KEY");
-  }
-  return cleanKey;
-};
+import { getApiKey } from './config';
 
 /**
  * 🛠️ MOTOR DE ENGENHARIA v6 (Ultra-Resiliente):

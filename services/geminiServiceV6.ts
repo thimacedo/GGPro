@@ -1,21 +1,7 @@
 // 🚀 Motor de IA Ultra-Geracional (Engine v6.3 - "Nuclear Edition")
 // Focado exclusivamente nos modelos Gemini 3.1, 3.0 e 2.5 detectados na sua conta.
 
-const getApiKey = () => {
-  // @ts-ignore - Tenta o padrão Vite
-  const viteKey = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_GEMINI_API_KEY : undefined;
-  
-  // @ts-ignore - Tenta injeção via define do Vite ou environment global
-  const processKey = typeof process !== 'undefined' && process.env ? (process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY) : undefined;
-  
-  const key = viteKey || processKey || localStorage.getItem('VITE_GEMINI_API_KEY') || localStorage.getItem('GEMINI_API_KEY');
-  
-  if (!key) {
-    console.error("❌ Erro: Chave de API não encontrada.");
-    throw new Error("INVALID_API_KEY");
-  }
-  return key;
-};
+import { getApiKey } from './config';
 
 /**
  * 🛠️ MOTOR NUCLEAR: Suporte prioritário às Ultra-IAs com fallback de alta segurança.
