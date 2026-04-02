@@ -66,10 +66,20 @@ class VoiceController {
       for (const res of actions) {
         if (!res.type || res.type === 'INVALID') continue;
         
+        if (res.type === 'CORRECTION') {
+          toasts.show("IA: Correção", `Anulando evento: ${res.description}`, "warning");
+          window.app.triggerVAR(); 
+          continue;
+        }
+
+        if (res.type === 'ANSWER') {
+          window.app.showAIAnswer(res.answerText || res.description);
+          continue;
+        }
+
         let teamId = res.team === 'away' ? 'away' : 'home';
         let description = res.description || `Evento: ${res.type}`;
         
-        // Melhoria de descrição baseada nos jogadores detectados pela IA
         const team = teamId === 'home' ? state.homeTeam : state.awayTeam;
         const p = res.playerNumber ? team.players.find(pl => pl.number === res.playerNumber) : null;
         const playerName = p ? p.name : (res.playerNumber ? `Nº ${res.playerNumber}` : '');
@@ -84,7 +94,6 @@ class VoiceController {
           description = `🛑 Falta para o ${team.shortName}${playerName ? ` (${playerName})` : ''}`;
         }
 
-        // Envia para o app sem informar minuto, deixando o app decidir com base no timer
         window.app.addEvent(res.type, teamId, description, p ? p.id : null);
       }
     } catch (e) {

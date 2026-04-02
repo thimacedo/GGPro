@@ -111,9 +111,30 @@ export const parseMatchBannerFromImage = async (base64Image) => {
   return { matches: [] };
 };
 
+export const parseRegulationDocument = async (base64, mimeType = "application/pdf") => {
+  const contents = [{
+    parts: [
+      { inline_data: { mime_type: mimeType, data: base64 } },
+      { text: `Analise as regras do torneio e retorne JSON: { "halfDuration": number, "maxSubstitutions": number, "penaltyKicks": number, "extraTime": boolean, "summary": "string" }` }
+    ]
+  }];
+  
+  for (const model of ULTRA_GEN_MODELS) {
+    try {
+      const text = await callGeminiProxy(model, contents);
+      return cleanAndParseJSON(text);
+    } catch (e) {
+      console.warn(`IA: Falha ao ler regulamento com ${model}`);
+    }
+  }
+  throw new Error("Não foi possível analisar o regulamento.");
+};
+
 export const processVoiceCommand = async (command, homeTeam, awayTeam, eventsSummary) => {
   const contents = [{
-    parts: [{ text: `Comando: "${command}". Equipes: ${homeTeam.name} vs ${awayTeam.name}. Retorne ARRAY JSON: [{type, team, playerNumber, description}].` }]
+    parts: [{ text: `Comando: "${command}". Equipes: ${homeTeam.name} vs ${awayTeam.name}. Eventos: ${eventsSummary}. 
+      Retorne ARRAY JSON: [{type: 'GOAL'|'CARD'|'SUB'|'CORRECTION'|'ANSWER'|'INVALID', team: 'home'|'away'|'none', playerNumber: number, description: string, answerText?: string, targetEventId?: string}].
+      Se for pergunta, use 'ANSWER' e coloque a resposta em 'answerText'. Se for correção (ex: 'Anule o último gol'), use 'CORRECTION' e aponte para o tipo.` }]
   }];
   
   for (const model of ULTRA_GEN_MODELS) {
