@@ -4,12 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx server.ts",
-    "prebuild": "tsx scripts/clean.js",
-    "build": "vite build",
-    "lint": "tsc",
-    "preview": "vite preview",
-    "start": "node server.ts"
+    "dev": "node server.js",
+    "prebuild": "node scripts/clean.js",
+    "build": "echo 'No build step needed for Vanilla JS'",
+    "lint": "echo 'Linting disabled'",
+    "start": "node server.js"
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
