@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ClipboardList } from 'lucide-react';
 import { MatchState } from '../types';
-import { generateMatchReport } from '../services/geminiServiceV6';
+import { generateMatchReport } from '../services/geminiService';
 
 interface Props {
   matchState: MatchState;

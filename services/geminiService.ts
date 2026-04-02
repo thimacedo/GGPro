@@ -68,10 +68,10 @@ const cleanAndParseJSON = (text: string): any => {
 
 // 📋 IDENTIFICADORES DE GERAÇÃO ESTÁVEL E EXPERIMENTAL
 const ULTRA_GEN_MODELS = [
-  "gemini-2.0-flash-exp",
-  "gemini-1.5-flash", 
-  "gemini-1.5-pro",
-  "gemini-2.0-pro-exp"
+  "gemini-2.5-flash",
+  "gemini-2.0-flash",
+  "gemini-flash-latest",
+  "gemini-2.5-flash-lite"
 ];
 
 // 🚀 PROCESSAMENTO OFFLINE: Texto Colado
