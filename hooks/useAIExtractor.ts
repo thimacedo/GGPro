@@ -1,5 +1,6 @@
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { MatchState, Player, Position } from '../types';
+import { parsePlayersFromImage } from '../services/geminiService';
 
 interface UseAIExtractorProps {
   matchState: MatchState;
@@ -113,9 +114,68 @@ export function useAIExtractor({ matchState, setMatchState, addToast, ui }: UseA
     }
   }, [setMatchState, addToast]);
 
+  const handleImageUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>, teamId: 'home' | 'away') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsProcessing(true);
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      const base64 = event.target?.result?.toString().split(',')[1];
+      if (base64) {
+        try {
+          const data = await parsePlayersFromImage(base64);
+          
+          // Compatibilidade com diferentes formatos de retorno da IA e estruturação dos dados
+          const rawPlayers = data.players || (teamId === 'home' ? data.teamA : data.teamB) || [];
+          const teamName = data.teamName || (teamId === 'home' ? data.teamAName : data.teamBName) || '';
+
+          if (rawPlayers && rawPlayers.length > 0) {
+            setMatchState(prev => {
+              const teamKey = teamId === 'home' ? 'homeTeam' : 'awayTeam';
+              
+              const newPlayers: Player[] = rawPlayers.map((p: any, index: number) => ({
+                id: `player-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                name: p.name || `Jogador ${p.number}`,
+                fullName: p.fullName || p.name || `Jogador ${p.number}`,
+                number: parseInt(p.number) || (index + 1),
+                position: (p.position || 'MF') as Position,
+                teamId: teamId,
+                isStarter: index < 11,
+                events: [],
+                x: 0, 
+                y: 0
+              }));
+
+              return {
+                ...prev,
+                [teamKey]: {
+                  ...prev[teamKey],
+                  name: teamName || prev[teamKey].name,
+                  players: [...prev[teamKey].players, ...newPlayers]
+                }
+              };
+            });
+            addToast("IA Processou", `${rawPlayers.length} jogadores extraídos da foto.`, "success");
+          } else {
+            addToast("Erro", "IA não identificou jogadores na imagem.", "error");
+          }
+        } catch (error) {
+          console.error("Erro no processamento de imagem:", error);
+          addToast("Erro de IA", "Falha ao processar imagem ou limite de API atingido.", "error");
+        } finally {
+          setIsProcessing(false);
+          if (e.target) e.target.value = '';
+        }
+      }
+    };
+    reader.readAsDataURL(file);
+  }, [setMatchState, addToast]);
+
   return {
     isProcessing,
     handlePasteProcess,
-    processAIResult
+    processAIResult,
+    handleImageUpload
   };
 }
