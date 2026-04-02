@@ -50,6 +50,8 @@ export default defineConfig(({ mode }) => {
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
+          'next/navigation': path.resolve(__dirname, 'utils/empty.ts'),
+          'next/headers': path.resolve(__dirname, 'utils/empty.ts')
         }
       }
     };
