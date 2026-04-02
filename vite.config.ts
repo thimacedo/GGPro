@@ -45,13 +45,20 @@ export default defineConfig(({ mode }) => {
       ],
       define: {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+        'process.env.NEXT_RUNTIME': JSON.stringify('nodejs')
       },
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
           'next/navigation': path.resolve(__dirname, 'utils/empty.ts'),
-          'next/headers': path.resolve(__dirname, 'utils/empty.ts')
+          'next/headers': path.resolve(__dirname, 'utils/empty.ts'),
+          'next/cache': path.resolve(__dirname, 'utils/empty.ts')
+        }
+      },
+      build: {
+        rollupOptions: {
+          external: ['next/navigation', 'next/headers', 'next/cache']
         }
       }
     };
