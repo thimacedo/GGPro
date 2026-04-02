@@ -80,14 +80,12 @@ const cleanAndParseJSON = (text: string): any => {
   return { teams: [] };
 };
 
-// 📋 IDENTIFICADORES DE ULTRA-GERAÇÃO (Detectados na sua Chave de API)
+// 📋 IDENTIFICADORES DE GERAÇÃO ESTÁVEL E EXPERIMENTAL
 const ULTRA_GEN_MODELS = [
-  "gemini-3.1-flash-lite-preview",
-  "gemini-2.5-flash-lite",
-  "gemini-flash-lite-latest",
-  "gemini-3-flash-preview",
+  "gemini-2.0-flash-exp",
   "gemini-1.5-flash", 
-  "gemini-1.5-pro"
+  "gemini-1.5-pro",
+  "gemini-2.0-pro-exp"
 ];
 
 // 🚀 PROCESSAMENTO OFFLINE: Texto Colado
