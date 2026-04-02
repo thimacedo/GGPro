@@ -16,7 +16,13 @@ if (fs.existsSync('dist')) {
     fs.rmSync('dist', { recursive: true, force: true });
     console.log('Pasta dist removida com sucesso.');
   } catch (e) {
-    console.warn('AVISO: Não foi possível remover a pasta dist. Ela pode estar bloqueada por outro processo (ex: npm run dev).');
+    if (e.code === 'EPERM' || e.code === 'EBUSY') {
+      console.warn('\n❌ ERRO DE PERMISSÃO: Não foi possível remover a pasta "dist".');
+      console.warn('Isso geralmente acontece porque o comando "npm run dev" está rodando em outro terminal.');
+      console.warn('👉 POR FAVOR, PARE O "npm run dev" (Ctrl+C) E TENTE NOVAMENTE.\n');
+    } else {
+      console.warn('AVISO: Não foi possível remover a pasta dist:', e.message);
+    }
   }
 } else {
   console.log('Pasta dist não encontrada, pulando limpeza.');
