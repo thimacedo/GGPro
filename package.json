@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx server.ts",
+    "prebuild": "tsx scripts/clean.js",
     "build": "vite build",
     "lint": "tsc",
     "preview": "vite preview",

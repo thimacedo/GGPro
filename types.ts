@@ -3,7 +3,7 @@ export type Position = 'GK' | 'DF' | 'MF' | 'FW';
 export type TacticalFormation = '4-4-2' | '4-3-3' | '5-3-2' | '3-4-3' | 'CUSTOM';
 
 export type EventType = 
-  | 'GOAL' | 'YELLOW_CARD' | 'RED_CARD' | 'SUBSTITUTION' | 'SHOT' | 'FOUL' | 'CORNER' | 'PENALTY' | 'INJURY' 
+  'GOAL' | 'YELLOW_CARD' | 'RED_CARD' | 'SUBSTITUTION' | 'SHOT' | 'FOUL' | 'CORNER' | 'PENALTY' | 'INJURY' 
   | 'PERIOD_START' | 'PERIOD_END' | 'START_TIMER' | 'VAR' | 'PENALTY_SHOOTOUT'
   | 'OFFSIDE' | 'SAVE' | 'WOODWORK' | 'ANSWER' | 'INVALID' | 'CORRECTION'
   | 'CONCUSSION_SUBSTITUTION' | 'GK_8_SECONDS' | 'SET_GOALKEEPER' | 'GENERIC';

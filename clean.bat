@@ -1,9 +1,4 @@
 @echo off
-echo Encerrando processos do Node para liberar arquivos...
 taskkill /f /im node.exe >nul 2>&1
-echo Removendo atributos de trava...
-attrib -r -s -h "dist" /s /d >nul 2>&1
-echo Deletando pasta dist...
-del /s /q dist >nul 2>&1
-rmdir /s /q dist
-echo Concluido.
+if exist "dist" rmdir /s /q "dist" >nul 2>&1
+exit /b 0
