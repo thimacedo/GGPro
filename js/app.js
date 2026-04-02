@@ -401,6 +401,14 @@ class App {
   nextPeriod() {
     const periods = ['PRE_MATCH', '1T', 'INTERVAL', '2T', 'FINISHED'];
     const current = store.getState().period;
+    
+    if (current === 'FINISHED') {
+      if (confirm("Deseja reiniciar a partida? Isso apagará todo o histórico atual.")) {
+        store.reset();
+      }
+      return;
+    }
+
     const nextIdx = periods.indexOf(current) + 1;
     if (nextIdx < periods.length) {
       store.setState({ period: periods[nextIdx] });

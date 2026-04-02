@@ -36,7 +36,7 @@ app.post('/api/ai/generate', async (req, res) => {
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents })
+      body: JSON.stringify({ contents: contents }) // Envolve o conteúdo no objeto root 'contents' esperado pelo Gemini
     });
 
     const data = await response.json();
