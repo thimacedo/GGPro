@@ -145,6 +145,28 @@ export const EndGameOptionsContent = () => {
     `;
 };
 
+export const ImportListContent = (teamId) => {
+    return `
+        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+            <p style="font-size: 0.75rem; color: var(--slate-400); line-height: 1.5;">Cole a lista de jogadores no formato: <br> <strong>1 - Rossi (GK)<br>2 - Varela</strong> etc.</p>
+            <textarea id="import-text" class="text-input" style="height: 200px; font-family: monospace; font-size: 0.75rem; resize: none;" placeholder="Cole aqui a súmula/lista de jogadores..."></textarea>
+            
+            <div style="display: flex; gap: 1rem;">
+                <button onclick="app.closeModal()" class="btn-submit" style="background: var(--slate-800); flex: 1;">CANCELAR</button>
+                <button onclick="app.processImport('${teamId}', document.getElementById('import-text').value)" class="btn-submit" style="flex: 2;">PROCESSAR COM IA</button>
+            </div>
+            
+            <div style="border-top: 1px solid var(--border-color); padding-top: 1.25rem; text-align: center;">
+                <p style="font-size: 0.625rem; font-weight: 900; color: var(--slate-500); text-transform: uppercase; margin-bottom: 0.75rem;">Ou selecione uma foto da súmula</p>
+                <input type="file" id="import-image" onchange="app.handlePlayerImageUpload(event, '${teamId}')" style="display: none;">
+                <button onclick="document.getElementById('import-image').click()" class="btn-submit" style="background: var(--slate-800); border: 2px dashed var(--border-color); color: var(--slate-300);">
+                    <i data-lucide="camera" style="width: 1rem; height: 1rem; vertical-align: middle; margin-right: 0.5rem;"></i> TIRAR FOTO / SUBIR IMAGEM
+                </button>
+            </div>
+        </div>
+    `;
+};
+
 export const PlayerActionContent = (player, team) => {
     const isStarter = player.isStarter;
     const actions = [
