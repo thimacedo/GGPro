@@ -126,3 +126,18 @@ export const processVoiceCommand = async (command, homeTeam, awayTeam, eventsSum
   }
   return [];
 };
+
+export const generateMatchReport = async (context, timeline) => {
+  const contents = [{
+    parts: [{ text: `Escreva uma crônica esportiva profissional e emocionante baseada no seguinte contexto e eventos. Contexto: ${context}, Eventos: ${timeline}. O texto deve ter entre 200 e 400 palavras.` }]
+  }];
+  
+  for (const model of ULTRA_GEN_MODELS) {
+    try {
+      return await callGeminiProxy(model, contents);
+    } catch (e) {
+      console.warn(`Próximo modelo: ${model} falhou na geração de crônica.`);
+    }
+  }
+  return "Não foi possível gerar a crônica no momento.";
+};

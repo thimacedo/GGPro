@@ -1,3 +1,5 @@
+import { Field } from './Field.js';
+
 export const Dashboard = (state, viewMode = 'list') => {
   const isList = viewMode === 'list';
   const isField = viewMode === 'field';
@@ -47,11 +49,7 @@ export const Dashboard = (state, viewMode = 'list') => {
             </div>
             
             <div class="content-display">
-                ${isField ? `
-                    <div class="card" style="aspect-ratio: 4/3; display: flex; items-center: center; justify-content: center; background: rgba(5, 150, 105, 0.05); border-color: rgba(5, 150, 105, 0.1);">
-                        <p style="color: var(--emerald-500); font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.75rem; opacity: 0.5;">Campo Tático em Breve</p>
-                    </div>
-                ` : `
+                ${isField ? Field(state) : `
                     <div class="card" style="padding: 1.5rem;">
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                             <div>
@@ -81,9 +79,15 @@ export const Dashboard = (state, viewMode = 'list') => {
                     ` : ''}
                 </div>
                 <div class="custom-scrollbar" style="flex: 1; overflow-y: auto; padding: 1.5rem;">
-                    ${state.events.map(renderEvent).join('')}
                     ${state.events.length === 0 ? '<div style="text-align: center; padding: 2.5rem 0; font-size: 0.75rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: var(--slate-500); opacity: 0.3;">Sem Eventos</div>' : ''}
                 </div>
+                ${state.period !== 'FINISHED' && state.events.length > 0 ? `
+                  <div style="padding: 1rem; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.2);">
+                      <button onclick="app.finishMatch()" class="btn-submit" style="padding: 0.75rem; font-size: 0.75rem; background: var(--emerald-600); box-shadow: 0 4px 15px -3px rgba(16, 185, 129, 0.4);">
+                        <i data-lucide="check-circle" style="width: 1rem; height: 1rem; vertical-align: middle; margin-right: 0.5rem;"></i> FINALIZAR E GERAR CRÔNICA
+                      </button>
+                  </div>
+                ` : ''}
             </div>
         </div>
     </div>

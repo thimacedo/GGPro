@@ -5,7 +5,7 @@ import { Stats } from './components/Stats.js';
 import { Modal, PreMatchSetupContent } from './components/Modals.js';
 import { formatDuration, generateId } from './utils.js';
 import { voice } from './services/voice.js';
-import { parseMatchBannerFromImage } from './services/gemini.js';
+import { parseMatchBannerFromImage, generateMatchReport } from './services/gemini.js';
 
 class App {
   constructor() {
@@ -15,6 +15,12 @@ class App {
     this.activeTab = 'main'; // 'main' ou 'stats'
     this.timerInterval = null;
     this.activeModal = null;
+    this.draggingPlayer = null;
+    
+    // Bind handlers for drag/drop to access 'this'
+    this.handlePlayerDragBound = this.handlePlayerDrag.bind(this);
+    this.handlePlayerDragEndBound = this.handlePlayerDragEnd.bind(this);
+    
     this.init();
   }
 
@@ -164,6 +170,96 @@ class App {
   async handleRegulationUpload(event) {
     alert("Funcionalidade de regulamento (PDF/Imagem) integrada ao motor de IA.");
     // Implementação similar ao banner, chamando parseRegulationDocument
+  }
+
+  // --- TACTICAL DRAG & DROP ---
+  handlePlayerDragStart(e, teamId, playerId) {
+    if (e.type === 'mousedown' && e.button !== 0) return;
+    e.stopPropagation();
+    this.draggingPlayer = { teamId, playerId };
+    
+    window.addEventListener('mousemove', this.handlePlayerDragBound);
+    window.addEventListener('mouseup', this.handlePlayerDragEndBound);
+    window.addEventListener('touchmove', this.handlePlayerDragBound, { passive: false });
+    window.addEventListener('touchend', this.handlePlayerDragEndBound);
+  }
+
+  handlePlayerDrag(e) {
+    if (!this.draggingPlayer) return;
+    
+    const field = document.getElementById('tactical-field');
+    if (!field) return;
+
+    const rect = field.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    let x = ((clientX - rect.left) / rect.width) * 100;
+    let y = ((clientY - rect.top) / rect.height) * 100;
+
+    // Constrain to field bounds
+    x = Math.max(2, Math.min(98, x));
+    y = Math.max(2, Math.min(98, y));
+
+    // Normalize for team side
+    const isHome = this.draggingPlayer.teamId === 'home';
+    const finalX = isHome ? x : (100 - x);
+    const finalY = isHome ? y : (100 - y);
+
+    this.updatePlayerPosition(this.draggingPlayer.teamId, this.draggingPlayer.playerId, finalX, finalY);
+  }
+
+  handlePlayerDragEnd() {
+    this.draggingPlayer = null;
+    window.removeEventListener('mousemove', this.handlePlayerDragBound);
+    window.removeEventListener('mouseup', this.handlePlayerDragEndBound);
+    window.removeEventListener('touchmove', this.handlePlayerDragBound);
+    window.removeEventListener('touchend', this.handlePlayerDragEndBound);
+  }
+
+  updatePlayerPosition(teamId, playerId, x, y) {
+    store.setState(prev => {
+      const teamKey = teamId === 'home' ? 'homeTeam' : 'awayTeam';
+      const players = prev[teamKey].players.map(p => 
+        p.id === playerId ? { ...p, x, y } : p
+      );
+      return { ...prev, [teamKey]: { ...prev[teamKey], players } };
+    });
+  }
+
+  // --- MATCH FINALIZATION ---
+  async finishMatch() {
+    if (!confirm("Deseja encerrar a partida e gerar a crônica final com IA?")) return;
+
+    const state = store.getState();
+    voice.isProcessing = true;
+    this.render(state);
+
+    try {
+      const context = `${state.competition} no ${state.stadium}. Árbitro: ${state.referee}.`;
+      const timeline = state.events.map(e => `${e.minute}' - ${e.description}`).reverse().join('\n');
+      
+      const report = await generateMatchReport(context, timeline);
+      
+      store.setState({ period: 'FINISHED' });
+      
+      this.activeModal = (s) => Modal(`
+        <div class="custom-scrollbar" style="max-height: 60vh; overflow-y: auto; color: var(--slate-300); font-size: 0.875rem; line-height: 1.6; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 1rem;">
+          ${report.replace(/\n/g, '<br>')}
+        </div>
+        <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+          <button onclick="app.closeModal()" class="btn-submit" style="flex: 1; background: var(--slate-800);">FECHAR</button>
+          <button onclick="window.print()" class="btn-submit" style="flex: 1;">IMPRIMIR PDF</button>
+        </div>
+      `, "Crônica da Partida");
+      
+    } catch (e) {
+      console.error("Falha ao gerar crônica:", e);
+      alert("Erro ao gerar crônica via IA.");
+    } finally {
+      voice.isProcessing = false;
+      this.render(store.getState());
+    }
   }
 
   toggleVoice() {

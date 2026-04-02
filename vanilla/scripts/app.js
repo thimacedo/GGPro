@@ -843,12 +843,296 @@ function startTimer() {
   }, 200);
 }
 
+// Função para mostrar modal de edição de time
+function showTeamEditModal(teamId) {
+  const state = matchState.getState();
+  const team = teamId === 'home' ? state.homeTeam : state.awayTeam;
+  
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4 animate-fade-in';
+  modal.innerHTML = `
+    <div class="bg-slate-800 p-6 rounded-[2rem] max-w-sm w-full text-center shadow-2xl text-white">
+      <h3 class="text-sm font-black uppercase mb-4">Editar Equipe</h3>
+      <input id="teamNameInput" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none mb-3" value="${team.name}" placeholder="Nome Completo" />
+      <input id="teamShortInput" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none mb-4 uppercase" value="${team.shortName}" maxlength="3" placeholder="SIGLA (3 letras)" />
+      <div class="mb-6 bg-slate-900/50 p-4 rounded-2xl border border-slate-700">
+        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-3 text-center">Cor no Mapa Tático</span>
+        <div class="grid grid-cols-6 gap-3 justify-items-center" id="colorPicker">
+          ${['#ef4444','#f97316','#f59e0b','#22c55e','#10b981','#14b8a6','#06b6d4','#3b82f6','#4f46e5','#a855f7','#1e293b','#ffffff'].map(c => `<button type="button" class="w-8 h-8 rounded-full transition-all border-4 ${team.color===c?'border-white scale-125 shadow-xl':'border-transparent hover:scale-110'}" style="background-color:${c}" data-color="${c}"></button>`).join('')}
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <button id="saveTeamBtn" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-3 rounded-xl font-black text-xs uppercase">Salvar</button>
+        <button id="cancelTeamBtn" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-xl font-black text-xs uppercase">Cancelar</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  let selectedColor = team.color;
+  modal.querySelectorAll('[data-color]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      modal.querySelectorAll('[data-color]').forEach(b => { b.classList.remove('border-white','scale-125','shadow-xl'); b.classList.add('border-transparent'); });
+      btn.classList.remove('border-transparent'); btn.classList.add('border-white','scale-125','shadow-xl');
+      selectedColor = btn.dataset.color;
+    });
+  });
+  modal.querySelector('#saveTeamBtn').addEventListener('click', () => {
+    const name = modal.querySelector('#teamNameInput').value.trim();
+    const shortName = modal.querySelector('#teamShortInput').value.trim().toUpperCase();
+    if (name) {
+      matchState.setState(prev => {
+        const key = teamId === 'home' ? 'homeTeam' : 'awayTeam';
+        return { ...prev, [key]: { ...prev[key], name, shortName: shortName || prev[key].shortName, color: selectedColor } };
+      });
+      addToast('Equipe Atualizada', `${name} atualizado com sucesso.`, 'success');
+      render();
+    }
+    modal.remove();
+  });
+  modal.querySelector('#cancelTeamBtn').addEventListener('click', () => modal.remove());
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+}
+
+// Função para mostrar modal de edição de jogador
+function showPlayerEditModal(playerId, teamId) {
+  const state = matchState.getState();
+  const team = teamId === 'home' ? state.homeTeam : state.awayTeam;
+  const player = team.players.find(p => p.id === playerId);
+  if (!player) return;
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4 animate-fade-in';
+  modal.innerHTML = `
+    <div class="bg-slate-800 p-6 rounded-[2rem] max-w-sm w-full text-center shadow-2xl text-white">
+      <h3 class="text-sm font-black uppercase mb-4">Editar Jogador</h3>
+      <input id="playerNumInput" type="number" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none mb-3 font-mono" value="${player.number}" placeholder="Número" />
+      <input id="playerNameInput" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none mb-4" value="${player.name}" placeholder="Nome" />
+      <div class="flex items-center justify-between bg-slate-900 border border-slate-700 rounded-xl p-3 mb-6">
+        <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Escalação</span>
+        <button id="toggleStarterBtn" class="px-4 py-2 rounded-lg text-xs font-black uppercase transition-all ${player.isStarter?'bg-emerald-600 text-white':'bg-slate-700 text-slate-400 hover:text-white'}">${player.isStarter?'Titular':'Reserva'}</button>
+      </div>
+      <div class="flex gap-2">
+        <button id="savePlayerBtn" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-black text-xs uppercase">Salvar</button>
+        <button id="cancelPlayerBtn" class="flex-1 bg-slate-700 text-white py-3 rounded-xl font-black text-xs uppercase">Cancelar</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  let isStarter = player.isStarter;
+  modal.querySelector('#toggleStarterBtn').addEventListener('click', (e) => {
+    isStarter = !isStarter;
+    e.target.textContent = isStarter ? 'Titular' : 'Reserva';
+    e.target.className = `px-4 py-2 rounded-lg text-xs font-black uppercase transition-all ${isStarter?'bg-emerald-600 text-white':'bg-slate-700 text-slate-400 hover:text-white'}`;
+  });
+  modal.querySelector('#savePlayerBtn').addEventListener('click', () => {
+    const name = modal.querySelector('#playerNameInput').value.trim();
+    const number = parseInt(modal.querySelector('#playerNumInput').value) || player.number;
+    if (name) {
+      matchState.setState(prev => {
+        const key = teamId === 'home' ? 'homeTeam' : 'awayTeam';
+        return { ...prev, [key]: { ...prev[key], players: prev[key].players.map(p => p.id === playerId ? { ...p, name, number, isStarter } : p) } };
+      });
+      addToast('Jogador Atualizado', `${name} atualizado com sucesso.`, 'success');
+      render();
+    }
+    modal.remove();
+  });
+  modal.querySelector('#cancelPlayerBtn').addEventListener('click', () => modal.remove());
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+}
+
+// Função para mostrar modal de edição de técnico
+function showCoachEditModal(teamId) {
+  const state = matchState.getState();
+  const team = teamId === 'home' ? state.homeTeam : state.awayTeam;
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4 animate-fade-in';
+  modal.innerHTML = `
+    <div class="bg-slate-800 p-6 rounded-[2rem] max-w-sm w-full text-center shadow-2xl text-white">
+      <h3 class="text-sm font-black uppercase mb-4">Editar Técnico</h3>
+      <input id="coachNameInput" class="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none mb-4" value="${team.coach||''}" placeholder="Nome do Técnico" />
+      <div class="flex gap-2">
+        <button id="saveCoachBtn" class="flex-1 bg-blue-600 text-white py-3 rounded-xl font-black text-xs uppercase">Salvar</button>
+        <button id="cancelCoachBtn" class="flex-1 bg-slate-700 text-white py-3 rounded-xl font-black text-xs uppercase">Cancelar</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  modal.querySelector('#saveCoachBtn').addEventListener('click', () => {
+    const name = modal.querySelector('#coachNameInput').value.trim();
+    matchState.setState(prev => {
+      const key = teamId === 'home' ? 'homeTeam' : 'awayTeam';
+      return { ...prev, [key]: { ...prev[key], coach: name } };
+    });
+    addToast('Técnico Atualizado', `${name||'Técnico'} atualizado com sucesso.`, 'success');
+    render();
+    modal.remove();
+  });
+  modal.querySelector('#cancelCoachBtn').addEventListener('click', () => modal.remove());
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+}
+
+// Função para mostrar modal de importação de lista
+function showImportListModal(teamId) {
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4 animate-fade-in';
+  modal.innerHTML = `
+    <div class="bg-slate-800 p-6 rounded-[2rem] max-w-2xl w-full text-white">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-sm font-black uppercase">Importar Lista (Texto Bruto)</h3>
+        <button id="closeImportBtn" class="p-2 hover:bg-white/10 rounded-full">✕</button>
+      </div>
+      <textarea id="importTextArea" class="w-full h-64 bg-slate-950 border border-white/10 rounded-2xl p-6 font-mono text-xs text-blue-100 mb-6 focus:outline-none" placeholder="Cole a lista completa aqui..."></textarea>
+      <button id="processImportBtn" class="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-blue-800 py-4 rounded-2xl font-black uppercase tracking-widest">Processar Lista</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  modal.querySelector('#closeImportBtn').addEventListener('click', () => modal.remove());
+  modal.querySelector('#processImportBtn').addEventListener('click', async () => {
+    const text = modal.querySelector('#importTextArea').value.trim();
+    if (!text) return;
+    const btn = modal.querySelector('#processImportBtn');
+    btn.disabled = true;
+    btn.textContent = 'Processando...';
+    const lines = text.split(/\r?\n/);
+    const players = [];
+    let starterCount = 0;
+    for (let line of lines) {
+      line = line.trim();
+      if (!line || line.length < 3) continue;
+      const match = line.match(/^[\D]*(\d{1,2})[\s\-\.\,:]+(.+)$/);
+      let num = 0, name = '';
+      if (match) { num = parseInt(match[1], 10); name = match[2].trim().replace(/[\*\-\_]/g, '').trim(); }
+      else { name = line.replace(/^[\d\s\-\.\,:]+/, '').replace(/[\*\-\_]/g, '').trim(); num = players.length + 1; }
+      if (name.length > 2 && !name.toLowerCase().includes('treinador')) {
+        let isGK = false;
+        if (/(\(gol\)|\(gk\)|goleiro)/i.test(name) || (num === 1 && starterCount === 0)) { isGK = true; name = name.replace(/\(gol\)|\(gk\)|goleiro|\(\)/ig, '').trim(); }
+        players.push({ id: `player-${Date.now()}-${Math.random().toString(36).substr(2,9)}`, name: name.substring(0,20), fullName: name, number: num, position: isGK?'GK':'MF', teamId, isStarter: starterCount < 11, events: [], x: 50+(Math.random()-0.5)*5, y: 50+(Math.random()-0.5)*5 });
+        starterCount++;
+      }
+    }
+    if (players.length > 0) {
+      matchState.setState(prev => { const key = teamId === 'home' ? 'homeTeam' : 'awayTeam'; return { ...prev, [key]: { ...prev[key], players: [...prev[key].players, ...players] } }; });
+      addToast('Lista Importada', `${players.length} jogadores adicionados.`, 'success');
+      render();
+    } else { addToast('Erro', 'Não foi possível extrair jogadores.', 'error'); }
+    modal.remove();
+  });
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+}
+
+// Função para mostrar modal de configuração da partida
+function showMatchSetupModal() {
+  const state = matchState.getState();
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4 animate-fade-in';
+  modal.innerHTML = `
+    <div class="w-full max-w-2xl max-h-[90vh] flex flex-col bg-slate-900 border border-slate-700 rounded-[2.5rem] shadow-2xl relative ring-1 ring-white/10 overflow-hidden">
+      <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-600 via-blue-400 to-blue-600 z-10"></div>
+      <button id="closeSetupBtn" class="absolute top-4 right-4 p-3 text-slate-500 hover:text-white hover:bg-white/10 rounded-full transition-all z-20">✕</button>
+      <div class="p-8 overflow-y-auto custom-scrollbar flex-1">
+        <div class="flex flex-col items-center mb-8">
+          <div class="w-16 h-16 bg-blue-600/20 border border-blue-500/30 rounded-3xl flex items-center justify-center mb-4 text-blue-400">📋</div>
+          <h1 class="text-3xl font-black text-center text-white uppercase tracking-tighter">Súmula da Partida</h1>
+        </div>
+        <div class="space-y-5">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div><label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-1 block">Competição</label><input id="competitionInput" type="text" placeholder="Ex: Copa Trampolim" value="${state.competition}" class="w-full bg-slate-950/50 border border-white/5 rounded-2xl py-4 px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 font-bold text-sm" /></div>
+            <div><label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-1 block">Árbitro</label><input id="refereeInput" type="text" placeholder="Ex: Wilton P. Sampaio" value="${state.referee||''}" class="w-full bg-slate-950/50 border border-white/5 rounded-2xl py-4 px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 font-bold text-sm" /></div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div><label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-1 block">Estádio</label><input id="stadiumInput" type="text" placeholder="Ex: Maracanã" value="${state.stadium}" class="w-full bg-slate-950/50 border border-white/5 rounded-2xl py-4 px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 font-bold text-sm" /></div>
+            <div><label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-1 block">Data</label><input id="dateInput" type="date" value="${state.matchDate}" class="w-full bg-slate-950/50 border border-white/5 rounded-2xl py-4 px-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 font-bold text-sm" /></div>
+          </div>
+          <div><label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1 mb-1 block">Observações</label><textarea id="observationsInput" placeholder="Ex: Final - Jogo Único" class="w-full bg-slate-950/50 border border-white/5 rounded-2xl p-4 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 font-bold text-sm min-h-[80px] resize-none">${state.observations||''}</textarea></div>
+        </div>
+        <div class="mt-10 mb-2"><button id="saveSetupBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black py-5 rounded-2xl uppercase tracking-[0.2em] text-xs">💾 Confirmar</button></div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  modal.querySelector('#closeSetupBtn').addEventListener('click', () => modal.remove());
+  modal.querySelector('#saveSetupBtn').addEventListener('click', () => {
+    matchState.setState(prev => ({ ...prev, competition: modal.querySelector('#competitionInput').value.trim(), referee: modal.querySelector('#refereeInput').value.trim(), stadium: modal.querySelector('#stadiumInput').value.trim(), matchDate: modal.querySelector('#dateInput').value, observations: modal.querySelector('#observationsInput').value.trim() }));
+    addToast('Súmula Atualizada', 'Configurações salvas com sucesso.', 'success');
+    render();
+    modal.remove();
+  });
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+}
+
+// Função para importar backup
+function importBackup() {
+  const input = document.createElement('input');
+  input.type = 'file'; input.accept = '.json';
+  input.addEventListener('change', (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const importedState = JSON.parse(ev.target.result);
+        if (importedState.homeTeam && importedState.awayTeam) { matchState.setState(importedState); addToast('Sucesso', 'Backup restaurado!', 'success'); render(); }
+        else { addToast('Erro', 'Backup inválido.', 'error'); }
+      } catch (err) { addToast('Erro', 'Backup inválido.', 'error'); }
+    };
+    reader.readAsText(file);
+  });
+  input.click();
+}
+
+// Função para copiar relatório
+function copyMatchReport() {
+  const state = matchState.getState();
+  const safeEvents = state.events || [];
+  const homeScore = safeEvents.filter(e => e.teamId === 'home' && e.type === 'GOAL' && !e.isAnnulled).length;
+  const awayScore = safeEvents.filter(e => e.teamId === 'away' && e.type === 'GOAL' && !e.isAnnulled).length;
+  let report = `🔴 GG PRO - Resumo da Partida 🔴\n`;
+  if (state.competition) report += `${state.competition}\n`;
+  report += `${state.homeTeam.name} ${homeScore} x ${awayScore} ${state.awayTeam.name}\n`;
+  const now = Date.now();
+  const elapsed = state.timeElapsed + (state.timerStartedAt && !state.isPaused ? now - state.timerStartedAt : 0);
+  report += `Tempo: ${Math.floor(elapsed / 60000)}'\n\n`;
+  const goals = safeEvents.filter(e => e.type === 'GOAL' && !e.isAnnulled).reverse();
+  if (goals.length > 0) { report += `⚽ GOLS:\n`; goals.forEach(g => { const tn = g.teamId === 'home' ? state.homeTeam.shortName : state.awayTeam.shortName; report += `- ${g.minute}': ${g.description.replace(/⚽/g,'').trim()} (${tn})\n`; }); }
+  navigator.clipboard.writeText(report).then(() => addToast('Copiado', 'Relatório copiado!', 'success')).catch(() => addToast('Erro', 'Não foi possível copiar.', 'error'));
+}
+
+// Função para mostrar modal de confirmação de reset
+function showResetConfirmModal() {
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-6 backdrop-blur-xl animate-fade-in';
+  modal.innerHTML = `<div class="bg-slate-900 p-10 rounded-[2.5rem] border border-white/10 text-center"><h3 class="text-2xl font-black mb-2 uppercase text-white">Nova Partida?</h3><p class="text-slate-400 text-sm mb-6">Todos os dados serão apagados.</p><div class="flex gap-4"><button id="confirmResetBtn" class="flex-1 bg-red-600 text-white py-4 rounded-2xl font-black text-xs uppercase">Confirmar</button><button id="cancelResetBtn" class="flex-1 bg-slate-800 text-white py-4 rounded-2xl font-black text-xs uppercase">Cancelar</button></div></div>`;
+  document.body.appendChild(modal);
+  modal.querySelector('#confirmResetBtn').addEventListener('click', () => { matchState.handleReset(); addToast('Resetado', 'Dados zerados.', 'info'); render(); modal.remove(); });
+  modal.querySelector('#cancelResetBtn').addEventListener('click', () => modal.remove());
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+}
+
+// Função para mostrar modal de fim de jogo
+function showEndGameModal() {
+  const modal = document.createElement('div');
+  modal.className = 'fixed inset-0 bg-black/95 z-[100] flex items-center justify-center p-4 animate-fade-in';
+  modal.innerHTML = `<div class="bg-slate-800 p-6 rounded-[2rem] max-w-sm w-full text-center shadow-2xl text-white"><h3 class="text-lg font-black mb-1 uppercase">Próximo Passo</h3><p class="text-xs text-slate-400 mb-6">Tempo regulamentar acabou.</p><div class="flex flex-col gap-3"><button id="finishGameBtn" class="w-full bg-slate-700 py-4 rounded-xl font-black text-xs uppercase">🏁 Encerrar Jogo</button><div class="flex gap-3"><button id="extraTimeBtn" class="flex-1 bg-blue-600 py-4 rounded-xl font-black text-xs uppercase">➕ Prorrogação</button><button id="penaltiesBtn" class="flex-1 bg-indigo-600 py-4 rounded-xl font-black text-xs uppercase">⚠️ Pênaltis</button></div><button id="cancelEndGameBtn" class="mt-2 text-slate-500 text-xs font-bold underline">Cancelar</button></div></div>`;
+  document.body.appendChild(modal);
+  modal.querySelector('#finishGameBtn').addEventListener('click', () => { matchState.handleFinalizeMatch(); addToast('Finalizado', 'Jogo encerrado.', 'success'); render(); modal.remove(); });
+  modal.querySelector('#extraTimeBtn').addEventListener('click', () => { matchState.advancePeriod('1ET'); addToast('Prorrogação', 'Início da prorrogação.', 'info'); render(); modal.remove(); });
+  modal.querySelector('#penaltiesBtn').addEventListener('click', () => { matchState.advancePeriod('PENALTIES'); addToast('Pênaltis', 'Disputa iniciada.', 'info'); render(); modal.remove(); });
+  modal.querySelector('#cancelEndGameBtn').addEventListener('click', () => modal.remove());
+  modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+}
+
+// Exportar funções para uso global
+window.showTeamEditModal = showTeamEditModal;
+window.showPlayerEditModal = showPlayerEditModal;
+window.showCoachEditModal = showCoachEditModal;
+window.showImportListModal = showImportListModal;
+window.showMatchSetupModal = showMatchSetupModal;
+window.importBackup = importBackup;
+window.copyMatchReport = copyMatchReport;
+window.showResetConfirmModal = showResetConfirmModal;
+window.showEndGameModal = showEndGameModal;
+
 // Inicialização
 document.addEventListener('DOMContentLoaded', () => {
   render();
-  
-  // Listener para mudanças de estado
-  matchState.subscribe(() => {
-    render();
-  });
+  matchState.subscribe(() => { render(); });
 });
