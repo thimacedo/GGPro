@@ -63,9 +63,15 @@ export const PreMatchSetupContent = (state) => {
         <div class="card" style="padding: 1.5rem; background: rgba(255,255,255,0.03);">
             <h4 style="font-size: 0.625rem; font-weight: 900; color: var(--slate-400); margin-bottom: 1rem; text-transform: uppercase;">DETALHES DO JOGO</h4>
             <div style="display: flex; flex-direction: column; gap: 1rem;">
-                <div class="input-group">
-                    <label class="input-label">Competição</label>
-                    <input type="text" id="setup-competition" value="${state.competition}" class="text-input" placeholder="Ex: Premier League">
+                <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1rem;">
+                    <div class="input-group">
+                        <label class="input-label">Competição</label>
+                        <input type="text" id="setup-competition" value="${state.competition}" class="text-input" placeholder="Ex: Premier League">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Data</label>
+                        <input type="date" id="setup-date" value="${state.matchDate}" class="text-input">
+                    </div>
                 </div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                     <div class="input-group">
@@ -76,6 +82,24 @@ export const PreMatchSetupContent = (state) => {
                         <label class="input-label">Árbitro</label>
                         <input type="text" id="setup-referee" value="${state.referee || ''}" class="text-input" placeholder="Ex: Mike Dean">
                     </div>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Observações</label>
+                    <textarea id="setup-observations" class="text-input" style="height: 60px; font-size: 0.75rem; resize: none;">${state.observations || ''}</textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="padding: 1.5rem; background: rgba(255,255,255,0.03);">
+            <h4 style="font-size: 0.625rem; font-weight: 900; color: var(--slate-400); margin-bottom: 1rem; text-transform: uppercase;">REGRAS DA PARTIDA</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="input-group">
+                    <label class="input-label">Tempo (min)</label>
+                    <input type="number" id="rules-duration" value="${state.rules.halfDuration}" class="text-input">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Limite de Subs</label>
+                    <input type="number" id="rules-subs" value="${state.rules.maxSubstitutions}" class="text-input">
                 </div>
             </div>
         </div>
@@ -129,6 +153,10 @@ export const EditTeamContent = (team) => {
         <div class="input-group">
             <label class="input-label">SIGLA (BANCADA)</label>
             <input type="text" id="edit-team-short" value="${team.shortName}" maxLength="3" class="text-input" style="text-transform: uppercase;">
+        </div>
+        <div class="input-group">
+            <label class="input-label">TREINADOR</label>
+            <input type="text" id="edit-team-coach" value="${team.coach || ''}" class="text-input">
         </div>
 
         <div style="background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 1.5rem; border: 1px solid rgba(255,255,255,0.05);">

@@ -6,7 +6,7 @@ import { Modal, PreMatchSetupContent, EditPlayerContent, EditTeamContent, EndGam
 import { formatDuration, generateId } from './utils.js';
 import { toasts } from './components/Toasts.js';
 import { voice } from './services/voice.js';
-import { parseMatchBannerFromImage, parsePlayersFromImage, parsePlayersFromText, generateMatchReport } from './services/gemini.js';
+import { parseMatchBannerFromImage, parsePlayersFromImage, parsePlayersFromText, parseRegulationDocument, generateMatchReport } from './services/gemini.js';
 
 class App {
   constructor() {
@@ -179,8 +179,26 @@ class App {
   }
 
   async handleRegulationUpload(event) {
-    alert("Funcionalidade de regulamento (PDF/Imagem) integrada ao motor de IA.");
-    // Implementação similar ao banner, chamando parseRegulationDocument
+    const file = event.target.files[0];
+    if (!file) return;
+
+    toasts.show("IA", "Analisando regulamento...", "info");
+    
+    try {
+      const base64 = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.readAsDataURL(file);
+      });
+
+      const rules = await parseRegulationDocument(base64, file.type);
+      
+      store.setState({ rules });
+      toasts.show("IA: Sucesso", `Regulamento aplicado: ${rules.halfDuration}min por tempo.`, "success");
+      this.openSetup();
+    } catch (e) {
+      toasts.show("Erro", "IA falhou ao ler regulamento.", "error");
+    }
   }
 
   // --- TACTICAL DRAG & DROP ---
@@ -288,6 +306,16 @@ class App {
   }
 
   // --- AÇÕES DO JOGADOR ---
+  showAIAnswer(text) {
+    this.activeModal = () => Modal(`
+        <div class="card" style="background: rgba(30, 41, 59, 0.5); padding: 1.5rem; border-radius: 1rem; color: var(--slate-200); line-height: 1.6; font-size: 0.875rem;">
+            ${text}
+        </div>
+        <button onclick="app.closeModal()" class="btn-submit" style="margin-top: 1.5rem; background: var(--slate-800);">ENTENDIDO</button>
+    `, "Rádio-Controle (IA)");
+    this.render(store.getState());
+  }
+
   openPlayerActions(playerId, teamId) {
     const state = store.getState();
     const team = teamId === 'home' ? state.homeTeam : state.awayTeam;
@@ -381,14 +409,15 @@ class App {
     const name = document.getElementById('edit-team-name').value;
     const short = document.getElementById('edit-team-short').value.toUpperCase();
     const color = document.getElementById('edit-team-color').value;
+    const coach = document.getElementById('edit-team-coach').value;
 
     store.saveToHistory();
     store.setState(prev => {
       const teamKey = teamId === 'home' ? 'homeTeam' : 'awayTeam';
-      return { ...prev, [teamKey]: { ...prev[teamKey], name, shortName: short, color } };
+      return { ...prev, [teamKey]: { ...prev[teamKey], name, shortName: short, color, coach } };
     });
 
-    toasts.show("Equipe Atualizada", `${short} agora está com as novas cores.`, "success");
+    toasts.show("Equipe Atualizada", `${short} agora está sob comando de ${coach || 'Técnico'}.`, "success");
     this.closeModal();
   }
 
@@ -492,16 +521,24 @@ class App {
   }
 
   saveSetup() {
+    const state = store.getState();
     const comp = document.getElementById('setup-competition').value;
     const ref = document.getElementById('setup-referee').value;
     const stad = document.getElementById('setup-stadium').value;
+    const date = document.getElementById('setup-date').value;
+    const obs = document.getElementById('setup-observations').value;
+    const halfDuration = parseInt(document.getElementById('rules-duration').value) || 45;
+    const maxSubstitutions = parseInt(document.getElementById('rules-subs').value) || 5;
 
     store.setState({
       competition: comp,
       referee: ref,
-      stadium: stad
+      stadium: stad,
+      matchDate: date,
+      observations: obs,
+      rules: { ...state.rules, halfDuration, maxSubstitutions }
     });
-    toasts.show("Súmula", "Configurações salvas.", "success");
+    toasts.show("Súmula", "Configurações profissionais salvas.", "success");
     this.closeModal();
   }
 
@@ -534,11 +571,27 @@ class App {
       period: 'PENALTIES', 
       timeElapsed: 0, 
       timerStartedAt: null, 
-      isPaused: true 
+      isPaused: true,
+      penaltyScore: { home: 0, away: 0 },
+      penaltySequence: []
     });
     this.addEvent('PERIOD_START', 'none', 'Início da Disputa de Pênaltis');
     toasts.show("Pênaltis", "A decisão será nas penalidades!", "warning");
     this.closeModal();
+  }
+
+  handlePenaltyShot(teamId, success) {
+    store.saveToHistory();
+    store.setState(prev => {
+        const newScore = { ...prev.penaltyScore };
+        if (success) newScore[teamId]++;
+        
+        const newSequence = [...(prev.penaltySequence || []), { teamId, success, timestamp: Date.now() }];
+        
+        return { ...prev, penaltyScore: newScore, penaltySequence: newSequence };
+    });
+    
+    toasts.show("Pênaltis", success ? "GOL!" : "PERDEU!", success ? "success" : "error");
   }
 
   closeModal() {
@@ -595,6 +648,14 @@ class App {
           totalMs += (Date.now() - state.timerStartedAt);
         }
         display.innerText = formatDuration(totalMs);
+        
+        // Alerta de Fim de Tempo
+        const currentMin = Math.floor(totalMs / 60000);
+        if (!state.isPaused && currentMin >= state.rules.halfDuration && !this._timeAlerted) {
+          toasts.show("Fim do Tempo", `Atingidos os ${state.rules.halfDuration} minutos regulamentares.`, "warning");
+          this._timeAlerted = true;
+        }
+        if (currentMin < state.rules.halfDuration) this._timeAlerted = false;
       }
     }, 200);
   }
@@ -671,6 +732,14 @@ class App {
       // --- LÓGICA DE NEGÓCIO POR TIPO DE EVENTO ---
       if (type === 'SUBSTITUTION' || type === 'CONCUSSION_SUBSTITUTION') {
         const team = { ...prev[teamKey] };
+        
+        // Validação de Limite de Subs
+        const subsCount = prev.events.filter(e => e.teamId === teamId && e.type === 'SUBSTITUTION' && !e.isAnnulled).length;
+        if (subsCount >= prev.rules.maxSubstitutions && type === 'SUBSTITUTION') {
+            toasts.show("Limite Excedido", `O ${team.shortName} já realizou as ${prev.rules.maxSubstitutions} substituições permitidas.`, "error");
+            // Permitimos continuar (o narrador manda), mas avisamos.
+        }
+
         const playerOut = team.players.find(p => p.id === playerId);
         const playerIn = team.players.find(p => p.id === relatedPlayerId);
 
@@ -737,6 +806,15 @@ class App {
         });
         newState[teamKey] = { ...team, players: updatedPlayers };
         toasts.show("Novo Goleiro", `${team.players.find(p => p.id === playerId).name} assumiu a meta.`, "info");
+      }
+
+      // Verificação Final: Time sem Goleiro
+      const teamAfter = newState[teamKey];
+      if (teamAfter && teamAfter.id !== 'none') {
+        const hasGK = teamAfter.players.some(p => p.isStarter && p.position === 'GK');
+        if (!hasGK && (type === 'RED_CARD' || type === 'SUBSTITUTION' || type === 'SET_GOALKEEPER')) {
+            toasts.show("⚠️ TIME SEM GOLEIRO", `O ${teamAfter.shortName} está sem goleiro em campo!`, "warning");
+        }
       }
 
       newState.events = [newEvent, ...prev.events];

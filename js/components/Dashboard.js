@@ -36,6 +36,52 @@ export const Dashboard = (state, viewMode = 'list') => {
     `;
   };
 
+  if (state.period === 'PENALTIES') {
+    const sequence = state.penaltySequence || [];
+    const renderDots = (teamId) => sequence
+        .filter(s => s.teamId === teamId)
+        .map(s => `<div style="width: 0.75rem; height: 0.75rem; border-radius: 50%; background: ${s.success ? 'var(--emerald-500)' : 'var(--red-500)'}; box-shadow: 0 0 10px ${s.success ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)'}"></div>`)
+        .join('');
+
+    return `
+      <div class="animate-in fade-in slide-in-from-bottom duration-700" style="max-width: 48rem; margin: 0 auto; width: 100%; padding: 2rem 1rem;">
+        <div class="card" style="padding: 2.5rem; border: 2px solid var(--indigo-600); background: linear-gradient(180deg, rgba(79, 70, 229, 0.1) 0%, transparent 100%); position: relative; overflow: hidden;">
+            <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: var(--indigo-600);"></div>
+            <h2 style="text-align: center; font-weight: 950; color: white; margin-bottom: 2rem; text-transform: uppercase; letter-spacing: 0.2em; font-size: 0.75rem; opacity: 0.8;">Disputa de Pênaltis</h2>
+            
+            <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 3rem; align-items: center; margin-bottom: 3rem;">
+                <div style="text-align: right;">
+                    <div style="font-size: 1.25rem; font-weight: 900; color: ${state.homeTeam.color}; margin-bottom: 0.5rem;">${state.homeTeam.shortName}</div>
+                    <div style="font-size: 4.5rem; font-weight: 950; color: white; line-height: 1; letter-spacing: -0.05em;">${state.penaltyScore.home}</div>
+                    <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.25rem;">${renderDots('home')}</div>
+                </div>
+                
+                <div style="font-size: 1.5rem; font-weight: 900; color: var(--slate-700); font-style: italic;">VS</div>
+                
+                <div style="text-align: left;">
+                    <div style="font-size: 1.25rem; font-weight: 900; color: ${state.awayTeam.color}; margin-bottom: 0.5rem;">${state.awayTeam.shortName}</div>
+                    <div style="font-size: 4.5rem; font-weight: 950; color: white; line-height: 1; letter-spacing: -0.05em;">${state.penaltyScore.away}</div>
+                    <div style="display: flex; gap: 0.5rem; justify-content: flex-start; margin-top: 1.25rem;">${renderDots('away')}</div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <button onclick="app.handlePenaltyShot('home', true)" class="btn-submit" style="background: var(--emerald-600); font-size: 0.75rem;">GOL MANDANTE</button>
+                    <button onclick="app.handlePenaltyShot('home', false)" class="btn-submit" style="background: var(--red-600); font-size: 0.75rem;">ERRO MANDANTE</button>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <button onclick="app.handlePenaltyShot('away', true)" class="btn-submit" style="background: var(--emerald-600); font-size: 0.75rem;">GOL VISITANTE</button>
+                    <button onclick="app.handlePenaltyShot('away', false)" class="btn-submit" style="background: var(--red-600); font-size: 0.75rem;">ERRO VISITANTE</button>
+                </div>
+            </div>
+
+            <button onclick="app.finishMatch()" class="btn-submit" style="margin-top: 2rem; background: var(--slate-800); font-size: 0.625rem; opacity: 0.5;">ENCERRAR DISPUTA</button>
+        </div>
+      </div>
+    `;
+  }
+
   return `
     <div class="dashboard-grid">
         <div class="view-panel">
@@ -55,12 +101,14 @@ export const Dashboard = (state, viewMode = 'list') => {
                             <div>
                                 <div onclick="app.editTeam('home')" style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color); margin-bottom: 0.5rem; cursor: pointer; hover: opacity-80;">
                                     <h4 style="font-size: 0.625rem; font-weight: 900; text-transform: uppercase; text-align: center; color: ${state.homeTeam.color}">${state.homeTeam.name}</h4>
+                                    ${state.homeTeam.coach ? `<div style="font-size: 0.5rem; color: var(--slate-500); text-align: center; margin-top: 0.25rem;">TÉC: ${state.homeTeam.coach}</div>` : ''}
                                 </div>
                                 ${renderPlayerList(state.homeTeam)}
                             </div>
                             <div>
                                 <div onclick="app.editTeam('away')" style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color); margin-bottom: 0.5rem; cursor: pointer; hover: opacity-80;">
                                     <h4 style="font-size: 0.625rem; font-weight: 900; text-transform: uppercase; text-align: center; color: ${state.awayTeam.color}">${state.awayTeam.name}</h4>
+                                    ${state.awayTeam.coach ? `<div style="font-size: 0.5rem; color: var(--slate-500); text-align: center; margin-top: 0.25rem;">TÉC: ${state.awayTeam.coach}</div>` : ''}
                                 </div>
                                 ${renderPlayerList(state.awayTeam)}
                             </div>
@@ -80,7 +128,7 @@ export const Dashboard = (state, viewMode = 'list') => {
                     </div>
                 </div>
                 <div class="custom-scrollbar" style="flex: 1; overflow-y: auto; padding: 1.5rem;">
-                    ${state.events.length === 0 ? '<div style="text-align: center; padding: 2.5rem 0; font-size: 0.75rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: var(--slate-500); opacity: 0.3;">Sem Eventos</div>' : ''}
+                    ${state.events.length === 0 ? '<div style="text-align: center; padding: 2.5rem 0; font-size: 0.75rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: var(--slate-500); opacity: 0.3;">Sem Eventos</div>' : state.events.map(renderEvent).join('')}
                 </div>
                 ${state.period !== 'FINISHED' && state.events.length > 0 ? `
                   <div style="padding: 1rem; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.2);">
