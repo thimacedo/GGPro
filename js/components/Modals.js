@@ -42,24 +42,46 @@ export const PreMatchSetupContent = (state) => {
         </div>
     </div>
     
-    <div style="display: flex; flex-direction: column; gap: 1.25rem;">
-        <div class="input-group">
-            <label class="input-label">Competição</label>
-            <input type="text" id="setup-competition" placeholder="Ex: Premier League" value="${state.competition}" class="text-input">
-        </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem;">
-            <div class="input-group">
-                <label class="input-label">Estádio</label>
-                <input type="text" id="setup-stadium" placeholder="Ex: Anfield" value="${state.stadium}" class="text-input">
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <div class="card" style="padding: 1.25rem; background: rgba(255,255,255,0.03);">
+                <h4 style="font-size: 0.625rem; font-weight: 900; color: ${state.homeTeam.color}; margin-bottom: 1rem; text-transform: uppercase;">MANDANTE</h4>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <button onclick="app.editTeam('home')" class="btn-submit" style="padding: 0.625rem; font-size: 0.5625rem; background: var(--slate-800); color: var(--slate-300);">EDITAR TIME</button>
+                    <button onclick="app.openImportModal('home')" class="btn-submit" style="padding: 0.625rem; font-size: 0.5625rem; background: var(--blue-600);">IMPORTAR ATLETAS</button>
+                </div>
             </div>
-            <div class="input-group">
-                <label class="input-label">Árbitro</label>
-                <input type="text" id="setup-referee" placeholder="Ex: Mike Dean" value="${state.referee || ''}" class="text-input">
+            <div class="card" style="padding: 1.25rem; background: rgba(255,255,255,0.03);">
+                <h4 style="font-size: 0.625rem; font-weight: 900; color: ${state.awayTeam.color}; margin-bottom: 1rem; text-transform: uppercase;">VISITANTE</h4>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                    <button onclick="app.editTeam('away')" class="btn-submit" style="padding: 0.625rem; font-size: 0.5625rem; background: var(--slate-800); color: var(--slate-300);">EDITAR TIME</button>
+                    <button onclick="app.openImportModal('away')" class="btn-submit" style="padding: 0.625rem; font-size: 0.5625rem; background: var(--blue-600);">IMPORTAR ATLETAS</button>
+                </div>
             </div>
         </div>
         
-        <button onclick="app.saveSetup()" class="btn-submit">
-            <i data-lucide="check" style="width: 1.125rem; height: 1.125rem; vertical-align: middle; margin-right: 0.5rem;"></i> CONFIRMAR E INICIAR
+        <div class="card" style="padding: 1.5rem; background: rgba(255,255,255,0.03);">
+            <h4 style="font-size: 0.625rem; font-weight: 900; color: var(--slate-400); margin-bottom: 1rem; text-transform: uppercase;">DETALHES DO JOGO</h4>
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                <div class="input-group">
+                    <label class="input-label">Competição</label>
+                    <input type="text" id="setup-competition" value="${state.competition}" class="text-input" placeholder="Ex: Premier League">
+                </div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div class="input-group">
+                        <label class="input-label">Estádio</label>
+                        <input type="text" id="setup-stadium" value="${state.stadium}" class="text-input" placeholder="Ex: Anfield">
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Árbitro</label>
+                        <input type="text" id="setup-referee" value="${state.referee || ''}" class="text-input" placeholder="Ex: Mike Dean">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <button onclick="app.saveSetup()" class="btn-submit" style="padding: 1.25rem; font-size: 0.875rem; background: var(--emerald-600);">
+            <i data-lucide="check" style="width: 1rem; height: 1rem; vertical-align: middle; margin-right: 0.5rem;"></i> CONFIRMAR E INICIAR JOGO
         </button>
     </div>
   `;

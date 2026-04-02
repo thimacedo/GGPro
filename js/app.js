@@ -6,7 +6,7 @@ import { Modal, PreMatchSetupContent, EditPlayerContent, EditTeamContent, EndGam
 import { formatDuration, generateId } from './utils.js';
 import { toasts } from './components/Toasts.js';
 import { voice } from './services/voice.js';
-import { parseMatchBannerFromImage, generateMatchReport } from './services/gemini.js';
+import { parseMatchBannerFromImage, parsePlayersFromImage, parsePlayersFromText, generateMatchReport } from './services/gemini.js';
 
 class App {
   constructor() {
@@ -186,8 +186,14 @@ class App {
   // --- TACTICAL DRAG & DROP ---
   handlePlayerDragStart(e, teamId, playerId) {
     if (e.type === 'mousedown' && e.button !== 0) return;
-    e.stopPropagation();
-    this.draggingPlayer = { teamId, playerId };
+    
+    this.draggingPlayer = { 
+      teamId, 
+      playerId, 
+      startX: e.touches ? e.touches[0].clientX : e.clientX, 
+      startY: e.touches ? e.touches[0].clientY : e.clientY,
+      hasMoved: false 
+    };
     
     window.addEventListener('mousemove', this.handlePlayerDragBound);
     window.addEventListener('mouseup', this.handlePlayerDragEndBound);
@@ -198,21 +204,26 @@ class App {
   handlePlayerDrag(e) {
     if (!this.draggingPlayer) return;
     
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    
+    // Pequena margem de movimento para considerar arrasto
+    const dist = Math.hypot(clientX - this.draggingPlayer.startX, clientY - this.draggingPlayer.startY);
+    if (!this.draggingPlayer.hasMoved && dist < 5) return;
+    
+    this.draggingPlayer.hasMoved = true;
+    if (e.cancelable) e.preventDefault(); 
+
     const field = document.getElementById('tactical-field');
     if (!field) return;
 
     const rect = field.getBoundingClientRect();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
     let x = ((clientX - rect.left) / rect.width) * 100;
     let y = ((clientY - rect.top) / rect.height) * 100;
 
-    // Constrain to field bounds
     x = Math.max(2, Math.min(98, x));
     y = Math.max(2, Math.min(98, y));
 
-    // Normalize for team side
     const isHome = this.draggingPlayer.teamId === 'home';
     const finalX = isHome ? x : (100 - x);
     const finalY = isHome ? y : (100 - y);
@@ -220,7 +231,9 @@ class App {
     this.updatePlayerPosition(this.draggingPlayer.teamId, this.draggingPlayer.playerId, finalX, finalY);
   }
 
-  handlePlayerDragEnd() {
+  handlePlayerDragEnd(e) {
+    // Se não se moveu significativamente, o evento de 'click' natural do navegador cuidará do openPlayerActions
+    // mas precisamos limpar os listeners
     this.draggingPlayer = null;
     window.removeEventListener('mousemove', this.handlePlayerDragBound);
     window.removeEventListener('mouseup', this.handlePlayerDragEndBound);
@@ -393,8 +406,89 @@ class App {
   }
 
   openSetup() {
-    this.activeModal = (state) => Modal(PreMatchSetupContent(state), "Configurar Partida");
+    this.activeModal = (state) => Modal(PreMatchSetupContent(state), "Ajustes da Partida");
     this.render(store.getState());
+  }
+
+  openImportModal(teamId) {
+    this.activeModal = () => Modal(ImportListContent(teamId), "Importar Atletas");
+    this.render(store.getState());
+  }
+
+  async processImport(teamId, text) {
+    if (!text.trim()) {
+      toasts.show("Aviso", "Cole o texto da súmula primeiro.", "warning");
+      return;
+    }
+    
+    toasts.show("IA", "Analisando lista de jogadores...", "info");
+    
+    try {
+      const { players } = await parsePlayersFromText(text);
+      this.applyImportedPlayers(teamId, players);
+    } catch (e) {
+      toasts.show("Erro", "Falha ao processar texto.", "error");
+    }
+  }
+
+  async handlePlayerImageUpload(event, teamId) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    toasts.show("IA", "Lendo imagem da súmula...", "info");
+    
+    try {
+      const base64 = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.readAsDataURL(file);
+      });
+
+      const data = await parsePlayersFromImage(base64);
+      
+      // A IA pode retornar vários formatos, pegamos o primeiro time se houver
+      const players = data.teams?.[0]?.players || data.players || [];
+      if (players.length === 0) throw new Error("Nenhum jogador encontrado.");
+      
+      this.applyImportedPlayers(teamId, players);
+    } catch (e) {
+      console.error(e);
+      toasts.show("Erro", "IA falhou ao ler a imagem.", "error");
+    }
+  }
+
+  applyImportedPlayers(teamId, players) {
+    const teamKey = teamId === 'home' ? 'homeTeam' : 'awayTeam';
+    const state = store.getState();
+    const team = { ...state[teamKey] };
+    
+    const positionedPlayers = players.map((p, idx) => {
+      let x = 50, y = 50;
+      const isGK = p.position === 'GK' || p.name.toLowerCase().includes('rossi') || p.number === 1;
+      
+      if (isGK) { 
+        x = 8; y = 50; 
+      } else if (p.isStarter || idx < 11) {
+        // Distribuição básica para evitar sobreposição total
+        x = p.position === 'DF' ? 25 : p.position === 'MF' ? 50 : 75;
+        y = 15 + ((idx % 7) * 12); 
+      }
+
+      return {
+        id: generateId(),
+        name: p.name,
+        number: parseInt(p.number) || (idx + 1),
+        position: p.position || (isGK ? 'GK' : 'MF'),
+        isStarter: p.isStarter !== undefined ? p.isStarter : idx < 11,
+        x, y,
+        events: [],
+        hasLeftGame: false
+      };
+    });
+
+    store.setState({ [teamKey]: { ...team, players: positionedPlayers } });
+    toasts.show("Sucesso", `${positionedPlayers.length} atletas carregados!`, "success");
+    this.openSetup();
   }
 
   saveSetup() {
@@ -405,9 +499,9 @@ class App {
     store.setState({
       competition: comp,
       referee: ref,
-      stadium: stad,
-      period: '1T'
+      stadium: stad
     });
+    toasts.show("Súmula", "Configurações salvas.", "success");
     this.closeModal();
   }
 
