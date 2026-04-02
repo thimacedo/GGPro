@@ -21,8 +21,18 @@ class App {
     // Bind handlers for drag/drop to access 'this'
     this.handlePlayerDragBound = this.handlePlayerDrag.bind(this);
     this.handlePlayerDragEndBound = this.handlePlayerDragEnd.bind(this);
+    this.isLightMode = localStorage.getItem('THEME') === 'light';
+    if (this.isLightMode) document.body.classList.add('light-mode');
     
     this.init();
+  }
+
+  toggleTheme() {
+    this.isLightMode = !this.isLightMode;
+    document.body.classList.toggle('light-mode', this.isLightMode);
+    localStorage.setItem('THEME', this.isLightMode ? 'light' : 'dark');
+    toasts.show("Tema Alterado", `Modo ${this.isLightMode ? 'Claro' : 'Escuro'} ativado.`, "info");
+    this.render(store.getState());
   }
 
   init() {
@@ -606,12 +616,33 @@ class App {
         }
       }
 
-      else if (type === 'RED_CARD' && playerId) {
+      else if (type === 'GK_8_SECONDS') {
+        const otherTeamKey = teamId === 'home' ? 'awayTeam' : 'homeTeam';
+        const otherTeamId = teamId === 'home' ? 'away' : 'home';
+        
+        const cornerEvent = {
+          id: generateId(),
+          type: 'CORNER',
+          teamId: otherTeamId,
+          minute: minute,
+          timestamp: now + 1,
+          description: `ESCANTEIO (Infração 8s GK): ${otherTeamId === 'home' ? prev.homeTeam.shortName : prev.awayTeam.shortName}`,
+          isAnnulled: false
+        };
+        newState.events = [cornerEvent, newEvent, ...prev.events];
+        toasts.show("Infração 8s", "Goleiro excedeu tempo. Escanteio para o adversário.", "warning");
+        return newState;
+      }
+
+      else if (type === 'SET_GOALKEEPER' && playerId) {
         const team = { ...prev[teamKey] };
-        const updatedPlayers = team.players.map(p => 
-          p.id === playerId ? { ...p, isStarter: false, hasLeftGame: true } : p
-        );
+        const updatedPlayers = team.players.map(p => {
+          if (p.id === playerId) return { ...p, position: 'GK' };
+          if (p.position === 'GK' && p.isStarter) return { ...p, position: 'MF' }; // Antigo vira linha
+          return p;
+        });
         newState[teamKey] = { ...team, players: updatedPlayers };
+        toasts.show("Novo Goleiro", `${team.players.find(p => p.id === playerId).name} assumiu a meta.`, "info");
       }
 
       newState.events = [newEvent, ...prev.events];

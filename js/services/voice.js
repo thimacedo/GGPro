@@ -1,5 +1,6 @@
 import { processVoiceCommand } from './gemini.js';
 import store from '../state.js';
+import { toasts } from '../components/Toasts.js';
 
 class VoiceController {
   constructor() {
@@ -84,11 +85,11 @@ class VoiceController {
         }
 
         // Envia para o app sem informar minuto, deixando o app decidir com base no timer
-        window.app.addEvent(res.type, teamId, description);
+        window.app.addEvent(res.type, teamId, description, p ? p.id : null);
       }
     } catch (e) {
       console.error("Narração falhou:", e);
-      alert("IA: Falha ao interpretar comando.");
+      toasts.show("Erro de IA", "Falha ao interpretar comando de rádio.", "error");
     } finally {
       this.isProcessing = false;
       window.app.render(store.getState());

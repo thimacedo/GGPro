@@ -15,6 +15,11 @@ export const Header = (state) => {
 
   return `
     <header class="app-header">
+      <div style="position: absolute; left: 1rem; top: 0.5rem; z-index: 60;">
+        <button onclick="app.toggleTheme()" style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 0.75rem; padding: 0.4rem; cursor: pointer; color: var(--slate-400);">
+          <i data-lucide="${app.isLightMode ? 'moon' : 'sun'}" style="width: 1rem; height: 1rem;"></i>
+        </button>
+      </div>
       <div class="top-bar">
         <!-- HOME TEAM -->
         <div class="team-info home">
