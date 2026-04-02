@@ -4,6 +4,7 @@ class StateManager {
   constructor(initialState) {
     this.state = JSON.parse(JSON.stringify(initialState));
     this.listeners = [];
+    this.history = []; // Pilha de estados para desfazer/VAR
     this._loadBackup();
   }
 
@@ -19,6 +20,21 @@ class StateManager {
     }
     this._persist();
     this._notify();
+  }
+
+  saveToHistory() {
+    this.history.push(JSON.parse(JSON.stringify(this.state)));
+    if (this.history.length > 20) this.history.shift();
+  }
+
+  undo() {
+    if (this.history.length > 0) {
+      this.state = this.history.pop();
+      this._persist();
+      this._notify();
+      return true;
+    }
+    return false;
   }
 
   subscribe(listener) {
@@ -52,6 +68,7 @@ class StateManager {
 
   reset() {
     localStorage.removeItem('MATCH_STATE_BACKUP');
+    this.history = [];
     this.state = JSON.parse(JSON.stringify(INITIAL_MATCH_STATE));
     this._notify();
   }

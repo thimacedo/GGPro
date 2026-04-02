@@ -97,5 +97,6 @@ export const INITIAL_MATCH_STATE = {
   observations: '',
   penaltyScore: { home: 0, away: 0 },
   penaltySequence: [],
+  penaltyStarter: 'home', // 'home' ou 'away'
   rules: { ...DEFAULT_RULES }
 };

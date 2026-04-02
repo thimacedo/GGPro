@@ -39,8 +39,8 @@ export const Header = (state) => {
               </button>
            </div>
            <div id="timer-display" class="timer-text font-black tracking-tighter">00:00</div>
-            <button onclick="app.nextPeriod()" style="background: transparent; border: none; cursor: pointer; color: var(--slate-500); font-size: 0.5rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; display: flex; align-items: center; gap: 0.25rem; margin-top: 0.25rem;">
-               ${state.period === '2T' ? 'ENCERRAR' : state.period === 'FINISHED' ? 'REINICIAR' : 'PRÓXIMO'} 
+            <button onclick="${state.period === '2T' ? 'app.openEndGameOptions()' : 'app.nextPeriod()'}" style="background: transparent; border: none; cursor: pointer; color: var(--slate-500); font-size: 0.5rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; display: flex; align-items: center; gap: 0.25rem; margin-top: 0.25rem;">
+               ${state.period === '2T' ? 'FIM REGL.' : state.period === 'FINISHED' ? 'REINICIAR' : 'PRÓXIMO'} 
                <i data-lucide="${state.period === 'FINISHED' ? 'rotate-ccw' : 'chevron-right'}" style="width: 0.5rem; height: 0.5rem;"></i>
             </button>
         </div>

@@ -53,14 +53,14 @@ export const Dashboard = (state, viewMode = 'list') => {
                     <div class="card" style="padding: 1.5rem;">
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                             <div>
-                                <div style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color); margin-bottom: 0.5rem;">
-                                    <h4 style="font-size: 0.625rem; font-weight: 900; text-transform: uppercase; text-align: center; color: ${state.homeTeam.color}">${state.homeTeam.shortName}</h4>
+                                <div onclick="app.editTeam('home')" style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color); margin-bottom: 0.5rem; cursor: pointer; hover: opacity-80;">
+                                    <h4 style="font-size: 0.625rem; font-weight: 900; text-transform: uppercase; text-align: center; color: ${state.homeTeam.color}">${state.homeTeam.name}</h4>
                                 </div>
                                 ${renderPlayerList(state.homeTeam)}
                             </div>
                             <div>
-                                <div style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color); margin-bottom: 0.5rem;">
-                                    <h4 style="font-size: 0.625rem; font-weight: 900; text-transform: uppercase; text-align: center; color: ${state.awayTeam.color}">${state.awayTeam.shortName}</h4>
+                                <div onclick="app.editTeam('away')" style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color); margin-bottom: 0.5rem; cursor: pointer; hover: opacity-80;">
+                                    <h4 style="font-size: 0.625rem; font-weight: 900; text-transform: uppercase; text-align: center; color: ${state.awayTeam.color}">${state.awayTeam.name}</h4>
                                 </div>
                                 ${renderPlayerList(state.awayTeam)}
                             </div>
@@ -72,11 +72,12 @@ export const Dashboard = (state, viewMode = 'list') => {
         
         <div class="stats-panel">
             <div class="card" style="height: 100%; min-height: 400px; display: flex; flex-direction: column;">
-                <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-color); background: rgba(255,255,255,0.02); display: flex; justify-content: space-between; align-items: center;">
+                <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-color); background: rgba(255,255,255,0.02); display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
                     <h3 style="font-size: 0.6875rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; color: var(--slate-400); display: flex; align-items: center; gap: 0.5rem;"><i data-lucide="history" style="width: 1rem; height: 1rem;"></i> CRONOLOGIA</h3>
-                    ${state.events.length > 0 ? `
-                        <button onclick="app.undoLastEvent()" style="font-size: 0.5625rem; font-weight: 900; color: var(--slate-500); text-transform: uppercase; background: transparent; border: none; cursor: pointer;">DESFAZER ÚLTIMO</button>
-                    ` : ''}
+                    <div style="display: flex; gap: 1rem;">
+                        <button onclick="app.triggerVAR()" style="font-size: 0.5625rem; font-weight: 900; color: var(--blue-400); text-transform: uppercase; background: transparent; border: none; cursor: pointer;">📺 VAR</button>
+                        <button onclick="app.undoLastEvent()" style="font-size: 0.5625rem; font-weight: 900; color: var(--slate-500); text-transform: uppercase; background: transparent; border: none; cursor: pointer;">DESFAZER</button>
+                    </div>
                 </div>
                 <div class="custom-scrollbar" style="flex: 1; overflow-y: auto; padding: 1.5rem;">
                     ${state.events.length === 0 ? '<div style="text-align: center; padding: 2.5rem 0; font-size: 0.75rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: var(--slate-500); opacity: 0.3;">Sem Eventos</div>' : ''}

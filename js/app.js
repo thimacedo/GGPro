@@ -2,8 +2,9 @@ import store from './state.js';
 import { Header } from './components/Header.js';
 import { Dashboard } from './components/Dashboard.js';
 import { Stats } from './components/Stats.js';
-import { Modal, PreMatchSetupContent } from './components/Modals.js';
+import { Modal, PreMatchSetupContent, EditPlayerContent, EditTeamContent, EndGameOptionsContent } from './components/Modals.js';
 import { formatDuration, generateId } from './utils.js';
+import { toasts } from './components/Toasts.js';
 import { voice } from './services/voice.js';
 import { parseMatchBannerFromImage, generateMatchReport } from './services/gemini.js';
 
@@ -242,24 +243,85 @@ class App {
       const report = await generateMatchReport(context, timeline);
       
       store.setState({ period: 'FINISHED' });
-      
+      toasts.show("Partida Finalizada", "O jogo foi encerrado e a crônica está pronta.", "success");
+
       this.activeModal = (s) => Modal(`
-        <div class="custom-scrollbar" style="max-height: 60vh; overflow-y: auto; color: var(--slate-300); font-size: 0.875rem; line-height: 1.6; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 1rem;">
+        <div class="custom-scrollbar" style="max-height: 50vh; overflow-y: auto; color: var(--slate-300); font-size: 0.875rem; line-height: 1.6; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 1rem;">
           ${report.replace(/\n/g, '<br>')}
         </div>
         <div style="margin-top: 2rem; display: flex; gap: 1rem;">
-          <button onclick="app.closeModal()" class="btn-submit" style="flex: 1; background: var(--slate-800);">FECHAR</button>
+          <button onclick="app.closeModal()" class="btn-submit" style="flex: 1; background: var(--slate-800); box-shadow: none;">FECHAR</button>
           <button onclick="window.print()" class="btn-submit" style="flex: 1;">IMPRIMIR PDF</button>
         </div>
       `, "Crônica da Partida");
       
     } catch (e) {
       console.error("Falha ao gerar crônica:", e);
-      alert("Erro ao gerar crônica via IA.");
+      toasts.show("Erro de IA", "Não foi possível gerar a crônica final.", "error");
     } finally {
       voice.isProcessing = false;
       this.render(store.getState());
     }
+  }
+
+  // --- MODAIS DE EDIÇÃO ---
+  selectPlayer(playerId, teamId) {
+    const state = store.getState();
+    const team = teamId === 'home' ? state.homeTeam : state.awayTeam;
+    const player = team.players.find(p => p.id === playerId);
+    
+    this.activeModal = (s) => Modal(EditPlayerContent(player, team), `Editar Atleta: #${player.number}`);
+    this.render(state);
+  }
+
+  savePlayerEdit(playerId, teamId) {
+    const name = document.getElementById('edit-player-name').value;
+    const num = document.getElementById('edit-player-number').value;
+    const isStarter = document.getElementById('edit-player-starter').checked;
+
+    store.saveToHistory();
+    store.setState(prev => {
+      const teamKey = teamId === 'home' ? 'homeTeam' : 'awayTeam';
+      const players = prev[teamKey].players.map(p => 
+        p.id === playerId ? { ...p, name, number: parseInt(num), isStarter } : p
+      );
+      return { ...prev, [teamKey]: { ...prev[teamKey], players } };
+    });
+
+    toasts.show("Atleta Atualizado", `${name} (#${num}) salvo com sucesso.`, "success");
+    this.closeModal();
+  }
+
+  editTeam(teamId) {
+    const state = store.getState();
+    const team = teamId === 'home' ? state.homeTeam : state.awayTeam;
+    this.activeModal = (s) => Modal(EditTeamContent(team), `Configurar Equipe: ${team.shortName}`);
+    this.render(state);
+  }
+
+  setEditTeamColor(color) {
+    document.getElementById('edit-team-color').value = color;
+    // Update visual selectors
+    document.querySelectorAll('.color-swatch').forEach(btn => {
+      const btnColor = btn.style.backgroundColor;
+      btn.classList.toggle('active', btnColor === color);
+      btn.style.border = btnColor === color ? '3px solid white' : '3px solid transparent';
+    });
+  }
+
+  saveTeamEdit(teamId) {
+    const name = document.getElementById('edit-team-name').value;
+    const short = document.getElementById('edit-team-short').value.toUpperCase();
+    const color = document.getElementById('edit-team-color').value;
+
+    store.saveToHistory();
+    store.setState(prev => {
+      const teamKey = teamId === 'home' ? 'homeTeam' : 'awayTeam';
+      return { ...prev, [teamKey]: { ...prev[teamKey], name, shortName: short, color } };
+    });
+
+    toasts.show("Equipe Atualizada", `${short} agora está com as novas cores.`, "success");
+    this.closeModal();
   }
 
   toggleVoice() {
@@ -299,6 +361,37 @@ class App {
     this.render(store.getState());
   }
 
+  openEndGameOptions() {
+    this.activeModal = () => Modal(EndGameOptionsContent(), "Próximo Passo");
+    this.render(store.getState());
+  }
+
+  startExtraTime() {
+    store.saveToHistory();
+    store.setState({ 
+      period: '1ET', 
+      timeElapsed: 0, 
+      timerStartedAt: null, 
+      isPaused: true 
+    });
+    this.addEvent('PERIOD_START', 'none', 'Início da Prorrogação (1º Tempo Prorr.)');
+    toasts.show("Prorrogação", "Partida avançada para o tempo extra.", "info");
+    this.closeModal();
+  }
+
+  startPenalties() {
+    store.saveToHistory();
+    store.setState({ 
+      period: 'PENALTIES', 
+      timeElapsed: 0, 
+      timerStartedAt: null, 
+      isPaused: true 
+    });
+    this.addEvent('PERIOD_START', 'none', 'Início da Disputa de Pênaltis');
+    toasts.show("Pênaltis", "A decisão será nas penalidades!", "warning");
+    this.closeModal();
+  }
+
   closeModal() {
     this.activeModal = null;
     this.render(store.getState());
@@ -312,11 +405,26 @@ class App {
   togglePlayPause() {
     const state = store.getState();
     const now = Date.now();
+    
     if (state.isPaused) {
-      store.setState({
+      let newState = {
         isPaused: false,
-        timerStartedAt: now
-      });
+        timerStartedAt: now,
+        startTime: state.startTime || now
+      };
+
+      // Início automático de períodos se pausado no início
+      if (state.period === 'PRE_MATCH') {
+        newState.period = '1T';
+        newState.timeElapsed = 0;
+        this.addEvent('PERIOD_START', 'none', 'Início de Jogo (1º Tempo)');
+      } else if (state.period === 'INTERVAL') {
+        newState.period = '2T';
+        newState.timeElapsed = 0;
+        this.addEvent('PERIOD_START', 'none', 'Recomeço de Jogo (2º Tempo)');
+      }
+
+      store.setState(newState);
     } else {
       const elapsed = state.timeElapsed + (now - (state.timerStartedAt || now));
       store.setState({
@@ -343,34 +451,127 @@ class App {
   }
 
   undoLastEvent() {
-    store.setState(prev => ({
-      ...prev,
-      events: prev.events.slice(1)
-    }));
+    if (store.undo()) {
+      toasts.show("Desfeito", "Ação anterior revertida com sucesso.", "info");
+    } else {
+      toasts.show("Aviso", "Nada para desfazer no histórico.", "warning");
+    }
   }
 
-  addEvent(type, teamId, description) {
+  triggerVAR() {
+    const state = store.getState();
+    const importantEventIdx = state.events.findIndex(e => 
+      ['GOAL', 'RED_CARD', 'PENALTY'].includes(e.type) && !e.isAnnulled
+    );
+
+    if (importantEventIdx !== -1) {
+      store.saveToHistory();
+      store.setState(prev => {
+        const events = [...prev.events];
+        const target = events[importantEventIdx];
+        events[importantEventIdx] = { 
+          ...target, 
+          isAnnulled: true, 
+          description: `${target.description} (ANULADO PELO VAR)` 
+        };
+        
+        // Add VAR event
+        const varEvent = {
+          id: generateId(),
+          type: 'VAR',
+          teamId: 'none',
+          minute: Math.floor(prev.timeElapsed / 60000),
+          timestamp: Date.now(),
+          description: `📺 VAR: Decisão revertida (${target.type})`,
+          isAnnulled: false
+        };
+        
+        return { ...prev, events: [varEvent, ...events] };
+      });
+      toasts.show("VAR", "Decisão de campo anulada com sucesso.", "warning");
+    } else {
+      toasts.show("AVISO", "Nenhum lance de impacto elegível para VAR.", "info");
+    }
+  }
+
+  addEvent(type, teamId, description, playerId = null, relatedPlayerId = null) {
+    store.saveToHistory();
     const state = store.getState();
     const now = Date.now();
     
-    // Calcula minuto base oficial: 0-59s = 1', 60-119s = 2', etc.
     const elapsed = state.timeElapsed + (state.timerStartedAt ? now - state.timerStartedAt : 0);
-    const minute = Math.floor(elapsed / 60000) + 1;
+    const minute = Math.floor(elapsed / 60000); // Removido +1 para bater com cronômetro real (0' é início)
 
     const newEvent = {
         id: generateId(),
-        type: type.toUpperCase(), // Normaliza para garantir match no Header/Stats
+        type: type.toUpperCase(),
         teamId,
+        playerId,
+        relatedPlayerId,
         minute: minute,
         timestamp: now,
         description,
         isAnnulled: false
     };
 
-    store.setState(prev => ({
-        ...prev,
-        events: [newEvent, ...prev.events]
-    }));
+    store.setState(prev => {
+      let newState = { ...prev };
+      const teamKey = teamId === 'home' ? 'homeTeam' : 'awayTeam';
+      const otherTeamKey = teamId === 'home' ? 'awayTeam' : 'homeTeam';
+
+      // --- LÓGICA DE NEGÓCIO POR TIPO DE EVENTO ---
+      if (type === 'SUBSTITUTION' || type === 'CONCUSSION_SUBSTITUTION') {
+        const team = { ...prev[teamKey] };
+        const playerOut = team.players.find(p => p.id === playerId);
+        const playerIn = team.players.find(p => p.id === relatedPlayerId);
+
+        if (playerOut && playerIn) {
+          const updatedPlayers = team.players.map(p => {
+            if (p.id === playerId) return { ...p, isStarter: false, hasLeftGame: true };
+            if (p.id === relatedPlayerId) return { ...p, isStarter: true, x: playerOut.x, y: playerOut.y }; // Herda posição tática
+            return p;
+          });
+          newState[teamKey] = { ...team, players: updatedPlayers };
+          newEvent.description = `Sai ${playerOut.name} (#${playerOut.number}), Entra ${playerIn.name} (#${playerIn.number})`;
+        }
+      } 
+      
+      else if (type === 'YELLOW_CARD' && playerId) {
+        const team = { ...prev[teamKey] };
+        const player = team.players.find(p => p.id === playerId);
+        const yellowCount = (player.events || []).filter(e => e.type === 'YELLOW_CARD' && !e.isAnnulled).length;
+
+        if (yellowCount >= 1) { // Já tinha um amarelo
+          const redEvent = {
+            id: generateId(),
+            type: 'RED_CARD',
+            teamId,
+            playerId,
+            minute: minute,
+            timestamp: now + 1,
+            description: `Expulsão (2º Amarelo): ${player.name}`,
+            isAnnulled: false
+          };
+          const updatedPlayers = team.players.map(p => 
+            p.id === playerId ? { ...p, isStarter: false, hasLeftGame: true } : p
+          );
+          newState[teamKey] = { ...team, players: updatedPlayers };
+          newState.events = [redEvent, newEvent, ...prev.events];
+          return newState;
+        }
+      }
+
+      else if (type === 'RED_CARD' && playerId) {
+        const team = { ...prev[teamKey] };
+        const updatedPlayers = team.players.map(p => 
+          p.id === playerId ? { ...p, isStarter: false, hasLeftGame: true } : p
+        );
+        newState[teamKey] = { ...team, players: updatedPlayers };
+      }
+
+      newState.events = [newEvent, ...prev.events];
+      return newState;
+    });
   }
 
   selectPlayer(playerId, teamId) {
