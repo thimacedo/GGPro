@@ -48,9 +48,13 @@ export default function App() {
         const hasKey = await window.aistudio.hasSelectedApiKey();
         setHasApiKey(hasKey);
       } else {
-        // @ts-ignore
-        const envKey = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.GEMINI_API_KEY : undefined;
-        setHasApiKey(!!envKey || !!localStorage.getItem('GEMINI_API_KEY'));
+        // @ts-ignore - Tenta o padrão Vite
+        const viteKey = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_GEMINI_API_KEY : undefined;
+        // @ts-ignore - Tenta injeção via define do Vite
+        const processKey = typeof process !== 'undefined' && process.env ? (process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY) : undefined;
+        
+        const hasKey = !!viteKey || !!processKey || !!localStorage.getItem('VITE_GEMINI_API_KEY') || !!localStorage.getItem('GEMINI_API_KEY');
+        setHasApiKey(hasKey);
       }
     };
     checkApiKey();
