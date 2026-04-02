@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef, useMemo } from 'react';
 import { 
   Play, Pause, Settings, Info, ChevronRight, Flag, History, Loader2, Mic, Send, Users
 } from 'lucide-react';
-import { Analytics } from "@vercel/analytics/next"
+import { inject } from "@vercel/analytics"
 import { MatchState, Player, Team, EventType } from './types';
 import ToastContainer from './components/ToastContainer';
 import Header from './components/Header';
@@ -33,6 +33,11 @@ export default function App() {
   const ctrl = useMatchController(addToast);
   const backup = useBackupSystem({ matchState: ctrl.matchState, setMatchState: ctrl.setMatchState, addToast, formatEventType: ctrl.formatEventType, setIsSettingsOpen: ui.setIsSettingsOpen });
   const ai = useAIExtractor({ matchState: ctrl.matchState, setMatchState: ctrl.setMatchState, addToast, ui });
+
+  // Initialize Vercel Analytics
+  useEffect(() => {
+    inject();
+  }, []);
 
   const [hasApiKey, setHasApiKey] = useState(true);
   const [billingError, setBillingError] = useState(false);
@@ -300,7 +305,6 @@ export default function App() {
           ui.setPendingAIResult(null);
         }}
       />
-      <Analytics />
     </div>
   );
 }
