@@ -49,7 +49,7 @@ export default function App() {
         setHasApiKey(hasKey);
       } else {
         // @ts-ignore
-        const envKey = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.VITE_GEMINI_API_KEY : undefined;
+        const envKey = typeof import.meta !== 'undefined' && import.meta.env ? import.meta.env.GEMINI_API_KEY : undefined;
         setHasApiKey(!!envKey || !!localStorage.getItem('GEMINI_API_KEY'));
       }
     };
