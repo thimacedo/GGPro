@@ -4,7 +4,7 @@ import cors from "cors";
 import { exec } from "child_process";
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
-import fetch from 'node-fetch'; // Fallback for older Node versions, otherwise uses global fetch
+// Em Node.js 18+ o fetch é global, não precisa de import.
 
 dotenv.config();
 

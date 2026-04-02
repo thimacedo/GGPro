@@ -62,7 +62,10 @@ export const Header = (state) => {
       <div class="match-info-bar" style="width: 100%; background: rgba(0,0,0,0.2); border-top: 1px solid var(--border-color); padding: 0.25rem 1rem; display: flex; justify-content: center; gap: 2rem; font-size: 0.625rem; color: var(--slate-400); font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;">
           <span style="display: flex; align-items: center; gap: 0.25rem;"><i data-lucide="trophy" style="width: 0.75rem; height: 0.75rem; color: var(--yellow-500);"></i> ${state.competition || "Camp. Não Definido"}</span>
           <span style="display: flex; align-items: center; gap: 0.25rem;"><i data-lucide="map-pin" style="width: 0.75rem; height: 0.75rem;"></i> ${state.stadium || "Local"}</span>
-          <span style="display: flex; align-items: center; gap: 0.25rem;"><i data-lucide="user" style="width: 0.75rem; height: 0.75rem;"></i> ${state.referee || "Árbitro"}</span>
+          <span style="display: flex; align-items: center; gap: 0.25rem; cursor: pointer; color: var(--blue-400);" onclick="app.setActiveTab(app.activeTab === 'main' ? 'stats' : 'main')">
+            <i data-lucide="bar-chart-2" style="width: 0.75rem; height: 0.75rem;"></i> 
+            ${app.activeTab === 'main' ? 'VER ESTATÍSTICAS' : 'VOLTAR AO JOGO'}
+          </span>
       </div>
     </header>
   `;

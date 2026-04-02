@@ -1,17 +1,19 @@
 import store from './state.js';
 import { Header } from './components/Header.js';
 import { Dashboard } from './components/Dashboard.js';
+import { Stats } from './components/Stats.js';
 import { Modal, PreMatchSetupContent } from './components/Modals.js';
 import { formatDuration, generateId } from './utils.js';
 import { voice } from './services/voice.js';
+import { parseMatchBannerFromImage } from './services/gemini.js';
 
 class App {
   constructor() {
     this.root = document.getElementById('root');
     this.viewMode = 'list';
+    this.activeTab = 'main'; // 'main' ou 'stats'
     this.timerInterval = null;
     this.activeModal = null;
-    this.commandText = '';
     this.init();
   }
 
@@ -19,7 +21,6 @@ class App {
     store.subscribe((state) => this.render(state));
     this.startTimerLoop();
     
-    // Auto-open setup if new match
     const state = store.getState();
     if (state.period === 'PRE_MATCH' && !state.competition) {
       this.openSetup();
@@ -29,36 +30,34 @@ class App {
   render(state) {
     if (!document.getElementById('header-container')) {
       this.root.innerHTML = `
-        <div class="h-screen flex flex-col font-sans selection:bg-blue-500/20 overflow-hidden bg-slate-950 text-slate-50">
+        <div class="app-container">
           <div id="header-container"></div>
-          <main id="main-container" class="flex-1 flex flex-col px-2 md:px-4 min-h-0 overflow-y-auto pb-40 pt-4 custom-scrollbar">
-             <div id="view-container" class="w-full max-w-7xl mx-auto flex flex-col gap-4 md:gap-6"></div>
+          <main class="main-content custom-scrollbar">
+             <div id="view-container" class="max-width-wrapper"></div>
           </main>
           
-          <!-- Roda-Pé de Comando -->
-          <div class="fixed bottom-0 left-0 right-0 z-[70] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent">
-            <div class="max-w-4xl mx-auto flex items-center gap-2">
-              <button onclick="app.togglePlayPause()" id="footer-play-pause" class="p-4 rounded-2xl shadow-xl transition-all shrink-0 flex items-center justify-center active:scale-90">
-                <!-- Icon injected by render -->
+          <div class="fixed-footer">
+            <div class="footer-content">
+              <button onclick="app.togglePlayPause()" id="footer-play-pause" class="btn-play-pause shadow-xl active:scale-90 flex items-center justify-center">
               </button>
-              <div class="flex-1 bg-slate-900/95 p-1.5 rounded-2xl shadow-2xl border border-white/10 flex items-center gap-1.5 backdrop-blur-3xl ring-1 ring-white/5 relative">
-                <button type="button" onclick="app.toggleVoice()" id="voice-btn" class="p-3 rounded-xl transition-all active:scale-90 shrink-0">
-                  <i data-lucide="mic" class="w-[18px] h-[18px] text-white"></i>
+              <div class="command-bar shadow-2xl">
+                <button type="button" onclick="app.toggleVoice()" id="voice-btn" class="icon-btn active:scale-90">
+                  <i data-lucide="mic" style="width: 1.125rem; height: 1.125rem; color: white;"></i>
                 </button>
-                <div class="flex-1 relative min-w-0">
+                <div style="flex: 1; position: relative; min-width: 0;">
                   <input 
                     id="command-input"
                     type="text" 
                     placeholder="Lance ou pergunta..." 
-                    class="w-full bg-transparent border-none py-2.5 px-1 font-bold text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-0" 
+                    class="command-input"
                     onkeydown="if(event.key==='Enter') app.submitCommand()"
                   />
-                  <div id="processing-spinner" class="absolute right-0 top-1/2 -translate-y-1/2 hidden">
-                    <i data-lucide="loader-2" class="animate-spin text-blue-500 mr-2 w-4 h-4"></i>
+                  <div id="processing-spinner" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); display: none;">
+                    <i data-lucide="loader-2" class="animate-spin" style="color: var(--blue-500); margin-right: 0.5rem; width: 1rem; height: 1rem;"></i>
                   </div>
                 </div>
-                <button type="button" onclick="app.submitCommand()" id="send-btn" class="p-3 bg-blue-600 rounded-xl text-white font-black hover:bg-blue-500 transition-colors active:scale-95 shadow-lg shrink-0">
-                  <i data-lucide="send" class="w-[18px] h-[18px]"></i>
+                <button type="button" onclick="app.submitCommand()" id="send-btn" class="icon-btn" style="background: var(--blue-600); color: white;">
+                  <i data-lucide="send" style="width: 1.125rem; height: 1.125rem;"></i>
                 </button>
               </div>
             </div>
@@ -66,58 +65,55 @@ class App {
           
           <div id="modal-container"></div>
           
-          <!-- AI Thinking Overlay -->
-          <div id="ai-overlay" class="fixed inset-0 z-[100] bg-slate-950/40 backdrop-blur-sm hidden items-center justify-center animate-in fade-in duration-300">
-            <div class="bg-slate-900/90 p-8 rounded-[2.5rem] border border-blue-500/20 shadow-[0_0_50px_rgba(59,130,246,0.2)] flex flex-col items-center gap-4 max-w-xs w-full">
-              <div class="relative">
-                <div class="w-16 h-16 rounded-full border-4 border-blue-500/20 border-t-blue-500 animate-spin"></div>
-                <div class="absolute inset-0 flex items-center justify-center">
-                  <i data-lucide="mic" class="text-blue-400 animate-pulse w-6 h-6"></i>
+          <div id="ai-overlay" class="modal-overlay animate-in fade-in duration-300" style="display: none; z-index: 200;">
+            <div class="card" style="background: var(--slate-900); padding: 2.5rem; border-radius: 2.5rem; border: 1px solid rgba(59, 130, 246, 0.2); box-shadow: 0 0 50px rgba(59,130,246,0.2); display: flex; flex-direction: column; align-items: center; gap: 1.5rem; max-width: 20rem; width: 100%;">
+              <div style="position: relative;">
+                <div style="width: 4rem; height: 4rem; border-radius: 50%; border: 4px solid rgba(59, 130, 246, 0.2); border-top-color: var(--blue-500); animation: spin 1s linear infinite;"></div>
+                <div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;">
+                  <i data-lucide="mic" class="animate-pulse" style="color: var(--blue-400); width: 1.5rem; height: 1.5rem;"></i>
                 </div>
               </div>
-              <div class="text-center">
-                <h3 class="text-lg font-black text-white uppercase tracking-tighter">Gemini está PENSANDO</h3>
-                <p class="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em] mt-1">Sincronizando com a Narração...</p>
+              <div style="text-align: center;">
+                <h3 style="font-size: 1.125rem; font-weight: 900; color: white; text-transform: uppercase; letter-spacing: -0.05em;">Gemini está PENSANDO</h3>
+                <p style="font-size: 0.625rem; color: var(--slate-500); font-weight: 700; text-transform: uppercase; letter-spacing: 0.2em; margin-top: 0.25rem;">Sincronizando com a Narração...</p>
               </div>
             </div>
           </div>
         </div>
+        <style>@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }</style>
       `;
     }
 
-    // Update Elements
     document.getElementById('header-container').innerHTML = Header(state);
-    document.getElementById('view-container').innerHTML = Dashboard(state, this.viewMode);
     
-    // Footer button colors
+    if (this.activeTab === 'main') {
+      document.getElementById('view-container').innerHTML = Dashboard(state, this.viewMode);
+    } else {
+      document.getElementById('view-container').innerHTML = Stats(state);
+    }
+    
+    // Update Play/Pause Button
     const playBtn = document.getElementById('footer-play-pause');
     if (playBtn) {
-      playBtn.className = `p-4 rounded-2xl shadow-xl transition-all shrink-0 flex items-center justify-center active:scale-90 ${state.isPaused ? 'bg-emerald-600 text-white' : 'bg-yellow-500 text-slate-900'}`;
-      playBtn.innerHTML = `<i data-lucide="${state.isPaused ? 'play' : 'pause'}" class="w-[22px] h-[22px]" fill="currentColor"></i>`;
+      playBtn.style.backgroundColor = state.isPaused ? 'var(--emerald-600)' : 'var(--yellow-500)';
+      playBtn.style.color = state.isPaused ? 'white' : 'var(--slate-900)';
+      playBtn.innerHTML = `<i data-lucide="${state.isPaused ? 'play' : 'pause'}" style="width: 1.375rem; height: 1.375rem;" fill="currentColor"></i>`;
     }
 
-    // Voice button state
-    const voiceBtn = document.getElementById('voice-btn');
-    if (voiceBtn) {
-      voiceBtn.className = `p-3 rounded-xl transition-all active:scale-90 shrink-0 ${voice.isRecording ? 'bg-red-600 animate-pulse' : 'bg-slate-800 hover:bg-slate-700'}`;
+    // Voice button
+    const vBtn = document.getElementById('voice-btn');
+    if (vBtn) {
+      vBtn.classList.toggle('active', voice.isRecording);
     }
 
-    // Input state
+    // Processing states
     const input = document.getElementById('command-input');
     if (input) {
       input.disabled = voice.isProcessing;
       input.placeholder = voice.isRecording ? "Ouvindo..." : (voice.isProcessing ? "Interpretando..." : "Lance ou pergunta...");
     }
 
-    const spinner = document.getElementById('processing-spinner');
-    if (spinner) {
-      spinner.classList.toggle('hidden', !voice.isProcessing);
-    }
-
-    const overlay = document.getElementById('ai-overlay');
-    if (overlay) {
-      overlay.style.display = voice.isProcessing ? 'flex' : 'none';
-    }
+    document.getElementById('ai-overlay').style.display = voice.isProcessing ? 'flex' : 'none';
     
     if (this.activeModal) {
       document.getElementById('modal-container').innerHTML = this.activeModal(state);
@@ -128,6 +124,45 @@ class App {
     if (window.lucide) {
       window.lucide.createIcons();
     }
+  }
+
+  async handleBannerUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    voice.isProcessing = true;
+    this.render(store.getState());
+
+    try {
+      const reader = new FileReader();
+      const base64 = await new Promise((resolve) => {
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.readAsDataURL(file);
+      });
+
+      const data = await parseMatchBannerFromImage(base64);
+      if (data.matches && data.matches.length > 0) {
+        const match = data.matches[0];
+        store.setState({
+          competition: match.competition || '',
+          stadium: match.stadium || '',
+          homeTeam: { ...store.getState().homeTeam, name: match.homeTeam || store.getState().homeTeam.name },
+          awayTeam: { ...store.getState().awayTeam, name: match.awayTeam || store.getState().awayTeam.name }
+        });
+        alert("✅ Banner lido com sucesso!");
+      }
+    } catch (e) {
+      console.error("Erro ao ler banner:", e);
+      alert("❌ Falha na leitura da imagem.");
+    } finally {
+      voice.isProcessing = false;
+      this.render(store.getState());
+    }
+  }
+
+  async handleRegulationUpload(event) {
+    alert("Funcionalidade de regulamento (PDF/Imagem) integrada ao motor de IA.");
+    // Implementação similar ao banner, chamando parseRegulationDocument
   }
 
   toggleVoice() {
@@ -160,6 +195,11 @@ class App {
       period: '1T'
     });
     this.closeModal();
+  }
+
+  setActiveTab(tab) {
+    this.activeTab = tab;
+    this.render(store.getState());
   }
 
   closeModal() {
@@ -202,7 +242,7 @@ class App {
         }
         display.innerText = formatDuration(totalMs);
       }
-    }, 100);
+    }, 200);
   }
 
   undoLastEvent() {
@@ -215,14 +255,16 @@ class App {
   addEvent(type, teamId, description) {
     const state = store.getState();
     const now = Date.now();
+    
+    // Calcula minuto base oficial: 0-59s = 1', 60-119s = 2', etc.
     const elapsed = state.timeElapsed + (state.timerStartedAt ? now - state.timerStartedAt : 0);
-    const minute = Math.floor(elapsed / 60000);
+    const minute = Math.floor(elapsed / 60000) + 1;
 
     const newEvent = {
         id: generateId(),
         type,
         teamId,
-        minute: minute || 1,
+        minute: minute,
         timestamp: now,
         description,
         isAnnulled: false

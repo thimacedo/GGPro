@@ -28,7 +28,7 @@ class VoiceController {
       };
 
       this.recognition.onerror = (event) => {
-        console.error("Speech error", event.error);
+        console.warn("Rádio-Comando: Erro de captura", event.error);
         this.isRecording = false;
         window.app.render(store.getState());
       };
@@ -39,8 +39,12 @@ class VoiceController {
     if (this.isRecording) {
       this.recognition?.stop();
     } else {
-      this.recognition?.start();
-      this.isRecording = true;
+      try {
+        this.recognition?.start();
+        this.isRecording = true;
+      } catch (e) {
+        console.error("Falha ao abrir canal de voz", e);
+      }
     }
     window.app.render(store.getState());
   }
@@ -52,6 +56,9 @@ class VoiceController {
 
     try {
       const state = store.getState();
+      
+      // O Prompt da IA já está instruído para retornar a ação e os envolvidos.
+      // A minutagem será aplicada pelo App.js usando o cronômetro oficial.
       const results = await processVoiceCommand(text, state.homeTeam, state.awayTeam, "");
       const actions = Array.isArray(results) ? results : [results];
 
@@ -59,19 +66,29 @@ class VoiceController {
         if (!res.type || res.type === 'INVALID') continue;
         
         let teamId = res.team === 'away' ? 'away' : 'home';
-        let description = res.description || `Evento de Voz: ${res.type}`;
+        let description = res.description || `Evento: ${res.type}`;
         
+        // Melhoria de descrição baseada nos jogadores detectados pela IA
+        const team = teamId === 'home' ? state.homeTeam : state.awayTeam;
+        const p = res.playerNumber ? team.players.find(pl => pl.number === res.playerNumber) : null;
+        const playerName = p ? p.name : (res.playerNumber ? `Nº ${res.playerNumber}` : '');
+
         if (res.type === 'GOAL') {
-          const team = teamId === 'home' ? state.homeTeam : state.awayTeam;
-          const p = res.playerNumber ? team.players.find(pl => pl.number === res.playerNumber) : null;
-          description = `⚽ GOL do ${team.shortName}${p ? ` - ${p.name}` : ''}`;
+          description = `⚽ GOL do ${team.shortName}${playerName ? ` - ${playerName}` : ''}`;
+        } else if (res.type === 'YELLOW_CARD') {
+          description = `🟨 Amarelo - ${playerName} (${team.shortName})`;
+        } else if (res.type === 'RED_CARD') {
+          description = `🟥 Vermelho - ${playerName} (${team.shortName})`;
+        } else if (res.type === 'FOUL') {
+          description = `🛑 Falta para o ${team.shortName}${playerName ? ` (${playerName})` : ''}`;
         }
 
+        // Envia para o app sem informar minuto, deixando o app decidir com base no timer
         window.app.addEvent(res.type, teamId, description);
       }
     } catch (e) {
-      console.error("Voice process error", e);
-      alert("Erro ao processar comando de voz");
+      console.error("Narração falhou:", e);
+      alert("IA: Falha ao interpretar comando.");
     } finally {
       this.isProcessing = false;
       window.app.render(store.getState());
