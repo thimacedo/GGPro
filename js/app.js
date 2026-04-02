@@ -264,14 +264,59 @@ class App {
     }
   }
 
-  // --- MODAIS DE EDIÇÃO ---
-  selectPlayer(playerId, teamId) {
+  // --- AÇÕES DO JOGADOR ---
+  openPlayerActions(playerId, teamId) {
     const state = store.getState();
     const team = teamId === 'home' ? state.homeTeam : state.awayTeam;
     const player = team.players.find(p => p.id === playerId);
     
-    this.activeModal = (s) => Modal(EditPlayerContent(player, team), `Editar Atleta: #${player.number}`);
+    if (player.hasLeftGame && !confirm("Este jogador já saiu ou foi expulso. Deseja editar seus dados mesmo assim?")) return;
+
+    this.activeModal = (s) => Modal(PlayerActionContent(player, team), `${player.name} (#${player.number})`);
     this.render(state);
+  }
+
+  handlePlayerAction(type, playerId, teamId) {
+    const state = store.getState();
+    const team = teamId === 'home' ? state.homeTeam : state.awayTeam;
+    const player = team.players.find(p => p.id === playerId);
+
+    if (type === 'SUBSTITUTION') {
+      if (player.isStarter) {
+        // Se for titular, abre lista de reservas
+        const reserves = team.players.filter(p => !p.isStarter && !p.hasLeftGame);
+        if (reserves.length === 0) {
+          toasts.show("Aviso", "Não há reservas disponíveis.", "warning");
+          return;
+        }
+
+        const reservesHtml = reserves.map(r => `
+          <button onclick="app.addEvent('SUBSTITUTION', '${teamId}', '', '${player.id}', '${r.id}'); app.closeModal();" class="btn-submit" style="background: rgba(255,255,255,0.05); box-shadow: none; display: flex; align-items: center; gap: 1rem; padding: 1rem; border: 1px solid rgba(255,255,255,0.05); justify-content: flex-start;">
+            <span class="num-tag" style="background: var(--blue-600); color: white; width: 1.5rem; height: 1.5rem; display: flex; align-items: center; justify-content: center; border-radius: 0.25rem;">${r.number}</span>
+            <span style="font-weight: 700;">${r.name}</span>
+          </button>
+        `).join('');
+
+        this.activeModal = () => Modal(`
+          <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <p style="font-size: 0.625rem; color: var(--slate-400); text-align: center; margin-bottom: 0.5rem; font-weight: 900; text-transform: uppercase;">Quem entra no lugar de ${player.name}?</p>
+            ${reservesHtml}
+            <button onclick="app.closeModal()" class="btn-submit" style="background: var(--slate-800); margin-top: 1rem;">CANCELAR</button>
+          </div>
+        `, "Substituição");
+        this.render(state);
+      } else {
+        // Se for reserva, tenta entrar (precisa de alguém saindo - lógica simplificada ou manual)
+        toasts.show("Aviso", "Selecione o jogador TITULAR que irá sair primeiro.", "info");
+      }
+      return;
+    }
+
+    // Ações diretas (GOL, CARTÕES, etc)
+    const labels = { GOAL: 'GOL', YELLOW_CARD: 'CARTÃO AMARELO', RED_CARD: 'CARTÃO VERMELHO', FOUL: 'FALTA', SHOT: 'FINALIZAÇÃO' };
+    this.addEvent(type, teamId, `${labels[type]}: ${player.name} (#${player.number})`, playerId);
+    toasts.show(labels[type], `Evento registrado para ${player.name}`, type === 'GOAL' ? 'success' : 'info');
+    this.closeModal();
   }
 
   savePlayerEdit(playerId, teamId) {

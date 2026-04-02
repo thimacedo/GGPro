@@ -24,7 +24,7 @@ export const Dashboard = (state, viewMode = 'list') => {
     return `
       <div class="player-list-container" style="display: flex; flex-direction: column; gap: 0.25rem;">
         ${team.players.map(p => `
-          <div class="player-item" onclick="app.selectPlayer('${p.id}', '${team.id}')" style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem; border-radius: 0.75rem; cursor: pointer; transition: background 0.2s;">
+          <div class="player-item" onclick="app.openPlayerActions('${p.id}', '${team.id}')" style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem; border-radius: 0.75rem; cursor: pointer; transition: background 0.2s; opacity: ${p.hasLeftGame ? '0.4' : '1'};">
             <div style="display: flex; align-items: center; gap: 0.75rem;">
               <span class="num-tag" style="width: 1.5rem; height: 1.5rem; background: var(--slate-800); color: var(--slate-400); border-radius: 0.25rem; display: flex; align-items: center; justify-content: center; font-size: 0.625rem;">${p.number}</span>
               <span style="font-size: 0.75rem; font-weight: 700; color: var(--slate-200);">${p.name}</span>

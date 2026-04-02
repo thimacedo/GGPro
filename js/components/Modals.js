@@ -156,6 +156,12 @@ export const PlayerActionContent = (player, team) => {
         { id: 'SHOT', label: 'FINALIZAÇÃO', icon: 'target', color: 'var(--slate-200)' }
     ];
 
+    if (player.position === 'GK') {
+        actions.push({ id: 'GK_8_SECONDS', label: '8 SEGUNDOS', icon: 'clock', color: 'var(--orange-500)' });
+    } else if (isStarter) {
+        actions.push({ id: 'SET_GOALKEEPER', label: 'VIRAR GK', icon: 'shield', color: 'var(--indigo-400)' });
+    }
+
     return `
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
             ${actions.map(a => `
