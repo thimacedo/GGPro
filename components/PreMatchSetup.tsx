@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { MatchState } from '../types';
 import { Calendar, Shield, MapPin, Save, X, UserCheck, FileText, Image as ImageIcon, Loader2, BookOpen } from 'lucide-react';
-import { parseMatchBannerFromImage, parseRegulationDocument } from '../services/geminiServiceV6';
+import { parseMatchBannerFromImage, parseRegulationDocument } from '../services/geminiService.ts';
 
 interface PreMatchSetupProps {
     matchState: MatchState;
