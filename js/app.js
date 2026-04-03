@@ -2,7 +2,7 @@ import store from './state.js';
 import { Header } from './components/Header.js';
 import { Dashboard } from './components/Dashboard.js';
 import { Stats } from './components/Stats.js';
-import { Modal, PreMatchSetupContent, EditPlayerContent, EditTeamContent, EndGameOptionsContent } from './components/Modals.js';
+import { Modal, PreMatchSetupContent, EditPlayerContent, EditTeamContent, EndGameOptionsContent, PlayerActionContent, TeamActionContent } from './components/Modals.js';
 import { formatDuration, generateId } from './utils.js';
 import { toasts } from './components/Toasts.js';
 import { voice } from './services/voice.js';
@@ -353,9 +353,22 @@ class App {
     }
 
     // Ações diretas (GOL, CARTÕES, etc)
-    const labels = { GOAL: 'GOL', YELLOW_CARD: 'CARTÃO AMARELO', RED_CARD: 'CARTÃO VERMELHO', FOUL: 'FALTA', SHOT: 'FINALIZAÇÃO' };
-    this.addEvent(type, teamId, `${labels[type]}: ${player.name} (#${player.number})`, playerId);
-    toasts.show(labels[type], `Evento registrado para ${player.name}`, type === 'GOAL' ? 'success' : 'info');
+    const labels = { 
+      GOAL: 'GOL', 
+      YELLOW_CARD: 'CARTÃO AMARELO', 
+      RED_CARD: 'CARTÃO VERMELHO', 
+      FOUL: 'FALTA', 
+      SHOT: 'CHUTE / FINALIZAÇÃO',
+      OFFSIDE: 'IMPEDIMENTO',
+      CORNER: 'ESCANTEIO',
+      PENALTY: 'PÊNALTI',
+      VAR: 'VAR',
+      INJURY: 'ATENDIMENTO',
+      GK_8_SECONDS: 'INFRAÇÃO 8S'
+    };
+    const label = labels[type] || type;
+    this.addEvent(type, teamId, `${label}: ${player ? player.name + ' (#' + player.number + ')' : (teamId === 'home' ? state.homeTeam.shortName : state.awayTeam.shortName)}`, playerId);
+    toasts.show(label, `Registrado para ${player ? player.name : 'equipe'}`, type === 'GOAL' || type === 'PENALTY' ? 'success' : 'info');
     this.closeModal();
   }
 

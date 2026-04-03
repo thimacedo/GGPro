@@ -245,13 +245,13 @@ export const PlayerActionContent = (player, team) => {
     return `
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.625rem;">
             ${actions.map(a => `
-                <button onclick="app.handlePlayerAction('${a.id}', '${player.id}', '${team.id}')" class="btn-submit" style="background: rgba(255,255,255,0.05); box-shadow: none; display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding: 1rem 0.5rem; border: 1px solid rgba(255,255,255,0.05); border-radius: 1rem;">
-                    <i data-lucide="${a.icon}" style="width: 1rem; height: 1rem; color: ${a.color};"></i>
-                    <span style="font-size: 0.5625rem; font-weight: 900; letter-spacing: 0.05em;">${a.label}</span>
+                <button onclick="app.handlePlayerAction('${a.id}', '${player.id}', '${team.id}')" class="btn-submit" style="background: rgba(128,128,128,0.1); box-shadow: none; display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.75rem 0.25rem; border: 1px solid var(--border-color); border-radius: 1rem; color: var(--slate-100);">
+                    <i data-lucide="${a.icon}" style="width: 1.25rem; height: 1.25rem; color: ${a.color};"></i>
+                    <span style="font-size: 0.5rem; font-weight: 900; letter-spacing: 0.05em; color: var(--slate-300);">${a.label}</span>
                 </button>
             `).join('')}
         </div>
-        <button onclick="app.openEditPlayer('${player.id}', '${team.id}')" class="btn-submit" style="margin-top: 1rem; background: var(--slate-800); font-size: 0.625rem; letter-spacing: 0.1em; padding: 1rem;">
+        <button onclick="app.openEditPlayer('${player.id}', '${team.id}')" class="btn-submit" style="margin-top: 1rem; background: var(--slate-800); font-size: 0.625rem; letter-spacing: 0.1em; padding: 1rem; color: white;">
             <i data-lucide="edit-3" style="width: 0.75rem; height: 0.75rem; vertical-align: middle; margin-right: 0.5rem;"></i> EDITAR DADOS DO ATLETA
         </button>
     `;
@@ -270,9 +270,9 @@ export const TeamActionContent = (teamId, team) => {
     return `
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
             ${actions.map(a => `
-                <button onclick="app.handleTeamAction('${a.id}', '${teamId}')" class="btn-submit" style="background: rgba(255,255,255,0.05); box-shadow: none; display: flex; align-items: center; gap: 0.75rem; padding: 1.25rem; border: 1px solid rgba(255,255,255,0.05); border-radius: 1.25rem;">
+                <button onclick="app.handleTeamAction('${a.id}', '${teamId}')" class="btn-submit" style="background: rgba(128,128,128,0.1); box-shadow: none; display: flex; align-items: center; gap: 0.75rem; padding: 1.25rem; border: 1px solid var(--border-color); border-radius: 1.25rem; color: var(--slate-100);">
                     <i data-lucide="${a.icon}" style="color: ${a.color};"></i>
-                    <span style="font-size: 0.6875rem; font-weight: 900;">${a.label}</span>
+                    <span style="font-size: 0.6875rem; font-weight: 900; color: var(--slate-300);">${a.label}</span>
                 </button>
             `).join('')}
         </div>
