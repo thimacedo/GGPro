@@ -1,6 +1,6 @@
 /**
- * Narrador Pro - main.js (Versão Integral Refatorada)
- * Foco: Rebranding, UI/UX, Padronização Técnica e Lógica Reativa.
+ * Narrador Pro - main.js (Versão Final de Rebranding)
+ * Foco: UI/UX Masterclass, Componentização Bouncer, Hierarquia Visual e Tabular Nums.
  */
 
 import matchState from './state.js';
@@ -20,7 +20,7 @@ const ui = {
   activeTab: 'main'
 };
 
-// --- Sistema de Tempo (Modularizado) ---
+// --- Serviço de Tempo Core ---
 const timerService = {
   getFormattedTime(state) {
     const now = Date.now();
@@ -32,40 +32,35 @@ const timerService = {
   }
 };
 
-// --- Inicialização ---
+// --- Inicialização do App ---
 function init() {
-  // Subscrever ao estado global para re-renderizar a UI
   matchState.subscribe(() => render());
   
-  // Ciclo de atualização do cronômetro (apenas DOM, desacoplado da lógica de estado)
+  // Update de cronômetro (DOM direto para performance e tabular-nums)
   setInterval(() => {
     const state = matchState.getState();
     if (!state.isPaused && !['PENALTIES', 'FINISHED', 'HALFTIME'].includes(state.period)) {
       const timerEl = document.getElementById('timerDisplay');
-      if (timerEl) {
-        timerEl.textContent = timerService.getFormattedTime(state);
-      }
+      if (timerEl) timerEl.textContent = timerService.getFormattedTime(state);
     }
   }, 100);
 
-  // Handlers Globais para disparos via HTML (onclick)
+  // Handlers de Interface
   window.handleVarReversal = handleVarReversal;
   window.setViewMode = setViewMode;
   window.toggleFullscreen = toggleFullscreen;
   window.handleAdvancePeriod = handleAdvancePeriod;
   window.handleStartPenalties = handleStartPenalties;
-  window.handleGenerateReport = handleGenerateReport;
-  window.handleManualCommand = (input) => { 
+  window.handleCommandSubmit = (input) => {
     if (!input.value.trim()) return;
     voice.processCommand(input.value);
     input.value = '';
   };
   
-  // Render inicial
   render();
 }
 
-// --- Funções de Renderização (BEM & Design System) ---
+// --- Funções de Renderização (Arquitetura BEM) ---
 
 function render() {
   const app = document.getElementById('app');
@@ -75,19 +70,19 @@ function render() {
   document.body.className = ui.isLightMode ? 'claro' : 'dark-mode';
 
   app.innerHTML = `
-    <!-- Header: Scoreboard Centralizado -->
+    <!-- Header: Scoreboard em Alta Hierarquia -->
     ${renderScoreboard(state)}
 
-    <!-- Layout Principal Grid -->
+    <!-- Main Content Grid -->
     <main class="main-content">
-      <!-- Painel de Visualização (Mapa ou Lista) -->
+      <!-- Módulo Visual Esquerdo -->
       <section class="view-panel">
         <div class="view-panel__controls">
           <div class="tabs">
             <button class="tabs__btn ${ui.viewMode === 'list' ? 'tabs__btn--active' : ''}" onclick="setViewMode('list')">Escalação</button>
-            <button class="tabs__btn ${ui.viewMode === 'field' ? 'tabs__btn--active' : ''}" onclick="setViewMode('field')">Mapa Tático</button>
+            <button class="tabs__btn ${ui.viewMode === 'field' ? 'tabs__btn--active' : ''}" onclick="setViewMode('field')">Tática</button>
           </div>
-          <button class="icon-btn" onclick="toggleFullscreen()">${ui.isFullscreen ? 'Sair Fullscreen' : 'Tela Cheia'}</button>
+          <button class="icon-btn" onclick="toggleFullscreen()">${ui.isFullscreen ? 'Sair Fullscreen' : 'Fullscreen'}</button>
         </div>
 
         <div class="view-panel__display custom-scrollbar">
@@ -98,14 +93,14 @@ function render() {
         </div>
       </section>
 
-      <!-- Painel de Cronologia Lateral -->
+      <!-- Módulo de Eventos (Timeline Bouncer) -->
       ${renderTimeline(state)}
     </main>
 
-    <!-- Barra de Comando Flutuante -->
+    <!-- Barra de Navegação e Comando Inferior -->
     ${renderCommandBar(state)}
 
-    <!-- Overlay de Configurações -->
+    <!-- Modais Overlay -->
     ${ui.isSettingsOpen ? renderSettingsOverlay(state) : ''}
   `;
 
@@ -120,7 +115,7 @@ function renderScoreboard(state) {
     <header class="scoreboard">
       <div class="scoreboard__team scoreboard__team--home" onclick="modalManager.showEditTeam(matchState.getState().homeTeam, 'home')">
         <div class="scoreboard__info">
-          <h2 class="scoreboard__name">${state.homeTeam.shortName}</h2>
+          <h2 class="scoreboard__name" style="color: ${state.homeTeam.color}">${state.homeTeam.shortName}</h2>
           <span class="scoreboard__formation">${state.homeTeam.formation}</span>
         </div>
         <div class="scoreboard__score" style="background-color: ${state.homeTeam.color}">${goalsHome}</div>
@@ -130,14 +125,14 @@ function renderScoreboard(state) {
       <div class="scoreboard__center">
         <span class="scoreboard__period">${matchState.formatPeriodName(state.period)}</span>
         <div id="timerDisplay" class="scoreboard__timer">${timerService.getFormattedTime(state)}</div>
-        <button class="scoreboard__next" onclick="handleAdvancePeriod()">AVANÇAR FASE ➔</button>
+        <button class="scoreboard__next" onclick="handleAdvancePeriod()">PRÓXIMO ➔</button>
       </div>
 
       <div class="scoreboard__team scoreboard__team--away" onclick="modalManager.showEditTeam(matchState.getState().awayTeam, 'away')">
         ${state.period === 'PENALTIES' ? `<div class="scoreboard__penalties">(${state.penaltyScore?.away || 0})</div>` : ''}
         <div class="scoreboard__score" style="background-color: ${state.awayTeam.color}">${goalsAway}</div>
         <div class="scoreboard__info">
-          <h2 class="scoreboard__name">${state.awayTeam.shortName}</h2>
+          <h2 class="scoreboard__name" style="color: ${state.awayTeam.color}">${state.awayTeam.shortName}</h2>
           <span class="scoreboard__formation">${state.awayTeam.formation}</span>
         </div>
       </div>
@@ -151,16 +146,16 @@ function renderTimeline(state) {
   return `
     <aside class="timeline">
       <div class="timeline__header">
-        <h3 class="timeline__title">Eventos da Partida</h3>
+        <h3 class="timeline__title">Cronologia Direta</h3>
         <div class="timeline__actions">
           <button class="text-btn text-btn--amber" onclick="handleVarReversal()">VAR</button>
           <button class="text-btn" onclick="matchState.undo()">Desfazer</button>
         </div>
       </div>
       <div class="timeline__content custom-scrollbar">
-        ${events.length === 0 ? '<div class="timeline__empty">Aguardando início do jogo...</div>' : ''}
+        ${events.length === 0 ? '<div class="timeline__empty">Nenhum evento registrado ainda...</div>' : ''}
         ${[...events].reverse().map((event) => {
-          // Renderização diferenciada para Marcadores de Início/Fim
+          // Lógica Bouncer: PERIOD_START e PERIOD_END como delimitadores de largura total
           if (event.type === 'PERIOD_START' || event.type === 'PERIOD_END') {
             return `
               <div class="timeline__marker">
@@ -201,13 +196,13 @@ function renderCommandBar(state) {
         ${state.isPaused ? '▶' : '⏸'}
       </button>
       
-      <div class="command-bar__group">
+      <div class="command-bar__group" style="border-left: 2px solid ${state.homeTeam.color}; border-right: 2px solid ${state.awayTeam.color}">
         <button class="icon-btn" id="micBtn">🎙️</button>
         <input 
           type="text" 
           id="commandInput" 
           class="command-bar__input" 
-          placeholder="Narre p/ o Gemini (ex: 'Gol do 9')..."
+          placeholder="Diga ou digite o lance da partida (ex: 'Gol do 10')..."
         />
         <button class="command-bar__btn" id="sendBtn">➤</button>
       </div>
@@ -253,21 +248,21 @@ function renderPlayerRow(player, team, teamId) {
 function renderSettingsOverlay(state) {
   return `
     <div class="modal-overlay" id="settingsOverlay">
-      <div class="modal" onclick="event.stopPropagation()">
-        <h3 class="modal__title">Menu Principal</h3>
-        <button class="w-full p-4 bg-slate-100 dark:bg-slate-800 rounded-xl mb-3 font-bold text-sm" onclick="modalManager.showSumula()">Editar Súmula e Regulamento</button>
+      <div class="modal" onclick="event.stopPropagation()" style="max-width: 440px; padding: 40px; background: var(--bg-surface); border-radius: var(--radius-2xl);">
+        <h3 class="modal__title" style="font-size: 0.7rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; text-align: center; color: var(--text-muted); margin-bottom: 32px">Configurações Gerais</h3>
+        <button class="w-full p-4 bg-slate-100 dark:bg-slate-800 rounded-xl mb-3 font-bold text-sm" onclick="modalManager.showSumula()">Editar Súmula / Regulamento</button>
         <button class="w-full p-4 bg-slate-100 dark:bg-slate-800 rounded-xl mb-3 font-bold text-sm" onclick="matchState.undo(); ui.isSettingsOpen=false;">Desfazer Última Ação</button>
         <div class="grid grid-cols-2 gap-3 mb-3">
            <button class="p-4 bg-blue-600 rounded-xl text-white font-bold text-[10px] uppercase" onclick="ui.isLightMode = !ui.isLightMode; render();">Alternar Tema</button>
            <button class="p-4 bg-indigo-600 rounded-xl text-white font-bold text-[10px] uppercase" onclick="handleGenerateReport()">Gerar Crônica IA</button>
         </div>
-        <button class="w-full p-4 bg-red-600 rounded-xl text-white font-bold text-sm" onclick="if(confirm('Deseja resetar toda a partida?')) { matchState.handleReset(); ui.isSettingsOpen = false; }">Zerar Partida</button>
+        <button class="w-full p-4 bg-red-600 rounded-xl text-white font-bold text-sm" onclick="if(confirm('Zerar toda a partida?')) { matchState.handleReset(); ui.isSettingsOpen = false; }">Zerar Partida</button>
       </div>
     </div>
   `;
 }
 
-// --- Listeners e Auxiliares ---
+// --- Listeners de Interação ---
 
 function attachEventListeners() {
   document.getElementById('playPauseBottom')?.addEventListener('click', () => matchState.handlePlayPauseToggle());
@@ -277,9 +272,9 @@ function attachEventListeners() {
 
   const cmdInput = document.getElementById('commandInput');
   cmdInput?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') handleManualCommand(cmdInput);
+    if (e.key === 'Enter') handleCommandSubmit(cmdInput);
   });
-  document.getElementById('sendBtn')?.addEventListener('click', () => handleManualCommand(cmdInput));
+  document.getElementById('sendBtn')?.addEventListener('click', () => handleCommandSubmit(cmdInput));
 
   window.addEventListener('voiceStateChange', (e) => {
     const mic = document.getElementById('micBtn');
@@ -289,6 +284,13 @@ function attachEventListeners() {
 
 function setViewMode(mode) { ui.viewMode = mode; render(); }
 function toggleFullscreen() { ui.isFullscreen = !ui.isFullscreen; render(); }
+
+function handleCommandSubmit(input) {
+  if (!input.value.trim()) return;
+  toastManager.show("Sistema", "Interpretando lance...", "ai");
+  voice.processCommand(input.value);
+  input.value = '';
+}
 
 function getEventIcon(type) {
   switch (type) {
@@ -309,28 +311,28 @@ function handleAdvancePeriod() {
 
     modalManager.open(`
       <div class="flex flex-col gap-3">
-        <p class="text-xs text-slate-500">O jogo está atualmente ${goalsHome}x${goalsAway}.</p>
-        <button class="w-full p-4 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase" onclick="matchState.advancePeriod(); modalManager.close();">Ir para Prorrogação</button>
-        <button class="w-full p-4 bg-indigo-600 text-white rounded-xl text-xs font-bold uppercase" onclick="handleStartPenalties(); modalManager.close();">Decisão por Pênaltis</button>
-        <button class="w-full p-4 bg-red-600 text-white rounded-xl text-xs font-bold uppercase" onclick="matchState.advancePeriod('FINISHED'); modalManager.close();">Finalizar Jogo</button>
+        <p class="text-xs text-slate-500">Resultado Atual: ${goalsHome} - ${goalsAway}</p>
+        <button class="w-full p-4 bg-blue-600 text-white rounded-xl text-xs font-bold uppercase" onclick="matchState.advancePeriod(); modalManager.close();">Iniciar Prorrogação</button>
+        <button class="w-full p-4 bg-indigo-600 text-white rounded-xl text-xs font-bold uppercase" onclick="handleStartPenalties(); modalManager.close();">Ir para Pênaltis</button>
+        <button class="w-full p-4 bg-red-600 text-white rounded-xl text-xs font-bold uppercase" onclick="matchState.advancePeriod('FINISHED'); modalManager.close();">Encerrar Jogo</button>
       </div>
-    `, 'Próxima Fase');
+    `, 'Transição de Fase');
   } else {
     matchState.advancePeriod();
-    toastManager.show("Sistema", "Período atualizado com sucesso.", "info");
+    toastManager.show("Match", "Novo período iniciado.", "info");
   }
 }
 
 function handleStartPenalties() {
   modalManager.open(`
     <div class="flex flex-col gap-3">
-      <p class="text-xs text-slate-500">Selecione quem inicia a cobrança:</p>
+      <p class="text-xs text-slate-500">Quem inicia as cobranças?</p>
       <div class="grid grid-cols-2 gap-3">
         <button class="p-4 bg-slate-100 dark:bg-slate-800 rounded-xl font-bold" onclick="matchState.setState({penaltyStarter: 'home', period: 'PENALTIES'}); modalManager.close();">${matchState.getState().homeTeam.shortName}</button>
         <button class="p-4 bg-slate-100 dark:bg-slate-800 rounded-xl font-bold" onclick="matchState.setState({penaltyStarter: 'away', period: 'PENALTIES'}); modalManager.close();">${matchState.getState().awayTeam.shortName}</button>
       </div>
     </div>
-  `, 'Pênaltis');
+  `, 'Disputa de Pênaltis');
 }
 
 function handleVarReversal() {
@@ -338,7 +340,7 @@ function handleVarReversal() {
   const majorEvents = (state.events || []).filter(e => ['GOAL', 'YELLOW_CARD', 'RED_CARD'].includes(e.type));
   
   if (majorEvents.length === 0) {
-    toastManager.show("VAR", "Não há eventos passíveis de revisão.", "info");
+    toastManager.show("VAR", "Não há lances para revisão.", "info");
     return;
   }
 
@@ -347,27 +349,27 @@ function handleVarReversal() {
       ${majorEvents.map(e => `
         <button class="p-4 bg-slate-100 dark:bg-slate-800 rounded-xl text-left flex justify-between items-center" onclick="matchState.annulEvent('${e.id}'); modalManager.close();">
           <div>
-            <div class="font-bold text-sm">${e.description}</div>
+            <div class="font-bold text-sm text-white">${e.description}</div>
             <div class="text-[10px] text-slate-500 uppercase font-bold">${e.minute}' - ${matchState.formatEventType(e.type)}</div>
           </div>
-          <span style="font-size: 20px">${e.isAnnulled ? '✅' : '🚫'}</span>
+          <span style="font-size: 1.25rem">${e.isAnnulled ? '✅' : '🚫'}</span>
         </button>
       `).join('')}
     </div>
-  `, 'Revisão VAR');
+  `, 'Revisão do VAR');
 }
 
 async function handleGenerateReport() {
   const state = matchState.getState();
   const timeline = state.events.filter(e => !e.isAnnulled).map(e => `${e.minute}' - ${e.description}`).join('\n');
   try {
-    toastManager.show("AI", "O Gemini está redigindo a crônica da partida...", "ai");
+    toastManager.show("AI", "Gerando crônica esportiva...", "ai");
     const report = await generateMatchReport('', timeline);
-    modalManager.open(`<div class="prose dark:prose-invert text-sm" style="line-height: 1.8">${report.replace(/\n/g, '<br>')}</div>`, "Relatório Final da Partida");
+    modalManager.open(`<div class="prose dark:prose-invert text-sm" style="line-height: 1.7">${report.replace(/\n/g, '<br>')}</div>`, "Crônica Narrada");
   } catch (e) {
-    toastManager.show("Erro", "Erro ao conectar com o Gemini AI.", "error");
+    toastManager.show("Erro", "Erro ao gerar crônica.", "error");
   }
 }
 
-// Início
+// Iniciar Aplicação
 init();
