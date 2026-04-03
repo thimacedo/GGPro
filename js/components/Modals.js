@@ -276,5 +276,13 @@ export const TeamActionContent = (teamId, team) => {
                 </button>
             `).join('')}
         </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 1rem;">
+            <button onclick="app.editTeam('${teamId}')" class="btn-submit" style="background: var(--slate-800); font-size: 0.625rem; letter-spacing: 0.1em; padding: 1rem; color: white;">
+                <i data-lucide="settings" style="width: 0.75rem; height: 0.75rem; vertical-align: middle; margin-right: 0.5rem;"></i> CONFIGURAR TIME
+            </button>
+            <button onclick="app.openImportModal('${teamId}')" class="btn-submit" style="background: var(--blue-600); font-size: 0.625rem; letter-spacing: 0.1em; padding: 1rem; color: white;">
+                <i data-lucide="file-up" style="width: 0.75rem; height: 0.75rem; vertical-align: middle; margin-right: 0.5rem;"></i> IMPORTAR ATLETAS
+            </button>
+        </div>
     `;
 };

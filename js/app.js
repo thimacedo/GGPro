@@ -2,7 +2,7 @@ import store from './state.js';
 import { Header } from './components/Header.js';
 import { Dashboard } from './components/Dashboard.js';
 import { Stats } from './components/Stats.js';
-import { Modal, PreMatchSetupContent, EditPlayerContent, EditTeamContent, EndGameOptionsContent, PlayerActionContent, TeamActionContent } from './components/Modals.js';
+import { Modal, PreMatchSetupContent, EditPlayerContent, EditTeamContent, EndGameOptionsContent, PlayerActionContent, TeamActionContent, ImportListContent } from './components/Modals.js';
 import { formatDuration, generateId } from './utils.js';
 import { toasts } from './components/Toasts.js';
 import { voice } from './services/voice.js';
