@@ -56,6 +56,15 @@ class ModalManager {
     if (this.activeModal) {
       this.activeModal.remove();
       this.activeModal = null;
+      
+      // Limpar funções globais temporárias injetadas para o modal
+      const globalFuncs = [
+        'handleAction', 'confirmSub', 'concussionSub', 
+        'executeConcussion', 'setPos', 'savePlayerSelf', 'saveSumulaSelf'
+      ];
+      globalFuncs.forEach(fn => {
+        if (window[fn]) delete window[fn];
+      });
     }
   }
 
@@ -138,6 +147,14 @@ class ModalManager {
   showSubstitution(playerOut, team, teamId) {
     const availableSubs = team.players.filter(p => !p.isStarter && !p.hasLeftGame);
     
+    if (availableSubs.length === 0) {
+      if (typeof window.addToast === 'function') {
+        window.addToast('Aviso', 'Não há reservas disponíveis para substituição.', 'warning');
+      } else {
+        alert('Não há reservas disponíveis para substituição.');
+      }
+      return;
+    }
     const content = `
       <div class="flex flex-col gap-6">
         <div class="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl">
@@ -339,8 +356,14 @@ class ModalManager {
     // Placeholder para os inputs de IA que o app.js vai ouvir
     this.open(content, 'Editar Súmula');
     
-    // Adicionar listener específico para IA dentro do modal se necessário
-    document.getElementById('sumula_ia')?.addEventListener('change', (e) => window.handleImageUpload(e, 'players'));
+    // Adicionar listener específico para IA dentro do modal
+    document.getElementById('sumula_ia')?.addEventListener('change', (e) => {
+      if (typeof window.handleImageUpload === 'function') {
+        window.handleImageUpload(e, 'players');
+      } else {
+        console.error('handleImageUpload não está definida no window');
+      }
+    });
   }
 }
 

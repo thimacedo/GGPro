@@ -40,11 +40,27 @@ async function callGeminiREST(modelNames, contents) {
           continue; 
         }
 
-        if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
+        if (data.candidates && 
+            Array.isArray(data.candidates) && 
+            data.candidates.length > 0 &&
+            data.candidates[0].content &&
+            data.candidates[0].content.parts &&
+            Array.isArray(data.candidates[0].content.parts) &&
+            data.candidates[0].content.parts.length > 0 &&
+            data.candidates[0].content.parts[0].text) {
           return data.candidates[0].content.parts[0].text;
+        } else {
+          console.warn("Resposta da IA em formato inesperado:", JSON.stringify(data, null, 2));
+          lastError = new Error("Resposta inválida da IA");
+          continue;
         }
       } catch (e) {
-        console.error(`Falha Técnica: ${model} [${v}]:`, e.message);
+        console.error("Erro Crítico no Reconhecimento/IA:", e);
+        // Se for erro de rede ou API, exibir mensagem mais clara
+        const errorMsg = e.message?.includes(' motores') ? "Servidores de IA indisponíveis no momento." : "Falha ao interpretar comando de rádio.";
+        if (typeof window !== 'undefined' && window.addToast) {
+          window.addToast("Erro de IA", errorMsg, "error");
+        }
         lastError = e;
       }
     }

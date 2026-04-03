@@ -30,16 +30,18 @@ function init() {
   
   // Configurar timer global
   setInterval(() => {
-    if (!matchState.getState().isPaused) {
+    const state = matchState.getState();
+    if (!state.isPaused && state.period !== 'PENALTIES') {
       updateTimer();
     }
   }, 1000);
 
   // Expor funções necessárias globalmente para os onclick do HTML gerado
   window.render = render;
-  window.handleAction = (action) => console.log("Action:", action); // Placeholder, será sobrescrito pelos modais
+  window.handleAction = (action) => console.log("Action:", action);
   window.generateReport = handleGenerateReport;
   window.exportToClipboard = handleExportClipboard;
+  window.handleImageUpload = handleImageUpload;
 }
 
 // --- Renderização ---
@@ -373,7 +375,12 @@ async function handleCommandSubmit(text) {
   
   // Se não for controle básico, deixa a IA processar
   toastManager.show("Processando", "Interpretando narração...", "ai");
-  await voice.processCommand(text);
+  try {
+    await voice.processCommand(text);
+  } catch (e) {
+    console.error("Erro ao processar comando de voz:", e);
+    toastManager.show("Erro de IA", "Não foi possível interpretar o comando.", "error");
+  }
 }
 
 async function handleGenerateReport() {
@@ -426,8 +433,7 @@ async function handleImageUpload(event, type) {
   }
 }
 
-// Expor handlers para o modal
-window.handleImageUpload = handleImageUpload;
+// Expor handlers para o modal (removido daqui e movido para init)
 
 function handleExportClipboard() {
   const state = matchState.getState();

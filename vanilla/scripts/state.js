@@ -91,8 +91,10 @@ class MatchState {
 
   // Salvar no histórico para undo
   saveToHistory() {
-    this.history = [...this.history.slice(-10), JSON.parse(JSON.stringify(this.state))];
-  }  // Formatar tipo de evento
+    this.history = [...this.history.slice(-30), JSON.parse(JSON.stringify(this.state))];
+  }
+
+  // Formatar tipo de evento
   formatEventType(type) {
     const map = {
       'GOAL': 'GOL', 'YELLOW_CARD': 'AMARELO', 'RED_CARD': 'VERMELHO', 'SUBSTITUTION': 'SUBSTITUIÇÃO',
