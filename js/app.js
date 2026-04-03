@@ -368,7 +368,6 @@ class App {
     };
     const label = labels[type] || type;
     this.addEvent(type, teamId, `${label}: ${player ? player.name + ' (#' + player.number + ')' : (teamId === 'home' ? state.homeTeam.shortName : state.awayTeam.shortName)}`, playerId);
-    toasts.show(label, `Registrado para ${player ? player.name : 'equipe'}`, type === 'GOAL' || type === 'PENALTY' ? 'success' : 'info');
     this.closeModal();
   }
 
@@ -764,7 +763,7 @@ class App {
         const player = team.players.find(p => p.id === playerId);
         const yellowCount = (player.events || []).filter(e => e.type === 'YELLOW_CARD' && !e.isAnnulled).length;
 
-        if (yellowCount >= 1) { // Já tinha um amarelo
+        if (yellowCount >= 1) { 
           const redEvent = {
             id: generateId(),
             type: 'RED_CARD',
@@ -780,8 +779,24 @@ class App {
           );
           newState[teamKey] = { ...team, players: updatedPlayers };
           newState.events = [redEvent, newEvent, ...prev.events];
+          toasts.show("EXPULSÃO", `${player.name} recebeu o 2º amarelo.`, "error");
           return newState;
         }
+        toasts.show("CARTÃO AMARELO", `${player.name} foi advertido.`, "warning");
+      }
+      
+      else if (type === 'RED_CARD' && playerId) {
+        const team = { ...prev[teamKey] };
+        const player = team.players.find(p => p.id === playerId);
+        const updatedPlayers = team.players.map(p => 
+          p.id === playerId ? { ...p, isStarter: false, hasLeftGame: true } : p
+        );
+        newState[teamKey] = { ...team, players: updatedPlayers };
+        toasts.show("CARTÃO VERMELHO", `${player.name} expulso de campo!`, "error");
+      }
+
+      else if (type === 'GOAL') {
+        toasts.show("GOL!", `Goooool do ${team.shortName}!`, "success");
       }
 
       else if (type === 'GK_8_SECONDS') {
@@ -816,7 +831,6 @@ class App {
       // Novos Eventos: Impedimento, Escanteio, Pênalti, Finalização
       else if (type === 'OFFSIDE') {
           newEvent.description = `IMPEDIMENTO: ${player ? player.name : (teamId === 'home' ? prev.homeTeam.shortName : prev.awayTeam.shortName)}`;
-          toasts.show("Impedimento", "Ataque anulado.", "info");
       }
       else if (type === 'CORNER') {
           newEvent.description = `ESCANTEIO: ${player ? player.name : (teamId === 'home' ? prev.homeTeam.shortName : prev.awayTeam.shortName)}`;
@@ -937,7 +951,6 @@ class App {
     const label = labels[type] || type;
     const team = store.getState()[teamId === 'home' ? 'homeTeam' : 'awayTeam'];
     this.addEvent(type, teamId, `${label}: ${team.shortName}`);
-    toasts.show(label, `Registrado para ${team.shortName}`, "info");
     this.closeModal();
   }
 

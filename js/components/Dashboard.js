@@ -5,16 +5,15 @@ export const Dashboard = (state, viewMode = 'list') => {
   const isField = viewMode === 'field';
 
   const renderEvent = (e) => {
+    const borderColor = e.isAnnulled ? '#64748b' : (e.teamId === 'home' ? state.homeTeam.color : e.teamId === 'away' ? state.awayTeam.color : '#475569');
+    const bgColor = e.isAnnulled ? 'transparent' : (e.teamId === 'home' ? state.homeTeam.color : e.teamId === 'away' ? state.awayTeam.color : '#ffffff') + '08';
+    
     return `
-      <div class="event-item" 
-           style="display: flex; gap: 0.75rem; padding: 0.75rem; border-left: 4px solid ${e.isAnnulled ? '#64748b' : (e.teamId === 'home' ? state.homeTeam.color : e.teamId === 'away' ? state.awayTeam.color : '#475569')}; 
-                  background: ${e.isAnnulled ? 'transparent' : (e.teamId === 'home' ? state.homeTeam.color : e.teamId === 'away' ? state.awayTeam.color : '#ffffff')}08;
-                  border-radius: 0 0.5rem 0.5rem 0; margin-bottom: 0.5rem; opacity: ${e.isAnnulled ? '0.5' : '1'};">
-        <span style="font-family: monospace; font-weight: 900; font-size: 0.625rem; min-width: 1.5rem; color: var(--slate-400); ${e.isAnnulled ? 'text-decoration: line-through; opacity: 0.5;' : ''}">
-          ${e.minute}'
-        </span>
+      <div class="event-item ${e.isAnnulled ? 'is-annulled' : ''}" 
+           style="border-left: 4px solid ${borderColor}; background: ${bgColor};">
+        <span class="event-time">${e.minute}'</span>
         <div style="flex: 1;">
-          <div style="font-size: 0.625rem; font-weight: 900; text-transform: uppercase; color: var(--slate-50);">${e.description}</div>
+          <div class="event-description">${e.description}</div>
         </div>
       </div>
     `;
