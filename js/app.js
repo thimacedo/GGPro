@@ -271,38 +271,27 @@ class App {
 
   // --- MATCH FINALIZATION ---
   async finishMatch() {
-    if (!confirm("Deseja encerrar a partida e gerar a crônica final com IA?")) return;
+    store.setState({ period: 'FINISHED' });
+    toasts.show("Partida Finalizada", "O cronômetro foi parado e o jogo encerrado.", "success");
+    this.closeModal();
+  }
 
-    const state = store.getState();
-    voice.isProcessing = true;
-    this.render(state);
-
-    try {
-      const context = `${state.competition} no ${state.stadium}. Árbitro: ${state.referee}.`;
-      const timeline = state.events.map(e => `${e.minute}' - ${e.description}`).reverse().join('\n');
-      
-      const report = await generateMatchReport(context, timeline);
-      
-      store.setState({ period: 'FINISHED' });
-      toasts.show("Partida Finalizada", "O jogo foi encerrado e a crônica está pronta.", "success");
-
-      this.activeModal = (s) => Modal(`
-        <div class="custom-scrollbar" style="max-height: 50vh; overflow-y: auto; color: var(--slate-300); font-size: 0.875rem; line-height: 1.6; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 1rem;">
-          ${report.replace(/\n/g, '<br>')}
+  confirmAction(message, onConfirm) {
+    this.activeModal = () => Modal(`
+      <div style="text-align: center; padding: 1rem;">
+        <p style="margin-bottom: 2rem; font-weight: 700; color: var(--slate-200); font-size: 0.875rem;">${message}</p>
+        <div style="display: flex; gap: 1rem;">
+          <button onclick="app.closeModal()" class="btn-submit" style="background: var(--slate-800); flex: 1; box-shadow: none;">CANCELAR</button>
+          <button id="modal-confirm-btn" class="btn-submit" style="flex: 1; background: var(--blue-600);">CONFIRMAR</button>
         </div>
-        <div style="margin-top: 2rem; display: flex; gap: 1rem;">
-          <button onclick="app.closeModal()" class="btn-submit" style="flex: 1; background: var(--slate-800); box-shadow: none;">FECHAR</button>
-          <button onclick="window.print()" class="btn-submit" style="flex: 1;">IMPRIMIR PDF</button>
-        </div>
-      `, "Crônica da Partida");
-      
-    } catch (e) {
-      console.error("Falha ao gerar crônica:", e);
-      toasts.show("Erro de IA", "Não foi possível gerar a crônica final.", "error");
-    } finally {
-      voice.isProcessing = false;
-      this.render(store.getState());
-    }
+      </div>
+    `, "Confirmação");
+    this.render(store.getState());
+    
+    setTimeout(() => {
+        const btn = document.getElementById('modal-confirm-btn');
+        if (btn) btn.onclick = () => { onConfirm(); };
+    }, 50);
   }
 
   // --- AÇÕES DO JOGADOR ---
@@ -866,11 +855,11 @@ class App {
     }
   }
   resetMatch() {
-    if (confirm("Deseja mesmo zerar tudo e voltar ao início?")) {
+    this.confirmAction("Deseja mesmo zerar tudo e voltar ao início?", () => {
       store.reset();
       this.activeModal = null;
       this.openSetup();
-    }
+    });
   }
 }
 
