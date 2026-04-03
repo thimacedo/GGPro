@@ -181,15 +181,54 @@ export const parseRegulationDocument = async (base64Data, mimeType) => {
 
 export const processVoiceCommand = async (command, homeTeam, awayTeam, eventsSummary) => {
   const contents = [{
-    parts: [{ text: `Comando: "${command}". Equipes: ${homeTeam.name} vs ${awayTeam.name}. Retorne ARRAY JSON de ações [{type, team, playerNumber, isAwarded, playerOutNumber, playerInNumber}].` }]
+    parts: [{ text: `
+      Você é o assistente de narração "Narrador Pro".
+      Comando de Voz: "${command}"
+      Equipes: ${homeTeam.name} (${homeTeam.shortName}) vs ${awayTeam.name} (${awayTeam.shortName})
+      Contexto Atual (Eventos recentes): ${eventsSummary}
+
+      Tarefa: Converta o comando de voz em uma lista de ações estruturadas.
+      
+      Regras:
+      1. Identifique o tipo de evento: GOAL, YELLOW_CARD, RED_CARD, SUBSTITUTION, FOUL, CORNER, OFFSIDE, SHOT, VAR, ANSWER, CORRECTION.
+      2. Identifique o time (home/away).
+      3. Identifique o número do jogador, se mencionado.
+      4. Se for uma CORREÇÃO (ex: "Anule o gol", "Não foi falta"), use type: 'CORRECTION'.
+      5. Se for uma PERGUNTA sobre o jogo (ex: "Quem fez o gol?", "Quantas faltas?"), use type: 'ANSWER' e forneça a resposta em 'answerText'.
+      
+      Retorne APENAS um ARRAY JSON no formato:
+      [{
+        "type": "tipo",
+        "team": "home"|"away"|"none",
+        "playerNumber": número,
+        "description": "breve descrição em pt-BR",
+        "answerText": "texto da resposta se for ANSWER",
+        "playerOutNumber": número (se SUB),
+        "playerInNumber": número (se SUB)
+      }]
+    ` }]
   }];
   const text = await callGeminiREST(ULTRA_GEN_MODELS, contents);
-  return cleanAndParseJSON(text);
+  const result = cleanAndParseJSON(text);
+  return Array.isArray(result) ? result : (result.actions || [result]);
 };
 
 export const generateMatchReport = async (context, timeline) => {
   const contents = [{
-    parts: [{ text: `Escreva cronica: Contexto: ${context}, Eventos: ${timeline}` }]
+    parts: [{ text: `
+      Escreva uma crônica esportiva profissional, emocionante e detalhada para o site "Narrador Pro".
+      
+      CONTEXTO: ${context}
+      CRONOLOGIA DOS EVENTOS: ${timeline}
+      
+      REQUISITOS:
+      - Título impactante.
+      - Lead resumindo o resultado.
+      - Descrição dos momentos chave.
+      - Tom jornalístico de alta qualidade.
+      - Entre 200 e 400 palavras.
+      - Use Markdown.
+    ` }]
   }];
   return await callGeminiREST(ULTRA_GEN_MODELS, contents);
 };

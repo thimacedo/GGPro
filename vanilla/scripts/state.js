@@ -92,9 +92,7 @@ class MatchState {
   // Salvar no histórico para undo
   saveToHistory() {
     this.history = [...this.history.slice(-10), JSON.parse(JSON.stringify(this.state))];
-  }
-
-  // Formatar tipo de evento
+  }  // Formatar tipo de evento
   formatEventType(type) {
     const map = {
       'GOAL': 'GOL', 'YELLOW_CARD': 'AMARELO', 'RED_CARD': 'VERMELHO', 'SUBSTITUTION': 'SUBSTITUIÇÃO',
@@ -103,7 +101,8 @@ class MatchState {
       'VAR': 'VAR', 'PENALTY_SHOOTOUT': 'PÊNALTIS', 'INVALID': 'INVÁLIDO', 'OFFSIDE': 'IMPEDIMENTO',
       'SAVE': 'DEFESA', 'WOODWORK': 'NA TRAVE', 'ANSWER': 'RESPOSTA', 'CORRECTION': 'CORREÇÃO',
       'CONCUSSION_SUBSTITUTION': 'SUBST. CONCUSSÃO', 'GK_8_SECONDS': 'INFRAÇÃO 8S',
-      'SET_GOALKEEPER': 'NOVO GOLEIRO', 'GENERIC': 'EVENTO'
+      'SET_GOALKEEPER': 'NOVO GOLEIRO', 'GENERIC': 'EVENTO', 'SHOOTOUT_GOAL': 'PÊNALTI (CONVERTIDO)',
+      'SHOOTOUT_MISS': 'PÊNALTI (PERDIDO)'
     };
     return map[type] || type;
   }
@@ -161,6 +160,10 @@ class MatchState {
         });
         return;
       }
+      if (this.state.period === 'PENALTIES') {
+        // No cronômetro em disputa de pênaltis
+        return;
+      }
     }
 
     this.setState({
@@ -191,7 +194,8 @@ class MatchState {
           eventData.type === 'YELLOW_CARD' ? '🟨' :
           eventData.type === 'RED_CARD' ? '🟥' :
           eventData.type === 'FOUL' ? '🛑' :
-          eventData.type === 'OFFSIDE' ? '🚩' : '•';
+          eventData.type === 'OFFSIDE' ? '🚩' :
+          eventData.type === 'SUBSTITUTION' ? '🔄' : '•';
 
         if (!finalDescription || finalDescription.toLowerCase().includes('registre') || finalDescription.includes('Lance rápido')) {
           finalDescription = `${icon} ${typeLabel}: ${p.number} - ${p.name} (${team.shortName})`;
@@ -206,18 +210,26 @@ class MatchState {
       playerId: eventData.playerId,
       relatedPlayerId: eventData.relatedPlayerId,
       description: finalDescription,
-      minute: currentMin,
+      minute: this.state.period === 'PENALTIES' ? 0 : currentMin,
       timestamp: now,
-      isAnnulled: false
+      isAnnulled: false,
+      metadata: eventData.metadata || {}
     };
 
     let newState = { ...this.state };
     let extraEvent = null;
 
+    // Lógica Específica de Substituição
     if (newEvent.type === 'SUBSTITUTION' || newEvent.type === 'CONCUSSION_SUBSTITUTION') {
       let players = [...team.players];
       const playerOut = newEvent.playerId ? players.find(p => p.id === newEvent.playerId) : null;
       let playerIn = newEvent.relatedPlayerId ? players.find(p => p.id === newEvent.relatedPlayerId) : null;
+
+      // Validação de limites
+      const normalSubs = this.state.events.filter(e => e.teamId === eventData.teamId && e.type === 'SUBSTITUTION' && !e.isAnnulled).length;
+      if (newEvent.type === 'SUBSTITUTION' && normalSubs >= this.state.rules.maxSubstitutions) {
+        throw new Error(`Limite de substituições (${this.state.rules.maxSubstitutions}) atingido para o ${team.name}.`);
+      }
 
       if (!playerIn && eventData.manualSub) {
         const randomOffset = (Math.random() - 0.5) * 5;
@@ -240,7 +252,7 @@ class MatchState {
 
       const subTypeLabel = newEvent.type === 'CONCUSSION_SUBSTITUTION' ? '(Concussão)' : '';
       if (playerOut && playerIn) {
-        finalDescription = `Sai ${playerOut.name} (#${playerOut.number}) Entra ${playerIn.name} (#${playerIn.number}) ${subTypeLabel}`;
+        finalDescription = `🔄 Sai ${playerOut.name} (#${playerOut.number}) Entra ${playerIn.name} (#${playerIn.number}) ${subTypeLabel}`;
       }
       newEvent.description = finalDescription;
 
@@ -264,7 +276,7 @@ class MatchState {
         id: Math.random().toString(36).substr(2, 9),
         type: 'CORNER',
         teamId: newEvent.teamId === 'home' ? 'away' : 'home',
-        description: `Escanteio (Infração 8s GK): ${team.name}`,
+        description: `🚩 Escanteio (Infração 8s GK): ${team.name}`,
         minute: currentMin,
         timestamp: Date.now() + 1,
         isAnnulled: false
@@ -281,7 +293,19 @@ class MatchState {
         if (p.isStarter && p.position === 'GK') return { ...p, position: 'MF' };
         return p;
       });
-      newState[teamKey] = { ...team, players: updatePlayers };
+      newState[teamKey] = { ...team, players: updatedPlayers };
+
+    } else if (newEvent.type === 'SHOOTOUT_GOAL' || newEvent.type === 'SHOOTOUT_MISS') {
+      const isGoal = newEvent.type === 'SHOOTOUT_GOAL';
+      newState.penaltyScore = {
+        ...this.state.penaltyScore,
+        [newEvent.teamId]: this.state.penaltyScore[newEvent.teamId] + (isGoal ? 1 : 0)
+      };
+      newState.penaltySequence = [...(this.state.penaltySequence || []), {
+        teamId: newEvent.teamId,
+        playerId: newEvent.playerId,
+        isGoal: isGoal
+      }];
 
     } else if (newEvent.playerId) {
       const tKey = newEvent.teamId === 'home' ? 'homeTeam' : 'awayTeam';
@@ -300,7 +324,7 @@ class MatchState {
                 type: 'RED_CARD',
                 teamId: newEvent.teamId,
                 playerId: p.id,
-                description: `Expulsão (2º Amarelo): ${p.name}`,
+                description: `🟥 Expulsão (2º Amarelo): ${p.name}`,
                 minute: currentMin,
                 timestamp: Date.now() + 1,
                 isAnnulled: false
@@ -330,6 +354,16 @@ class MatchState {
     this.setState(newState);
   }
 
+  // Anular evento (VAR)
+  annulEvent(eventId) {
+    this.saveToHistory();
+    const events = this.state.events.map(e => {
+      if (e.id === eventId) return { ...e, isAnnulled: !e.isAnnulled };
+      return e;
+    });
+    this.setState({ events });
+  }
+
   // Avançar período
   advancePeriod(target) {
     const currentIdx = PERIODS.indexOf(this.state.period);
@@ -342,7 +376,7 @@ class MatchState {
       teamId: 'none',
       minute: 0,
       timestamp: Date.now(),
-      description: `Início de Fase: ${nextPeriod}`,
+      description: `▶ Início de Fase: ${this.formatPeriodName(nextPeriod)}`,
       isAnnulled: false
     };
 
@@ -353,6 +387,15 @@ class MatchState {
       isPaused: true,
       events: [periodEvent, ...(this.state.events || [])]
     });
+  }
+
+  formatPeriodName(p) {
+    const map = {
+      'PRE_MATCH': 'Pré-Jogo', '1T': '1º Tempo', 'INTERVAL': 'Intervalo',
+      '2T': '2º Tempo', '1ET': '1º Tempo Extra', '2ET': '2º Tempo Extra',
+      'PENALTIES': 'Pênaltis', 'FINISHED': 'Encerrado'
+    };
+    return map[p] || p;
   }
 
   // Resetar partida
@@ -393,10 +436,21 @@ class MatchState {
         teamId: 'none',
         minute: Math.floor((this.state.timeElapsed + (this.state.timerStartedAt ? Date.now() - this.state.timerStartedAt : 0)) / 60000),
         timestamp: Date.now(),
-        description: 'Fim de Jogo Finalizado',
+        description: '🏁 Fim de Jogo Finalizado',
         isAnnulled: false
       }, ...(this.state.events || [])]
     });
+  }
+
+  // Desfazer (Undo)
+  undo() {
+    if (this.history.length > 0) {
+      const lastState = this.history.pop();
+      this.state = lastState;
+      this.save();
+      return true;
+    }
+    return false;
   }
 }
 
