@@ -32,7 +32,7 @@ function init() {
   // Configurar timer global
   setInterval(() => {
     const state = matchState.getState();
-    if (!state.isPaused && state.period !== 'PENALTIES') {
+    if (!state.isPaused && state.period !== 'PENALTIES' && state.period !== 'FINISHED' && state.period !== 'HALFTIME') {
       updateTimer();
     }
   }, 1000);
