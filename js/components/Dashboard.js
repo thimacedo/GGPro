@@ -5,15 +5,32 @@ export const Dashboard = (state, viewMode = 'list') => {
   const isField = viewMode === 'field';
 
   const renderEvent = (e) => {
-    const borderColor = e.isAnnulled ? '#64748b' : (e.teamId === 'home' ? state.homeTeam.color : e.teamId === 'away' ? state.awayTeam.color : '#475569');
-    const bgColor = e.isAnnulled ? 'transparent' : (e.teamId === 'home' ? state.homeTeam.color : e.teamId === 'away' ? state.awayTeam.color : '#ffffff') + '08';
+    const icons = {
+      GOAL: { icon: 'circle-dot', color: 'var(--emerald-500)', label: 'GOL' },
+      YELLOW_CARD: { icon: 'rectangle-vertical', color: 'var(--yellow-400)', label: 'CARTÃO AMARELO' },
+      RED_CARD: { icon: 'rectangle-vertical', color: 'var(--red-500)', label: 'CARTÃO VERMELHO' },
+      SUBSTITUTION: { icon: 'repeat', color: 'var(--blue-400)', label: 'SUBSTITUIÇÃO' },
+      VAR: { icon: 'tv', color: 'var(--indigo-400)', label: 'VAR' },
+      OFFSIDE: { icon: 'flag', color: 'var(--orange-400)', label: 'IMPEDIMENTO' },
+      PENALTY: { icon: 'maximize', color: 'var(--red-400)', label: 'PÊNALTI' },
+      INJURY: { icon: 'ambulance', color: 'var(--slate-400)', label: 'ATENDIMENTO' },
+      CORNER: { icon: 'corner-down-right', color: 'var(--blue-400)', label: 'ESCANTEIO' },
+      FOUL: { icon: 'alert-triangle', color: 'var(--slate-400)', label: 'FALTA' },
+      SHOT: { icon: 'zap', color: 'var(--orange-400)', label: 'CHUTE / FINALIZAÇÃO' }
+    };
+
+    const config = icons[e.type] || { icon: 'info', color: 'var(--slate-400)', label: e.type };
+    const teamColor = e.teamId === 'home' ? state.homeTeam.color : (e.teamId === 'away' ? state.awayTeam.color : 'rgba(255,255,255,0.1)');
     
     return `
-      <div class="event-item ${e.isAnnulled ? 'is-annulled' : ''}" 
-           style="border-left: 4px solid ${borderColor}; background: ${bgColor};">
-        <span class="event-time">${e.minute}'</span>
-        <div style="flex: 1;">
-          <div class="event-description">${e.description}</div>
+      <div class="event-item ${e.isAnnulled ? 'is-annulled' : ''}" style="border-left: 3px solid ${teamColor} !important;">
+        <div class="event-time-tag">${e.minute}'</div>
+        <div class="event-icon-circle" style="background: ${teamColor}15; border: 1px solid ${teamColor}30;">
+           <i data-lucide="${config.icon}" style="color: ${config.color};"></i>
+        </div>
+        <div class="event-content">
+           <div class="event-title">${config.label}</div>
+           <div class="event-detail">${e.description}</div>
         </div>
       </div>
     `;
@@ -25,135 +42,72 @@ export const Dashboard = (state, viewMode = 'list') => {
         ${team.players.map(p => `
           <div class="player-item" onclick="app.openPlayerActions('${p.id}', '${team.id}')" style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem; border-radius: 0.75rem; cursor: pointer; transition: background 0.2s; opacity: ${p.hasLeftGame ? '0.4' : '1'};">
             <div style="display: flex; align-items: center; gap: 0.75rem;">
-              <span class="num-tag" style="width: 1.5rem; height: 1.5rem; background: var(--slate-800); color: var(--slate-400); border-radius: 0.25rem; display: flex; align-items: center; justify-content: center; font-size: 0.625rem;">${p.number}</span>
-              <span style="font-size: 0.75rem; font-weight: 700; color: var(--slate-100);">${p.name}</span>
+              <span class="num-tag" style="width: 1.5rem; height: 1.5rem; background: var(--slate-800); color: var(--slate-400); border-radius: 0.25rem; display: flex; align-items: center; justify-content: center; font-size: 0.625rem; transition: background 0.2s;">${p.number}</span>
+              <span class="player-name" style="font-size: 0.75rem; font-weight: 700; color: var(--slate-100); transition: color 0.2s;">${p.name}</span>
             </div>
-            ${p.isStarter ? '<span style="font-size: 0.5rem; font-weight: 900; color: var(--blue-500); text-transform: uppercase;">T</span>' : ''}
+            ${p.isStarter ? '<span style="font-size: 0.5rem; color: var(--blue-400); font-weight: 800; text-transform: uppercase;">T</span>' : ''}
           </div>
         `).join('')}
       </div>
     `;
   };
 
-  if (state.period === 'PENALTIES') {
-    const sequence = state.penaltySequence || [];
-    const renderDots = (teamId) => sequence
-        .filter(s => s.teamId === teamId)
-        .map(s => `<div style="width: 0.75rem; height: 0.75rem; border-radius: 50%; background: ${s.success ? 'var(--emerald-500)' : 'var(--red-500)'}; box-shadow: 0 0 10px ${s.success ? 'rgba(16,185,129,0.4)' : 'rgba(239,68,68,0.4)'}"></div>`)
-        .join('');
+  return `
+    <div style="display: grid; grid-template-columns: 1fr 320px; gap: 1.5rem; align-items: start;">
+      <div class="glass-card" style="min-height: 500px; padding: 1.5rem;">
+        <!-- Tabs -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; padding: 0.25rem; background: rgba(15, 23, 42, 0.4); border-radius: 1rem; margin-bottom: 2rem;">
+          <button onclick="app.setDashboardView('list')" class="btn-view ${isList ? 'active' : ''}">
+            <i data-lucide="list" style="width: 1rem; height: 1rem;"></i> LISTA
+          </button>
+          <button onclick="app.setDashboardView('field')" class="btn-view ${isField ? 'active' : ''}">
+            <i data-lucide="layout" style="width: 1rem; height: 1rem;"></i> MAPA TÁTICO
+          </button>
+        </div>
 
-    return `
-      <div class="animate-in fade-in slide-in-from-bottom duration-700" style="max-width: 48rem; margin: 0 auto; width: 100%; padding: 2rem 1rem;">
-        <div class="card" style="padding: 2.5rem; border: 2px solid var(--indigo-600); background: linear-gradient(180deg, rgba(79, 70, 229, 0.1) 0%, transparent 100%); position: relative; overflow: hidden;">
-            <div style="position: absolute; top: 0; left: 0; right: 0; height: 4px; background: var(--indigo-600);"></div>
-            <h2 style="text-align: center; font-weight: 950; color: white; margin-bottom: 2rem; text-transform: uppercase; letter-spacing: 0.2em; font-size: 0.75rem; opacity: 0.8;">Disputa de Pênaltis</h2>
-            
-            <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 3rem; align-items: center; margin-bottom: 3rem;">
-                <div style="text-align: right;">
-                    <div style="font-size: 1.25rem; font-weight: 900; color: ${state.homeTeam.color}; margin-bottom: 0.5rem;">${state.homeTeam.shortName}</div>
-                    <div style="font-size: 4.5rem; font-weight: 950; color: var(--slate-50); line-height: 1; letter-spacing: -0.05em;">${state.penaltyScore.home}</div>
-                    <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.25rem;">${renderDots('home')}</div>
-                </div>
-                
-                <div style="font-size: 1.5rem; font-weight: 900; color: var(--slate-700); font-style: italic;">VS</div>
-                
-                <div style="text-align: left;">
-                    <div style="font-size: 1.25rem; font-weight: 900; color: ${state.awayTeam.color}; margin-bottom: 0.5rem;">${state.awayTeam.shortName}</div>
-                    <div style="font-size: 4.5rem; font-weight: 950; color: var(--slate-50); line-height: 1; letter-spacing: -0.05em;">${state.penaltyScore.away}</div>
-                    <div style="display: flex; gap: 0.5rem; justify-content: flex-start; margin-top: 1.25rem;">${renderDots('away')}</div>
-                </div>
+        ${isList ? `
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+            <div>
+               <h3 style="text-align: center; color: var(--red-500); font-weight: 900; text-transform: uppercase; margin-bottom: 1.5rem; font-size: 0.625rem; letter-spacing: 0.1em;">${state.homeTeam.name}</h3>
+               <p style="text-align: center; font-size: 0.5rem; color: var(--slate-500); margin-top: -1rem; margin-bottom: 1.5rem;">TÉC: ${state.homeTeam.coach || 'NÃO DEFINIDO'}</p>
+               ${renderPlayerList(state.homeTeam)}
             </div>
-
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
-                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                    <button onclick="app.handlePenaltyShot('home', true)" class="btn-submit" style="background: var(--emerald-600); font-size: 0.75rem;">GOL MANDANTE</button>
-                    <button onclick="app.handlePenaltyShot('home', false)" class="btn-submit" style="background: var(--red-600); font-size: 0.75rem;">ERRO MANDANTE</button>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                    <button onclick="app.handlePenaltyShot('away', true)" class="btn-submit" style="background: var(--emerald-600); font-size: 0.75rem;">GOL VISITANTE</button>
-                    <button onclick="app.handlePenaltyShot('away', false)" class="btn-submit" style="background: var(--red-600); font-size: 0.75rem;">ERRO VISITANTE</button>
-                </div>
+            <div>
+               <h3 style="text-align: center; color: var(--emerald-500); font-weight: 900; text-transform: uppercase; margin-bottom: 1.5rem; font-size: 0.625rem; letter-spacing: 0.1em;">${state.awayTeam.name}</h3>
+               <p style="text-align: center; font-size: 0.5rem; color: var(--slate-500); margin-top: -1rem; margin-bottom: 1.5rem;">TÉC: ${state.awayTeam.coach || 'NÃO DEFINIDO'}</p>
+               ${renderPlayerList(state.awayTeam)}
             </div>
+          </div>
+        ` : `
+          ${Field(state)}
+        `}
+      </div>
 
-            <button onclick="app.finishMatch()" class="btn-submit" style="margin-top: 2rem; background: var(--slate-800); font-size: 0.625rem; opacity: 0.5;">ENCERRAR DISPUTA</button>
+      <!-- Chronology -->
+      <div class="glass-card" style="padding: 1.25rem; min-height: 500px; display: flex; flex-direction: column;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem;">
+           <div style="display: flex; align-items: center; gap: 0.5rem; color: var(--slate-400);">
+             <i data-lucide="history" style="width: 1rem; height: 1rem;"></i>
+             <span style="font-size: 0.6875rem; font-weight: 950; text-transform: uppercase; letter-spacing: 0.1em;">Cronologia</span>
+           </div>
+           <div style="display: flex; gap: 0.5rem;">
+             <button onclick="app.showVAR()" class="text-btn" style="font-size: 0.5625rem; color: var(--slate-500);"><i data-lucide="tv" style="width: 0.75rem; vertical-align: middle; margin-right: 0.25rem;"></i> VAR</button>
+             <button onclick="app.undoLastEvent()" class="text-btn" style="font-size: 0.5625rem; color: var(--slate-500);"><i data-lucide="rotate-ccw" style="width: 0.75rem; vertical-align: middle; margin-right: 0.25rem;"></i> DESFAZER</button>
+           </div>
+        </div>
+        <div class="custom-scrollbar" style="flex: 1; overflow-y: auto; overflow-x: hidden; padding-right: 0.5rem;">
+          ${state.events.length === 0 ? `
+             <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: var(--slate-600); opacity: 0.5;">
+               <i data-lucide="timer" style="width: 2.5rem; height: 2.5rem; margin-bottom: 1rem;"></i>
+               <p style="font-size: 0.625rem; font-weight: 800; text-transform: uppercase;">Aguardando lances...</p>
+             </div>
+          ` : `
+             <div style="display: flex; flex-direction: column;">
+               ${[...state.events].reverse().map(e => renderEvent(e)).join('')}
+             </div>
+          `}
         </div>
       </div>
-    `;
-  }
-
-  return `
-    <div class="dashboard-grid">
-        <div class="view-panel">
-            <div class="view-selector">
-                <button onclick="app.setViewMode('list')" class="btn-view ${isList ? 'active' : ''}">
-                    <i data-lucide="list-filter" style="width: 0.875rem; height: 0.875rem;"></i> LISTA
-                </button>
-                <button onclick="app.setViewMode('field')" class="btn-view ${isField ? 'active' : ''}">
-                    <i data-lucide="layout-dashboard" style="width: 0.875rem; height: 0.875rem;"></i> MAPA TÁTICO
-                </button>
-            </div>
-            
-            <div class="content-display">
-                ${isField ? Field(state) : `
-                    <div class="card" style="padding: 1.5rem;">
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-                            <div>
-                                <div onclick="app.editTeam('home')" style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color); margin-bottom: 0.5rem; cursor: pointer; hover: opacity-80;">
-                                    <h4 style="font-size: 0.625rem; font-weight: 900; text-transform: uppercase; text-align: center; color: ${state.homeTeam.color}">${state.homeTeam.name}</h4>
-                                    ${state.homeTeam.coach ? `<div style="font-size: 0.5rem; color: var(--slate-500); text-align: center; margin-top: 0.25rem;">TÉC: ${state.homeTeam.coach}</div>` : ''}
-                                </div>
-                                ${renderPlayerList(state.homeTeam)}
-                            </div>
-                            <div>
-                                <div onclick="app.editTeam('away')" style="padding: 0.5rem 0; border-bottom: 1px solid var(--border-color); margin-bottom: 0.5rem; cursor: pointer; hover: opacity-80;">
-                                    <h4 style="font-size: 0.625rem; font-weight: 900; text-transform: uppercase; text-align: center; color: ${state.awayTeam.color}">${state.awayTeam.name}</h4>
-                                    ${state.awayTeam.coach ? `<div style="font-size: 0.5rem; color: var(--slate-500); text-align: center; margin-top: 0.25rem;">TÉC: ${state.awayTeam.coach}</div>` : ''}
-                                </div>
-                                ${renderPlayerList(state.awayTeam)}
-                            </div>
-                        </div>
-                    </div>
-                `}
-            </div>
-        </div>
-        
-        <div class="stats-panel">
-            <div class="card" style="height: 100%; min-height: 400px; display: flex; flex-direction: column;">
-                <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-color); background: rgba(255,255,255,0.02); display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
-                    <h3 style="font-size: 0.6875rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.3em; color: var(--slate-400); display: flex; align-items: center; gap: 0.5rem;"><i data-lucide="history" style="width: 1rem; height: 1rem;"></i> CRONOLOGIA</h3>
-                    <div style="display: flex; gap: 1rem;">
-                        <button onclick="app.triggerVAR()" style="font-size: 0.5625rem; font-weight: 900; color: var(--blue-400); text-transform: uppercase; background: transparent; border: none; cursor: pointer;">📺 VAR</button>
-                        <button onclick="app.undoLastEvent()" style="font-size: 0.5625rem; font-weight: 900; color: var(--slate-500); text-transform: uppercase; background: transparent; border: none; cursor: pointer;">DESFAZER</button>
-                    </div>
-                </div>
-                <div class="custom-scrollbar" style="flex: 1; overflow-y: auto; padding: 1.5rem;">
-                    ${state.events.length === 0 ? '<div style="text-align: center; padding: 2.5rem 0; font-size: 0.75rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: var(--slate-500); opacity: 0.3;">Sem Eventos</div>' : state.events.map(renderEvent).join('')}
-                </div>
-
-                <div style="padding: 1rem; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.2);">
-                  ${state.period === 'FINISHED' ? `
-                      <button onclick="app.resetMatch()" class="btn-submit" style="padding: 0.75rem; font-size: 0.75rem; background: var(--blue-600); box-shadow: 0 4px 15px -3px rgba(37, 99, 235, 0.4);">
-                        <i data-lucide="rotate-ccw" style="width: 1rem; height: 1rem; vertical-align: middle; margin-right: 0.5rem;"></i> REINICIAR / NOVA PARTIDA
-                      </button>
-                  ` : `
-                      <div style="display: flex; gap: 0.5rem;">
-                        <button onclick="app.nextPeriod()" class="btn-submit" style="flex: 1.5; padding: 0.75rem; font-size: 0.6875rem; background: var(--slate-800); border: 1px solid var(--slate-700); box-shadow: none;">
-                          <i data-lucide="chevron-right" style="width: 1rem; height: 1rem; vertical-align: middle; margin-right: 0.5rem;"></i>
-                          ${state.period === 'PRE_MATCH' ? 'INICIAR JOGO' : 
-                            state.period === '1T' ? 'INTERVALO' : 
-                            state.period === 'INTERVAL' ? 'INICIAR 2T' : 
-                            state.period === '2T' ? 'FIM REGULAM.' : 'PRÓXIMO'}
-                        </button>
-                        ${state.period === '2T' || state.period === 'FINISHED' ? `
-                          <button onclick="app.confirmAction('Encerrar a partida agora?', () => app.finishMatch())" class="btn-submit" style="flex: 1; padding: 0.75rem; font-size: 0.6875rem; background: var(--emerald-600); box-shadow: 0 4px 15px -3px rgba(16, 185, 129, 0.4);">
-                            ENCERRAR
-                          </button>
-                        ` : ''}
-                      </div>
-                  `}
-                </div>
-            </div>
-        </div>
     </div>
   `;
 };

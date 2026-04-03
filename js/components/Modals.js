@@ -25,15 +25,15 @@ export const PreMatchSetupContent = (state) => {
     </div>
 
     <!-- IA Uploads -->
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 2rem;">
-        <div style="padding: 1.25rem; background: rgba(30, 41, 59, 0.5); border-radius: 1.5rem; border: 1px dashed var(--slate-600); text-align: center; display: flex; flex-direction: column; align-items: center;">
+    <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;">
+        <div style="flex: 1; min-width: 14rem; padding: 1.25rem; background: rgba(30, 41, 59, 0.5); border-radius: 1.5rem; border: 1px dashed var(--slate-600); text-align: center; display: flex; flex-direction: column; align-items: center;">
             <p style="font-size: 0.625rem; color: var(--slate-400); margin-bottom: 0.75rem; font-weight: 800; text-transform: uppercase;">Banner / Jornal</p>
             <label class="btn-view active" style="padding: 0.5rem 1rem; font-size: 0.625rem; width: auto; cursor: pointer; background: var(--blue-600);">
                 <i data-lucide="image" style="width: 0.875rem; height: 0.875rem;"></i> LER BANNER
                 <input type="file" class="hidden" accept="image/*" onchange="app.handleBannerUpload(event)">
             </label>
         </div>
-        <div style="padding: 1.25rem; background: rgba(30, 41, 59, 0.5); border-radius: 1.5rem; border: 1px dashed var(--slate-600); text-align: center; display: flex; flex-direction: column; align-items: center;">
+        <div style="flex: 1; min-width: 14rem; padding: 1.25rem; background: rgba(30, 41, 59, 0.5); border-radius: 1.5rem; border: 1px dashed var(--slate-600); text-align: center; display: flex; flex-direction: column; align-items: center;">
             <p style="font-size: 0.625rem; color: var(--slate-400); margin-bottom: 0.75rem; font-weight: 800; text-transform: uppercase;">Regulamento PDF</p>
             <label class="btn-view active" style="padding: 0.5rem 1rem; font-size: 0.625rem; width: auto; background: var(--emerald-600); border-color: var(--emerald-400); cursor: pointer;">
                 <i data-lucide="book-open" style="width: 0.875rem; height: 0.875rem;"></i> LER REGRAS
