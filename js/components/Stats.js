@@ -34,7 +34,7 @@ export const Stats = (state) => {
 
   return `
     <div class="card" style="padding: 2.5rem; max-width: 40rem; margin: 0 auto; width: 100%;">
-      <h2 style="font-size: 1.5rem; font-weight: 900; color: white; text-transform: uppercase; letter-spacing: -0.05em; margin-bottom: 2.5rem; text-align: center;">Estatísticas da Partida</h2>
+      <h2 style="font-size: 1.5rem; font-weight: 900; color: var(--slate-50); text-transform: uppercase; letter-spacing: -0.05em; margin-bottom: 2.5rem; text-align: center;">Estatísticas da Partida</h2>
       <div style="display: flex; flex-direction: column;">
         ${stats.map(renderStatRow).join('')}
       </div>

@@ -14,7 +14,7 @@ export const Dashboard = (state, viewMode = 'list') => {
           ${e.minute}'
         </span>
         <div style="flex: 1;">
-          <div style="font-size: 0.625rem; font-weight: 900; text-transform: uppercase; color: white;">${e.description}</div>
+          <div style="font-size: 0.625rem; font-weight: 900; text-transform: uppercase; color: var(--slate-50);">${e.description}</div>
         </div>
       </div>
     `;
@@ -27,7 +27,7 @@ export const Dashboard = (state, viewMode = 'list') => {
           <div class="player-item" onclick="app.openPlayerActions('${p.id}', '${team.id}')" style="display: flex; align-items: center; justify-content: space-between; padding: 0.5rem; border-radius: 0.75rem; cursor: pointer; transition: background 0.2s; opacity: ${p.hasLeftGame ? '0.4' : '1'};">
             <div style="display: flex; align-items: center; gap: 0.75rem;">
               <span class="num-tag" style="width: 1.5rem; height: 1.5rem; background: var(--slate-800); color: var(--slate-400); border-radius: 0.25rem; display: flex; align-items: center; justify-content: center; font-size: 0.625rem;">${p.number}</span>
-              <span style="font-size: 0.75rem; font-weight: 700; color: var(--slate-200);">${p.name}</span>
+              <span style="font-size: 0.75rem; font-weight: 700; color: var(--slate-100);">${p.name}</span>
             </div>
             ${p.isStarter ? '<span style="font-size: 0.5rem; font-weight: 900; color: var(--blue-500); text-transform: uppercase;">T</span>' : ''}
           </div>
@@ -52,7 +52,7 @@ export const Dashboard = (state, viewMode = 'list') => {
             <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 3rem; align-items: center; margin-bottom: 3rem;">
                 <div style="text-align: right;">
                     <div style="font-size: 1.25rem; font-weight: 900; color: ${state.homeTeam.color}; margin-bottom: 0.5rem;">${state.homeTeam.shortName}</div>
-                    <div style="font-size: 4.5rem; font-weight: 950; color: white; line-height: 1; letter-spacing: -0.05em;">${state.penaltyScore.home}</div>
+                    <div style="font-size: 4.5rem; font-weight: 950; color: var(--slate-50); line-height: 1; letter-spacing: -0.05em;">${state.penaltyScore.home}</div>
                     <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.25rem;">${renderDots('home')}</div>
                 </div>
                 
@@ -60,7 +60,7 @@ export const Dashboard = (state, viewMode = 'list') => {
                 
                 <div style="text-align: left;">
                     <div style="font-size: 1.25rem; font-weight: 900; color: ${state.awayTeam.color}; margin-bottom: 0.5rem;">${state.awayTeam.shortName}</div>
-                    <div style="font-size: 4.5rem; font-weight: 950; color: white; line-height: 1; letter-spacing: -0.05em;">${state.penaltyScore.away}</div>
+                    <div style="font-size: 4.5rem; font-weight: 950; color: var(--slate-50); line-height: 1; letter-spacing: -0.05em;">${state.penaltyScore.away}</div>
                     <div style="display: flex; gap: 0.5rem; justify-content: flex-start; margin-top: 1.25rem;">${renderDots('away')}</div>
                 </div>
             </div>
