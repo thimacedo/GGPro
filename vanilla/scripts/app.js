@@ -123,7 +123,10 @@ function renderActiveTab(state) {
           <div class="bg-slate-900/50 rounded-[2.5rem] border border-white/5 flex flex-col overflow-hidden shadow-2xl flex-1 min-h-0 backdrop-blur-xl">
             <div class="p-6 border-b border-white/5 bg-white/5 flex justify-between items-center">
               <h3 class="text-[11px] font-black uppercase tracking-[0.3em] text-slate-400 flex items-center gap-2">📜 Cronologia</h3>
-              <button id="undoBtn" class="p-2 text-[10px] font-black text-slate-500 hover:text-red-400 transition-colors uppercase">Desfazer</button>
+              <div class="flex gap-2">
+                <button onclick="handleVarReversal()" class="p-2 text-[10px] font-black text-amber-500 hover:text-amber-400 transition-colors uppercase">VAR</button>
+                <button id="undoBtn" class="p-2 text-[10px] font-black text-slate-500 hover:text-red-400 transition-colors uppercase">Desfazer</button>
+              </div>
             </div>
             <div class="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-4">
               ${(state.events || []).map(e => renderTimelineEvent(e, state)).join('')}
