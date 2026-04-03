@@ -39,16 +39,24 @@
   --radius-3xl: 2.5rem;
 }
 
-/* LIGHT MODE OVERRIDES */
+/* LIGHT MODE OVERRIDES - Total Slate Inversion */
 body.light-mode {
   --slate-50: #0f172a;
-  --header-bg: #ffffff;
-  --body-bg: #f1f5f9;
-  --card-bg: rgba(255, 255, 255, 0.8);
-  --border-color: rgba(0, 0, 0, 0.1);
-  --slate-800: #e2e8f0;
+  --slate-100: #1e293b;
+  --slate-200: #334155;
+  --slate-300: #475569;
+  --slate-400: #64748b;
+  --slate-500: #94a3b8;
+  --slate-600: #cbd5e1;
+  --slate-700: #e2e8f0;
+  --slate-800: #f1f5f9;
   --slate-900: #f8fafc;
   --slate-950: #ffffff;
+
+  --header-bg: #ffffff;
+  --body-bg: #f8fafc;
+  --card-bg: rgba(255, 255, 255, 0.9);
+  --border-color: rgba(0, 0, 0, 0.1);
 }
 
 * {

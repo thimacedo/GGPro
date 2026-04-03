@@ -138,8 +138,8 @@ export const Dashboard = (state, viewMode = 'list') => {
                   </div>
                 ` : (state.events.length > 0 ? `
                   <div style="padding: 1rem; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.2);">
-                      <button onclick="app.finishMatch()" class="btn-submit" style="padding: 0.75rem; font-size: 0.75rem; background: var(--emerald-600); box-shadow: 0 4px 15px -3px rgba(16, 185, 129, 0.4);">
-                        <i data-lucide="check-circle" style="width: 1rem; height: 1rem; vertical-align: middle; margin-right: 0.5rem;"></i> FINALIZAR E GERAR CRÔNICA
+                      <button onclick="app.confirmAction('Encerrar a partida agora?', () => app.finishMatch())" class="btn-submit" style="padding: 0.75rem; font-size: 0.75rem; background: var(--emerald-600); box-shadow: 0 4px 15px -3px rgba(16, 185, 129, 0.4);">
+                        <i data-lucide="check-circle" style="width: 1rem; height: 1rem; vertical-align: middle; margin-right: 0.5rem;"></i> FINALIZAR PARTIDA
                       </button>
                   </div>
                 ` : '')}

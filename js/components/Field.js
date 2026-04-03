@@ -27,7 +27,7 @@ export const Field = (state) => {
   const renderPlayers = (team, isHome) => {
     const contrast = getContrastColor(team.color);
     
-    return team.players.filter(p => p.isStarter).map(player => {
+    return team.players.map(player => {
       const px = player.x ?? 50;
       const py = player.y ?? 50;
       const displayX = isHome ? px : (100 - px);
@@ -36,7 +36,7 @@ export const Field = (state) => {
       return `
         <div 
           class="player-marker" 
-          style="top: ${displayY}%; left: ${displayX}%;"
+          style="top: ${displayY}%; left: ${displayX}%; z-index: 20; opacity: ${player.isStarter ? '1' : '0.5'};"
           onmousedown="app.handlePlayerDragStart(event, '${team.id}', '${player.id}')"
           ontouchstart="app.handlePlayerDragStart(event, '${team.id}', '${player.id}')"
           onclick="event.stopPropagation(); app.openPlayerActions('${player.id}', '${team.id}')"
