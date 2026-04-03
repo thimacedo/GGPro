@@ -146,15 +146,8 @@ class ModalManager {
 
   showSubstitution(playerOut, team, teamId) {
     const availableSubs = team.players.filter(p => !p.isStarter && !p.hasLeftGame);
+    const hasSubs = availableSubs.length > 0;
     
-    if (availableSubs.length === 0) {
-      if (typeof window.addToast === 'function') {
-        window.addToast('Aviso', 'Não há reservas disponíveis para substituição.', 'warning');
-      } else {
-        alert('Não há reservas disponíveis para substituição.');
-      }
-      return;
-    }
     const content = `
       <div class="flex flex-col gap-6">
         <div class="p-4 bg-red-500/10 border border-red-500/20 rounded-2xl">
@@ -163,20 +156,37 @@ class ModalManager {
         </div>
         
         <div class="flex flex-col gap-3">
-          <p class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Selecionar Substituto (Entrando)</p>
-          ${availableSubs.map(p => `
-            <button class="w-full p-4 bg-slate-800 hover:bg-emerald-600 border border-white/5 rounded-2xl text-left transition-all group" onclick="confirmSub('${p.id}')">
-              <div class="flex items-center justify-between">
-                <span class="text-white font-bold group-hover:text-white">${p.number} - ${p.name}</span>
-                <span class="text-[10px] font-black text-slate-500 group-hover:text-emerald-200 uppercase">${p.position}</span>
+          <p class="text-[10px] font-black text-emerald-500 uppercase tracking-widest">
+            ${hasSubs ? 'Selecionar Substituto (Entrando)' : 'Registrar Substituto Manual'}
+          </p>
+          
+          ${hasSubs ? `
+            <div class="flex flex-col gap-2">
+              ${availableSubs.map(p => `
+                <button class="w-full p-4 bg-slate-800 hover:bg-emerald-600 border border-white/5 rounded-2xl text-left transition-all group" onclick="confirmSub('${p.id}')">
+                  <div class="flex items-center justify-between">
+                    <span class="text-white font-bold group-hover:text-white">${p.number} - ${p.name}</span>
+                    <span class="text-[10px] font-black text-slate-500 group-hover:text-emerald-200 uppercase">${p.position}</span>
+                  </div>
+                </button>
+              `).join('')}
+            </div>
+          ` : `
+            <div class="bg-slate-800 p-6 rounded-2xl border border-white/10 space-y-4">
+              <p class="text-xs text-slate-400 mb-4">Nenhum reserva cadastrado. Insira os dados do atleta que está entrando:</p>
+              <div class="grid grid-cols-4 gap-3">
+                <input type="number" id="manual_sub_num" placeholder="Nº" class="bg-slate-900 border border-white/10 rounded-xl p-3 text-white font-bold text-center">
+                <input type="text" id="manual_sub_name" placeholder="Nome do Jogador" class="col-span-3 bg-slate-900 border border-white/10 rounded-xl p-3 text-white font-bold">
               </div>
-            </button>
-          `).join('')}
-          ${availableSubs.length === 0 ? '<p class="text-center text-slate-500 text-xs py-4">Sem reservas disponíveis.</p>' : ''}
+              <button class="w-full p-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl transition-all shadow-lg" onclick="confirmManualSub()">
+                CONFIRMAR ENTRADA
+              </button>
+            </div>
+          `}
         </div>
         
         <div class="pt-4 border-t border-white/5">
-          <button class="w-full p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-[10px] font-black uppercase text-amber-500 hover:bg-amber-500 hover:text-slate-900 transition-all" onclick="concussionSub()">
+          <button class="w-full p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-[10px] font-black uppercase text-amber-500 hover:bg-amber-500 hover:text-slate-900 transition-all font-bold" onclick="concussionSub()">
             🧠 Substituição p/ Concussão (Extra)
           </button>
         </div>
@@ -191,24 +201,57 @@ class ModalManager {
           playerId: playerOut.id,
           relatedPlayerId: playerIdIn
         });
-        window.addToast('Substituição Realizada', 'Evento registrado com sucesso.', 'success');
         this.close();
         window.render();
       } catch (e) {
-        window.addToast('Erro', e.message, 'error');
+        alert(e.message);
       }
     };
 
+    window.confirmManualSub = () => {
+      const num = parseInt(document.getElementById('manual_sub_num').value);
+      const name = document.getElementById('manual_sub_name').value.trim();
+
+      if (!num || !name) {
+        alert("Preencha o número e o nome do jogador.");
+        return;
+      }
+
+      // 1. Criar novo jogador no estado
+      const newPlayerId = `manual_${Date.now()}`;
+      const newPlayer = {
+        id: newPlayerId,
+        number: num,
+        name: name,
+        position: 'SUB',
+        isStarter: false,
+        cards: { yellow: 0, red: 0 }
+      };
+
+      matchState.setState(prev => {
+        const teamKey = teamId === 'home' ? 'homeTeam' : 'awayTeam';
+        return {
+          ...prev,
+          [teamKey]: {
+            ...prev[teamKey],
+            players: [...prev[teamKey].players, newPlayer]
+          }
+        };
+      });
+
+      // 2. Executar a substituição
+      window.confirmSub(newPlayerId);
+    };
+
     window.concussionSub = () => {
-      // Abre modal de seleção para concussão
       this.open(`
         <div class="flex flex-col gap-4">
           <p class="text-xs text-slate-400">Selecione o jogador para substituir por motivo de concussão (não conta no limite normal).</p>
-          ${availableSubs.map(p => `
+          ${hasSubs ? availableSubs.map(p => `
             <button class="w-full p-4 bg-slate-800 hover:bg-blue-600 border border-white/5 rounded-2xl text-left transition-all" onclick="executeConcussion('${p.id}')">
               <span class="text-white font-bold">${p.number} - ${p.name}</span>
             </button>
-          `).join('')}
+          `).join('') : '<p class="text-center p-4">Sem reservas. Use a substituição manual normal acima.</p>'}
         </div>
       `, 'Substituição por Concussão');
       
@@ -219,7 +262,6 @@ class ModalManager {
           playerId: playerOut.id,
           relatedPlayerId: pIdIn
         });
-        window.addToast('Concussão Atendida', 'Substituição realizada.', 'success');
         this.close();
         window.render();
       };
