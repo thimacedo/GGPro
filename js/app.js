@@ -797,6 +797,29 @@ class App {
         toasts.show("Novo Goleiro", `${team.players.find(p => p.id === playerId).name} assumiu a meta.`, "info");
       }
 
+      // Novos Eventos: Impedimento, Escanteio, Pênalti, Finalização
+      else if (type === 'OFFSIDE') {
+          newEvent.description = `IMPEDIMENTO: ${player ? player.name : (teamId === 'home' ? prev.homeTeam.shortName : prev.awayTeam.shortName)}`;
+          toasts.show("Impedimento", "Ataque anulado.", "info");
+      }
+      else if (type === 'CORNER') {
+          newEvent.description = `ESCANTEIO: ${player ? player.name : (teamId === 'home' ? prev.homeTeam.shortName : prev.awayTeam.shortName)}`;
+      }
+      else if (type === 'PENALTY') {
+          newEvent.description = `PÊNALTI: ${player ? player.name : (teamId === 'home' ? prev.homeTeam.shortName : prev.awayTeam.shortName)}`;
+          toasts.show("PÊNALTI!", "Lance perigoso na área.", "warning");
+      }
+      else if (type === 'SHOT') {
+          newEvent.description = `CHUTE / FINALIZAÇÃO: ${player ? player.name : (teamId === 'home' ? prev.homeTeam.shortName : prev.awayTeam.shortName)}`;
+      }
+      else if (type === 'VAR') {
+          newEvent.description = `ANÁLISE VAR: ${teamId === 'home' ? prev.homeTeam.shortName : prev.awayTeam.shortName}`;
+          toasts.show("📺 VAR", "Verificando lance na cabine.", "info");
+      }
+      else if (type === 'INJURY') {
+          newEvent.description = `ATENDIMENTO MÉDICO: ${teamId === 'home' ? prev.homeTeam.shortName : prev.awayTeam.shortName}`;
+      }
+
       // Verificação Final: Time sem Goleiro
       const teamAfter = newState[teamKey];
       if (teamAfter && teamAfter.id !== 'none') {
@@ -811,14 +834,44 @@ class App {
     });
   }
 
-  selectPlayer(playerId, teamId) {
+  openEditPlayer(playerId, teamId) {
     const state = store.getState();
     const team = teamId === 'home' ? state.homeTeam : state.awayTeam;
     const player = team.players.find(p => p.id === playerId);
     
-    if (confirm(`GOL de ${player.name}?`)) {
-      this.addEvent('GOAL', teamId, `GOL: ${player.name} (${player.number})`);
-    }
+    this.activeModal = () => Modal(EditPlayerContent(player, teamId), `Editar Atleta: ${player.name}`);
+    this.render(state);
+  }
+
+  openTeamActions(teamId) {
+    const state = store.getState();
+    const team = teamId === 'home' ? state.homeTeam : state.awayTeam;
+    
+    this.activeModal = () => Modal(TeamActionContent(teamId, team), `Ações Coletivas: ${team.shortName}`);
+    this.render(state);
+  }
+
+  savePlayerEdit(playerId, teamId) {
+    const name = document.getElementById('edit-player-name').value;
+    const number = parseInt(document.getElementById('edit-player-number').value);
+    const position = document.getElementById('edit-player-position').value;
+    const isStarter = document.getElementById('edit-player-starter').checked;
+
+    store.saveToHistory();
+    store.setState(prev => {
+      const teamKey = teamId === 'home' ? 'homeTeam' : 'awayTeam';
+      const team = { ...prev[teamKey] };
+      const players = team.players.map(p => {
+        if (p.id === playerId) {
+          return { ...p, name, number, position, isStarter };
+        }
+        return p;
+      });
+      return { ...prev, [teamKey]: { ...team, players } };
+    });
+
+    toasts.show("Atleta Atualizado", `${name} (#${number}) atualizado com sucesso.`, "success");
+    this.closeModal();
   }
 
   editTeamName(teamId) {
@@ -840,20 +893,27 @@ class App {
     const periods = ['PRE_MATCH', '1T', 'INTERVAL', '2T', 'FINISHED'];
     const current = store.getState().period;
     
-    if (current === 'FINISHED') {
-      if (confirm("Deseja reiniciar a partida? Isso apagará todo o histórico atual.")) {
-        store.reset();
-        this.activeModal = null; // Fecha qualquer modal (ex: Crônica)
-        this.openSetup(); // Força a abertura do setup
-      }
-      return;
-    }
+    if (current === 'FINISHED') return;
 
     const nextIdx = periods.indexOf(current) + 1;
     if (nextIdx < periods.length) {
-      store.setState({ period: periods[nextIdx] });
+      const nextPeriod = periods[nextIdx];
+      const label = nextPeriod === '1T' ? 'Início do 1º Tempo' :
+                    nextPeriod === 'INTERVAL' ? 'Intervalo' :
+                    nextPeriod === '2T' ? 'Início do 2º Tempo' :
+                    nextPeriod === 'FINISHED' ? 'Fim de Jogo' : 'Próxima Etapa';
+
+      store.setState({ period: nextPeriod, isPaused: true });
+      this.addEvent('PERIOD_START', 'none', label);
+      toasts.show("Etapa Atualizada", `Partida agora em: ${nextPeriod}`, "info");
     }
   }
+
+  handleTeamAction(type, teamId) {
+    this.handlePlayerAction(type, null, teamId);
+    this.closeModal();
+  }
+
   resetMatch() {
     this.confirmAction("Deseja mesmo zerar tudo e voltar ao início?", () => {
       store.reset();

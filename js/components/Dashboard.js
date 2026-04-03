@@ -130,19 +130,29 @@ export const Dashboard = (state, viewMode = 'list') => {
                 <div class="custom-scrollbar" style="flex: 1; overflow-y: auto; padding: 1.5rem;">
                     ${state.events.length === 0 ? '<div style="text-align: center; padding: 2.5rem 0; font-size: 0.75rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; color: var(--slate-500); opacity: 0.3;">Sem Eventos</div>' : state.events.map(renderEvent).join('')}
                 </div>
-                ${state.period === 'FINISHED' ? `
-                  <div style="padding: 1rem; border-top: 1px solid var(--border-color); background: rgba(59, 130, 246, 0.1);">
+
+                <div style="padding: 1rem; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.2);">
+                  ${state.period === 'FINISHED' ? `
                       <button onclick="app.resetMatch()" class="btn-submit" style="padding: 0.75rem; font-size: 0.75rem; background: var(--blue-600); box-shadow: 0 4px 15px -3px rgba(37, 99, 235, 0.4);">
                         <i data-lucide="rotate-ccw" style="width: 1rem; height: 1rem; vertical-align: middle; margin-right: 0.5rem;"></i> REINICIAR / NOVA PARTIDA
                       </button>
-                  </div>
-                ` : (state.events.length > 0 ? `
-                  <div style="padding: 1rem; border-top: 1px solid var(--border-color); background: rgba(0,0,0,0.2);">
-                      <button onclick="app.confirmAction('Encerrar a partida agora?', () => app.finishMatch())" class="btn-submit" style="padding: 0.75rem; font-size: 0.75rem; background: var(--emerald-600); box-shadow: 0 4px 15px -3px rgba(16, 185, 129, 0.4);">
-                        <i data-lucide="check-circle" style="width: 1rem; height: 1rem; vertical-align: middle; margin-right: 0.5rem;"></i> FINALIZAR PARTIDA
-                      </button>
-                  </div>
-                ` : '')}
+                  ` : `
+                      <div style="display: flex; gap: 0.5rem;">
+                        <button onclick="app.nextPeriod()" class="btn-submit" style="flex: 1.5; padding: 0.75rem; font-size: 0.6875rem; background: var(--slate-800); border: 1px solid var(--slate-700); box-shadow: none;">
+                          <i data-lucide="chevron-right" style="width: 1rem; height: 1rem; vertical-align: middle; margin-right: 0.5rem;"></i>
+                          ${state.period === 'PRE_MATCH' ? 'INICIAR JOGO' : 
+                            state.period === '1T' ? 'INTERVALO' : 
+                            state.period === 'INTERVAL' ? 'INICIAR 2T' : 
+                            state.period === '2T' ? 'FIM REGULAM.' : 'PRÓXIMO'}
+                        </button>
+                        ${state.period === '2T' || state.period === 'FINISHED' ? `
+                          <button onclick="app.confirmAction('Encerrar a partida agora?', () => app.finishMatch())" class="btn-submit" style="flex: 1; padding: 0.75rem; font-size: 0.6875rem; background: var(--emerald-600); box-shadow: 0 4px 15px -3px rgba(16, 185, 129, 0.4);">
+                            ENCERRAR
+                          </button>
+                        ` : ''}
+                      </div>
+                  `}
+                </div>
             </div>
         </div>
     </div>

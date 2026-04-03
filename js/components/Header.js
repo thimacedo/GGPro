@@ -28,7 +28,12 @@ export const Header = (state) => {
               <i data-lucide="pencil" style="width: 0.75rem; height: 0.75rem;"></i>
               ${state.homeTeam.shortName}
             </h2>
-            <span class="formation-badge font-black uppercase tracking-widest">${state.homeTeam.formation}</span>
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem;">
+                <span class="formation-badge font-black uppercase tracking-widest">${state.homeTeam.formation}</span>
+                <button onclick="event.stopPropagation(); app.openTeamActions('home')" style="background: rgba(255,255,255,0.05); border: none; border-radius: 4px; padding: 0 4px; color: var(--slate-400); cursor: pointer;">
+                  <i data-lucide="plus-square" style="width: 0.75rem; height: 0.75rem;"></i>
+                </button>
+            </div>
           </div>
           <div class="score-badge ${homeContrast}" style="background-color: ${state.homeTeam.color}">
             ${homeGoals}
@@ -44,7 +49,7 @@ export const Header = (state) => {
               </button>
            </div>
            <div id="timer-display" class="timer-text font-black tracking-tighter">00:00</div>
-            <button onclick="${state.period === '2T' ? 'app.openEndGameOptions()' : 'app.nextPeriod()'}" style="background: transparent; border: none; cursor: pointer; color: var(--slate-500); font-size: 0.5rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; display: flex; align-items: center; gap: 0.25rem; margin-top: 0.25rem;">
+            <button onclick="app.nextPeriod()" style="background: transparent; border: none; cursor: pointer; color: var(--slate-500); font-size: 0.5rem; font-weight: 900; text-transform: uppercase; letter-spacing: 0.1em; display: flex; align-items: center; gap: 0.25rem; margin-top: 0.25rem;">
                ${state.period === '2T' ? 'FIM REGL.' : state.period === 'FINISHED' ? 'REINICIAR' : 'PRÓXIMO'} 
                <i data-lucide="${state.period === 'FINISHED' ? 'rotate-ccw' : 'chevron-right'}" style="width: 0.5rem; height: 0.5rem;"></i>
             </button>
@@ -60,7 +65,12 @@ export const Header = (state) => {
               ${state.awayTeam.shortName}
               <i data-lucide="pencil" style="width: 0.75rem; height: 0.75rem;"></i>
             </h2>
-            <span class="formation-badge font-black uppercase tracking-widest">${state.awayTeam.formation}</span>
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.25rem;">
+                <button onclick="event.stopPropagation(); app.openTeamActions('away')" style="background: rgba(255,255,255,0.05); border: none; border-radius: 4px; padding: 0 4px; color: var(--slate-400); cursor: pointer;">
+                  <i data-lucide="plus-square" style="width: 0.75rem; height: 0.75rem;"></i>
+                </button>
+                <span class="formation-badge font-black uppercase tracking-widest">${state.awayTeam.formation}</span>
+            </div>
           </div>
         </div>
       </div>

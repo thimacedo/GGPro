@@ -111,34 +111,39 @@ export const PreMatchSetupContent = (state) => {
   `;
 };
 
-export const EditPlayerContent = (player, team) => {
-  return `
-    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-        <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 1rem;">
-            <div class="input-group">
-                <label class="input-label">NÚMERO</label>
-                <input type="number" id="edit-player-number" value="${player.number}" class="text-input" style="font-family: monospace; text-align: center;">
-            </div>
+export const EditPlayerContent = (player, teamId) => {
+    return `
+        <div style="display: flex; flex-direction: column; gap: 1.25rem;">
             <div class="input-group">
                 <label class="input-label">NOME DO ATLETA</label>
                 <input type="text" id="edit-player-name" value="${player.name}" class="text-input">
             </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div class="input-group">
+                    <label class="input-label">NÚMERO</label>
+                    <input type="number" id="edit-player-number" value="${player.number}" class="text-input" style="font-family: monospace;">
+                </div>
+                <div class="input-group">
+                    <label class="input-label">POSIÇÃO</label>
+                    <select id="edit-player-position" class="text-input" style="background: var(--slate-800); border: 1px solid var(--border-color); color: white; padding: 0.5rem; border-radius: 0.5rem;">
+                        <option value="GK" ${player.position === 'GK' ? 'selected' : ''}>GOLEIRO (GK)</option>
+                        <option value="DF" ${player.position === 'DF' ? 'selected' : ''}>DEFENSOR (DF)</option>
+                        <option value="MF" ${player.position === 'MF' ? 'selected' : ''}>MEIA (MF)</option>
+                        <option value="FW" ${player.position === 'FW' ? 'selected' : ''}>ATACANTE (FW)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="input-group" style="display: flex; align-items: center; gap: 0.75rem; background: rgba(0,0,0,0.2); padding: 1.25rem; border-radius: 1rem; border: 1px solid rgba(255,255,255,0.05);">
+                <input type="checkbox" id="edit-player-starter" ${player.isStarter ? 'checked' : ''} style="width: 1.25rem; height: 1.25rem; accent-color: var(--blue-500);">
+                <label for="edit-player-starter" style="font-size: 0.75rem; font-weight: 900; color: var(--slate-200); cursor: pointer; text-transform: uppercase;">Titular em Campo</label>
+            </div>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+                <button onclick="app.closeModal()" class="btn-submit" style="background: var(--slate-800); box-shadow: none;">CANCELAR</button>
+                <button onclick="app.savePlayerEdit('${player.id}', '${teamId}')" class="btn-submit">SALVAR ALTERAÇÕES</button>
+            </div>
         </div>
-
-        <div style="display: flex; items-center: center; justify-content: space-between; padding: 1rem; background: rgba(0,0,0,0.2); border-radius: 1rem; border: 1px solid rgba(255,255,255,0.05);">
-            <span style="font-size: 0.75rem; font-weight: 900; color: var(--slate-400); text-transform: uppercase;">Status em Campo</span>
-            <button onclick="document.getElementById('edit-player-starter').click()" id="starter-toggle-btn" class="btn-view ${player.isStarter ? 'active' : ''}" style="width: auto; padding: 0.5rem 1rem;">
-                ${player.isStarter ? 'TITULAR' : 'RESERVA'}
-                <input type="checkbox" id="edit-player-starter" ${player.isStarter ? 'checked' : ''} class="hidden" onchange="document.getElementById('starter-toggle-btn').classList.toggle('active'); this.parentElement.innerText = this.checked ? 'TITULAR' : 'RESERVA';">
-            </button>
-        </div>
-
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
-            <button onclick="app.closeModal()" class="btn-submit" style="background: var(--slate-800); box-shadow: none;">CANCELAR</button>
-            <button onclick="app.savePlayerEdit('${player.id}', '${player.teamId}')" class="btn-submit">SALVAR</button>
-        </div>
-    </div>
-  `;
+    `;
 };
 
 export const EditTeamContent = (team) => {
@@ -217,32 +222,59 @@ export const ImportListContent = (teamId) => {
     `;
 };
 
+
 export const PlayerActionContent = (player, team) => {
     const isStarter = player.isStarter;
     const actions = [
         { id: 'GOAL', label: 'GOL', icon: 'circle-dot', color: 'var(--blue-500)' },
+        { id: 'SHOT', label: 'CHUTE', icon: 'target', color: 'var(--slate-200)' },
         { id: 'YELLOW_CARD', label: 'AMARELO', icon: 'rectangle-vertical', color: 'var(--yellow-500)' },
         { id: 'RED_CARD', label: 'VERMELHO', icon: 'rectangle-vertical', color: 'var(--red-600)' },
-        { id: 'SUBSTITUTION', label: isStarter ? 'SUBSTITUÍVEL' : 'ENTRAR', icon: 'repeat', color: 'var(--emerald-500)' },
+        { id: 'OFFSIDE', label: 'IMPEDIM.', icon: 'flag', color: 'var(--orange-400)' },
         { id: 'FOUL', label: 'FALTA', icon: 'alert-triangle', color: 'var(--slate-500)' },
-        { id: 'SHOT', label: 'FINALIZAÇÃO', icon: 'target', color: 'var(--slate-200)' }
+        { id: 'CORNER', label: 'ESCANTEIO', icon: 'corner-down-right', color: 'var(--blue-400)' },
+        { id: 'PENALTY', label: 'PÊNALTI', icon: 'maximize', color: 'var(--red-400)' }
     ];
 
     if (player.position === 'GK') {
-        actions.push({ id: 'GK_8_SECONDS', label: '8 SEGUNDOS', icon: 'clock', color: 'var(--orange-500)' });
-    } else if (isStarter) {
-        actions.push({ id: 'SET_GOALKEEPER', label: 'VIRAR GK', icon: 'shield', color: 'var(--indigo-400)' });
+        actions.push({ id: 'GK_8_SECONDS', label: '8 SEG', icon: 'clock', color: 'var(--yellow-500)' });
     }
+    
+    actions.push({ id: 'SUBSTITUTION', label: isStarter ? 'SAIR' : 'ENTRAR', icon: 'repeat', color: 'var(--emerald-500)' });
+
+    return `
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.625rem;">
+            ${actions.map(a => `
+                <button onclick="app.handlePlayerAction('${a.id}', '${player.id}', '${team.id}')" class="btn-submit" style="background: rgba(255,255,255,0.05); box-shadow: none; display: flex; flex-direction: column; align-items: center; gap: 0.25rem; padding: 1rem 0.5rem; border: 1px solid rgba(255,255,255,0.05); border-radius: 1rem;">
+                    <i data-lucide="${a.icon}" style="width: 1rem; height: 1rem; color: ${a.color};"></i>
+                    <span style="font-size: 0.5625rem; font-weight: 900; letter-spacing: 0.05em;">${a.label}</span>
+                </button>
+            `).join('')}
+        </div>
+        <button onclick="app.openEditPlayer('${player.id}', '${team.id}')" class="btn-submit" style="margin-top: 1rem; background: var(--slate-800); font-size: 0.625rem; letter-spacing: 0.1em; padding: 1rem;">
+            <i data-lucide="edit-3" style="width: 0.75rem; height: 0.75rem; vertical-align: middle; margin-right: 0.5rem;"></i> EDITAR DADOS DO ATLETA
+        </button>
+    `;
+};
+
+export const TeamActionContent = (teamId, team) => {
+    const actions = [
+        { id: 'CORNER', label: 'ESCANTEIO', icon: 'corner-down-right', color: 'var(--blue-400)' },
+        { id: 'OFFSIDE', label: 'IMPEDIMENTO', icon: 'flag', color: 'var(--orange-400)' },
+        { id: 'FOUL', label: 'FALTA COLETIVA', icon: 'alert-triangle', color: 'var(--slate-500)' },
+        { id: 'PENALTY', label: 'PÊNALTI', icon: 'maximize', color: 'var(--red-400)' },
+        { id: 'VAR', label: 'DECISÃO VAR', icon: 'tv', color: 'var(--indigo-500)' },
+        { id: 'INJURY', label: 'ATENDIMENTO', icon: 'ambulance', color: 'var(--red-500)' }
+    ];
 
     return `
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
             ${actions.map(a => `
-                <button onclick="app.handlePlayerAction('${a.id}', '${player.id}', '${team.id}')" class="btn-submit" style="background: rgba(255,255,255,0.05); box-shadow: none; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 1.25rem; border: 1px solid rgba(255,255,255,0.05);">
+                <button onclick="app.handleTeamAction('${a.id}', '${teamId}')" class="btn-submit" style="background: rgba(255,255,255,0.05); box-shadow: none; display: flex; align-items: center; gap: 0.75rem; padding: 1.25rem; border: 1px solid rgba(255,255,255,0.05); border-radius: 1.25rem;">
                     <i data-lucide="${a.icon}" style="color: ${a.color};"></i>
-                    <span style="font-size: 0.625rem; font-weight: 900;">${a.label}</span>
+                    <span style="font-size: 0.6875rem; font-weight: 900;">${a.label}</span>
                 </button>
             `).join('')}
         </div>
-        <button onclick="app.selectPlayer('${player.id}', '${team.id}')" class="btn-submit" style="margin-top: 1rem; background: var(--slate-800); font-size: 0.625rem;">EDITAR DADOS DO ATLETA</button>
     `;
 };

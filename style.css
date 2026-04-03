@@ -146,7 +146,7 @@ body {
 
 .team-name-h2 {
   font-size: 1.25rem;
-  color: white;
+  color: var(--slate-50);
   cursor: pointer;
   transition: color 0.2s;
   display: flex;
@@ -190,7 +190,7 @@ body {
 .timer-text {
   font-size: 3rem;
   font-weight: 900;
-  color: white;
+  color: var(--slate-50);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.05em;
 }
@@ -240,7 +240,7 @@ body {
 .btn-view.active {
   background: var(--blue-600);
   border-color: var(--blue-400);
-  color: white;
+  color: var(--slate-900);
 }
 
 /* Lists */
