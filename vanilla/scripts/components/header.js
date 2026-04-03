@@ -43,6 +43,7 @@ export function renderHeader(container, callbacks) {
             <div class="rounded-lg md:rounded-2xl flex items-center justify-center font-black shadow-xl transition-all w-8 h-8 md:w-14 md:h-14 text-sm md:text-3xl ${homeContrast}" style="background-color: ${state.homeTeam.color}">
               ${safeEventsCountHome}
             </div>
+            ${state.period === 'PENALTIES' ? `<span class="text-[10px] md:text-lg font-black text-blue-500 mt-1">(${state.penaltyScore?.home || 0})</span>` : ''}
           </div>
         </div>
 
@@ -73,6 +74,7 @@ export function renderHeader(container, callbacks) {
             <div class="rounded-lg md:rounded-2xl flex items-center justify-center font-black shadow-xl transition-all w-8 h-8 md:w-14 md:h-14 text-sm md:text-3xl ${awayContrast}" style="background-color: ${state.awayTeam.color}">
               ${safeEventsCountAway}
             </div>
+            ${state.period === 'PENALTIES' ? `<span class="text-[10px] md:text-lg font-black text-blue-500 mt-1">(${state.penaltyScore?.away || 0})</span>` : ''}
           </div>
           
           <div class="flex flex-col items-start min-w-0 group">
@@ -105,7 +107,7 @@ export function renderHeader(container, callbacks) {
             ${state.referee || "Árbitro"}
           </span>
       </div>
-      `}
+      ` : ''}
     </header>
   `;
 
@@ -130,18 +132,16 @@ export function renderHeader(container, callbacks) {
 
   if (homeNameEl) {
     homeNameEl.addEventListener('click', () => {
-      const newName = prompt('Nome do time mandante:', state.homeTeam.name);
-      if (newName && newName.trim()) {
-        if (onUpdateTeamName) onUpdateTeamName('home', newName.trim());
+      if (typeof window.modalManager !== 'undefined') {
+        window.modalManager.showEditTeam(state.homeTeam, 'home');
       }
     });
   }
 
   if (awayNameEl) {
     awayNameEl.addEventListener('click', () => {
-      const newName = prompt('Nome do time visitante:', state.awayTeam.name);
-      if (newName && newName.trim()) {
-        if (onUpdateTeamName) onUpdateTeamName('away', newName.trim());
+      if (typeof window.modalManager !== 'undefined') {
+        window.modalManager.showEditTeam(state.awayTeam, 'away');
       }
     });
   }

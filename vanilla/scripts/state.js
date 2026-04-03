@@ -359,11 +359,30 @@ class MatchState {
   // Anular evento (VAR)
   annulEvent(eventId) {
     this.saveToHistory();
+    let targetEvent = this.state.events.find(e => e.id === eventId);
+    if (!targetEvent) return;
+
+    const newIsAnnulled = !targetEvent.isAnnulled;
     const events = this.state.events.map(e => {
-      if (e.id === eventId) return { ...e, isAnnulled: !e.isAnnulled };
+      if (e.id === eventId) return { ...e, isAnnulled: newIsAnnulled };
       return e;
     });
-    this.setState({ events });
+
+    const now = Date.now();
+    const currentMs = this.state.timeElapsed + (this.state.timerStartedAt ? now - this.state.timerStartedAt : 0);
+    const currentMin = Math.floor(currentMs / 60000);
+
+    const varEvent = {
+      id: Math.random().toString(36).substr(2, 9),
+      type: 'VAR',
+      teamId: 'none',
+      minute: this.state.period === 'PENALTIES' ? 0 : currentMin,
+      timestamp: now,
+      description: `📺 VAR: Lance ${newIsAnnulled ? 'ANULADO' : 'VALIDADO'} (${targetEvent.description})`,
+      isAnnulled: false
+    };
+
+    this.setState({ events: [varEvent, ...events] });
   }
 
   // Avançar período

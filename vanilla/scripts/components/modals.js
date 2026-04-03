@@ -288,6 +288,59 @@ class ModalManager {
 
     this.open(content, 'Editar Atleta');
   }
+  
+  showEditTeam(team, teamId) {
+    const content = `
+      <div class="flex flex-col gap-6">
+        <div>
+          <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Nome da Equipe</label>
+          <input type="text" id="edit_t_name" value="${team.name}" class="w-full bg-slate-800 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-blue-500 font-bold" oninput="updateAutoShort()">
+        </div>
+        <div>
+          <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Sigla (3 letras)</label>
+          <input type="text" id="edit_t_short" value="${team.shortName}" maxlength="3" class="w-full bg-slate-800 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:border-blue-500 font-bold uppercase">
+        </div>
+        <div>
+          <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">Cor Principal</label>
+          <input type="color" id="edit_t_color" value="${team.color}" class="w-full h-12 bg-slate-800 border border-white/10 rounded-xl p-1 cursor-pointer">
+        </div>
+        <button class="w-full p-4 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-2xl shadow-lg transition-all" onclick="saveTeamSelf()">
+          ATUALIZAR EQUIPE
+        </button>
+      </div>
+    `;
+
+    window.updateAutoShort = () => {
+      const name = document.getElementById('edit_t_name').value;
+      const shortEl = document.getElementById('edit_t_short');
+      if (typeof window.generateDistinctShortName === 'function') {
+        const otherShort = teamId === 'home' ? matchState.getState().awayTeam.shortName : matchState.getState().homeTeam.shortName;
+        shortEl.value = window.generateDistinctShortName(name, otherShort);
+      }
+    };
+
+    window.saveTeamSelf = () => {
+      const name = document.getElementById('edit_t_name').value;
+      const shortName = document.getElementById('edit_t_short').value.toUpperCase();
+      const color = document.getElementById('edit_t_color').value;
+
+      const otherTeam = teamId === 'home' ? matchState.getState().awayTeam : matchState.getState().homeTeam;
+      if (typeof window.ensureDistinctColors === 'function' && window.ensureDistinctColors(color, otherTeam.color)) {
+        if (!confirm('Esta cor é muito parecida com a do oponente. Deseja continuar mesmo assim?')) return;
+      }
+
+      matchState.setState(prev => {
+        const teamKey = teamId === 'home' ? 'homeTeam' : 'awayTeam';
+        return { ...prev, [teamKey]: { ...prev[teamKey], name, shortName, color } };
+      });
+
+      window.addToast('Equipe Atualizada', 'Configurações de time salvas.', 'success');
+      this.close();
+      window.render();
+    };
+
+    this.open(content, 'Editar Equipe - ' + teamId.toUpperCase());
+  }
 
   showSumula() {
     const state = matchState.getState();
@@ -356,12 +409,19 @@ class ModalManager {
     // Placeholder para os inputs de IA que o app.js vai ouvir
     this.open(content, 'Editar Súmula');
     
-    // Adicionar listener específico para IA dentro do modal
     document.getElementById('sumula_ia')?.addEventListener('change', (e) => {
       if (typeof window.handleImageUpload === 'function') {
         window.handleImageUpload(e, 'players');
       } else {
         console.error('handleImageUpload não está definida no window');
+      }
+    });
+
+    document.getElementById('regulas_ia')?.addEventListener('change', (e) => {
+      if (typeof window.handleRegulationUpload === 'function') {
+        window.handleRegulationUpload(e);
+      } else {
+        console.error('handleRegulationUpload não está definida no window');
       }
     });
   }

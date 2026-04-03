@@ -8,7 +8,8 @@ import { modalManager } from './components/modals.js';
 import { fieldManager } from './components/field.js';
 import { statsManager } from './components/stats.js';
 import { voice } from './services/voice.js';
-import { processImageForPlayers, generateMatchReport } from './services/gemini.js';
+import { processImageForPlayers, generateMatchReport, parseRegulationDocument } from './services/gemini.js';
+import { TEAM_ABBREVIATIONS } from './constants.js';
 
 // Estado local da UI (não persistente)
 const ui = {
@@ -42,6 +43,10 @@ function init() {
   window.generateReport = handleGenerateReport;
   window.exportToClipboard = handleExportClipboard;
   window.handleImageUpload = handleImageUpload;
+  window.handleRegulationUpload = handleRegulationUpload;
+  window.handleVarReversal = handleVarReversal;
+  window.modalManager = modalManager;
+  window.generateDistinctShortName = generateDistinctShortName;
 }
 
 // --- Renderização ---
@@ -177,6 +182,11 @@ function renderSettingsMenu(state) {
       <button id="btnNextPeriod" class="w-full p-4 bg-slate-800 hover:bg-blue-600 rounded-2xl text-left flex items-center gap-4 transition-all">
         <span class="text-xl">⏳</span>
         <span class="text-xs font-black uppercase tracking-widest text-white">Próximo Período</span>
+      </button>
+
+      <button onclick="handleVarReversal()" class="w-full p-4 bg-slate-800 hover:bg-amber-600 rounded-2xl text-left flex items-center gap-4 transition-all group">
+        <span class="text-xl group-hover:scale-110 transition-transform">📺</span>
+        <span class="text-xs font-black uppercase tracking-widest text-white">Reversão de VAR</span>
       </button>
 
       <button id="btnFinalize" class="w-full p-4 bg-red-600/10 border border-red-600/20 hover:bg-red-600 rounded-2xl text-left flex items-center gap-4 transition-all text-red-500 hover:text-white">
@@ -349,11 +359,18 @@ function attachEventListeners() {
 function handleAdvancePeriod() {
   const state = matchState.getState();
   if (state.period === '2T' || state.period === '2ET') {
+    // Verificar se está empatado para sugerir prorrogação ou pênaltis
+    const goalsHome = state.events.filter(e => e.type === 'GOAL' && e.teamId === 'home' && !e.isAnnulled).length;
+    const goalsAway = state.events.filter(e => e.type === 'GOAL' && e.teamId === 'away' && !e.isAnnulled).length;
+
     modalManager.open(`
       <div class="flex flex-col gap-4">
-        <p class="text-xs text-slate-400">O tempo regulamentar acabou. Como deseja proceder?</p>
-        <button class="w-full p-4 bg-blue-600 rounded-2xl text-xs font-black uppercase text-white" onclick="matchState.advancePeriod(); modalManager.close();">Iniciar Prorrogação</button>
-        <button class="w-full p-4 bg-indigo-600 rounded-2xl text-xs font-black uppercase text-white" onclick="matchState.setState({period: 'PENALTIES'}); modalManager.close();">Ir Direto p/ Pênaltis</button>
+        <p class="text-xs text-slate-400">O tempo regulamentar acabou. Placar: ${goalsHome} x ${goalsAway}. Como deseja proceder?</p>
+        ${goalsHome === goalsAway ? `
+          <button class="w-full p-4 bg-blue-600 rounded-2xl text-xs font-black uppercase text-white hover:bg-blue-500 transition-all" onclick="matchState.advancePeriod(); modalManager.close();">Iniciar Prorrogação</button>
+          <button class="w-full p-4 bg-indigo-600 rounded-2xl text-xs font-black uppercase text-white hover:bg-indigo-500 transition-all" onclick="handleStartPenalties(); modalManager.close();">Ir Direto p/ Pênaltis</button>
+        ` : ''}
+        <button class="w-full p-4 bg-red-600 rounded-2xl text-xs font-black uppercase text-white hover:bg-red-500 transition-all" onclick="matchState.advancePeriod('FINISHED'); modalManager.close();">Encerrar Partida</button>
         <button class="w-full p-4 bg-slate-800 rounded-2xl text-xs font-black uppercase text-slate-400" onclick="modalManager.close();">Cancelar</button>
       </div>
     `, 'Fim do Tempo');
@@ -361,6 +378,22 @@ function handleAdvancePeriod() {
     matchState.advancePeriod();
     toastManager.show("Novo Período", `Início de ${matchState.formatPeriodName(matchState.getState().period)}`, "info");
   }
+}
+
+function handleStartPenalties() {
+  modalManager.open(`
+    <div class="flex flex-col gap-4">
+      <p class="text-xs text-slate-400">Quem inicia as cobranças?</p>
+      <div class="grid grid-cols-2 gap-3">
+        <button class="p-4 bg-slate-800 border border-white/5 rounded-2xl hover:bg-blue-600 transition-all" onclick="matchState.setState({penaltyStarter: 'home', period: 'PENALTIES'}); modalManager.close();">
+          <span class="text-xs font-black uppercase text-white">${matchState.getState().homeTeam.shortName}</span>
+        </button>
+        <button class="p-4 bg-slate-800 border border-white/5 rounded-2xl hover:bg-blue-600 transition-all" onclick="matchState.setState({penaltyStarter: 'away', period: 'PENALTIES'}); modalManager.close();">
+          <span class="text-xs font-black uppercase text-white">${matchState.getState().awayTeam.shortName}</span>
+        </button>
+      </div>
+    </div>
+  `, 'Disputa de Pênaltis');
 }
 
 async function handleCommandSubmit(text) {
@@ -431,6 +464,88 @@ async function handleImageUpload(event, type) {
   } catch (e) {
     toastManager.show("Erro", "Falha ao processar imagem.", "error");
   }
+}
+
+async function handleRegulationUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  toastManager.show("IA Regulamento", "Analisando regras da competição...", "ai");
+  try {
+    const rules = await parseRegulationDocument(file, file.type);
+    matchState.setState(prev => ({
+      ...prev,
+      rules: { ...prev.rules, ...rules }
+    }));
+    toastManager.show("Regras Atualizadas", "O sistema foi configurado conforme o regulamento.", "success");
+    modalManager.close();
+    render();
+  } catch (e) {
+    toastManager.show("Erro", "Não foi possível ler o regulamento.", "error");
+  }
+}
+
+function handleVarReversal() {
+  const state = matchState.getState();
+  const majorEvents = (state.events || []).filter(e => ['GOAL', 'YELLOW_CARD', 'RED_CARD', 'PENALTY'].includes(e.type));
+  
+  if (majorEvents.length === 0) {
+    toastManager.show("VAR", "Nenhum lance de impacto para revisar.", "info");
+    return;
+  }
+
+  modalManager.open(`
+    <div class="flex flex-col gap-3">
+      <p class="text-[10px] font-black uppercase text-slate-500 mb-2">Selecionar lance para revisão:</p>
+      ${majorEvents.slice(0, 5).map(e => `
+        <button class="w-full p-4 bg-slate-800 hover:bg-amber-600 border border-white/5 rounded-2xl flex justify-between items-center transition-all group" onclick="matchState.annulEvent('${e.id}'); modalManager.close();">
+          <div class="flex flex-col items-start">
+            <span class="text-white font-bold text-xs group-hover:text-white">${e.description}</span>
+            <span class="text-[9px] font-black text-slate-500 group-hover:text-amber-200 uppercase">${e.minute}' - ${matchState.formatEventType(e.type)}</span>
+          </div>
+          <span class="text-xl">${e.isAnnulled ? '✅' : '🚫'}</span>
+        </button>
+      `).join('')}
+    </div>
+  `, 'Reversão de VAR');
+  ui.isSettingsOpen = false;
+  render();
+}
+
+// --- Funções Utilitárias de Dados ---
+
+function generateDistinctShortName(teamName, otherShortName) {
+  if (!teamName) return 'UND';
+  const rawName = teamName.toLowerCase().trim();
+  
+  for (const [key, value] of Object.entries(TEAM_ABBREVIATIONS)) {
+    if (rawName.includes(key)) {
+      if (!otherShortName || value !== otherShortName) return value;
+    }
+  }
+
+  const cleanName = rawName.replace(/[^a-z]/g, '').toUpperCase();
+  let candidate = cleanName.substring(0, 3) || 'UND';
+
+  if (candidate === otherShortName && cleanName.length > 3) {
+    candidate = cleanName[0] + cleanName[1] + cleanName[cleanName.length > 3 ? 3 : 2];
+  }
+
+  return candidate.padEnd(3, 'X');
+}
+
+function hexToRgb(hex) {
+  let c = hex.replace(/^#/, '');
+  if (c.length === 3) c = c.split('').map(char => char + char).join('');
+  const num = parseInt(c, 16);
+  return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+}
+
+function ensureDistinctColors(color1, color2) {
+  const c1 = hexToRgb(color1);
+  const c2 = hexToRgb(color2);
+  const distance = Math.sqrt(Math.pow(c1.r - c2.r, 2) + Math.pow(c1.g - c2.g, 2) + Math.pow(c1.b - c2.b, 2));
+  return distance < 80;
 }
 
 // Expor handlers para o modal (removido daqui e movido para init)
