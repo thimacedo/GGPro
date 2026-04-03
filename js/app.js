@@ -854,6 +854,8 @@ class App {
     if (current === 'FINISHED') {
       if (confirm("Deseja reiniciar a partida? Isso apagará todo o histórico atual.")) {
         store.reset();
+        this.activeModal = null; // Fecha qualquer modal (ex: Crônica)
+        this.openSetup(); // Força a abertura do setup
       }
       return;
     }
@@ -861,6 +863,13 @@ class App {
     const nextIdx = periods.indexOf(current) + 1;
     if (nextIdx < periods.length) {
       store.setState({ period: periods[nextIdx] });
+    }
+  }
+  resetMatch() {
+    if (confirm("Deseja mesmo zerar tudo e voltar ao início?")) {
+      store.reset();
+      this.activeModal = null;
+      this.openSetup();
     }
   }
 }

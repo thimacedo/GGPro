@@ -1,35 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-@layer base {
-  body {
-    font-family: 'Inter', sans-serif;
-    @apply bg-slate-900 text-slate-50;
-    margin: 0;
-    overflow-x: hidden;
-    overscroll-behavior-y: none;
-  }
-
-  /* Exceção Light Mode para testarmos estilos claros depois */
-  .claro {
-    @apply bg-slate-50 text-slate-900;
-  }
-}
-
-@layer utilities {
-  ::-webkit-scrollbar {
-    width: 8px;
-  }
-  ::-webkit-scrollbar-track {
-    @apply bg-slate-800;
-  }
-  ::-webkit-scrollbar-thumb {
-    @apply bg-slate-600 rounded-md;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-slate-500;
-  }
+/* Reset Vanilla - Tailwind removido para evitar conflitos com o Design System Puro */
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
 }

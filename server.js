@@ -40,9 +40,12 @@ app.post('/api/ai/generate', async (req, res) => {
     });
 
     const data = await response.json();
+    if (!response.ok) {
+        console.error(`Gemini Proxy Error ${response.status}:`, JSON.stringify(data));
+    }
     res.status(response.status).json(data);
   } catch (error) {
-    console.error("Erro no Proxy AI:", error);
+    console.error("Erro no Proxy AI:", error.message);
     res.status(500).json({ error: "Falha na comunicação com o provedor de IA." });
   }
 });

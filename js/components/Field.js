@@ -1,7 +1,8 @@
 export const PlayerStatusIcons = (player) => {
-  const hasGoal = player.events?.some(e => e.type === 'GOAL' && !e.isAnnulled);
-  const yellowCards = player.events?.filter(e => e.type === 'YELLOW_CARD' && !e.isAnnulled).length || 0;
-  const hasRedCard = player.events?.some(e => e.type === 'RED_CARD' && !e.isAnnulled);
+  const events = player.events || [];
+  const hasGoal = events.some(e => e.type === 'GOAL' && !e.isAnnulled);
+  const yellowCards = events.filter(e => e.type === 'YELLOW_CARD' && !e.isAnnulled).length || 0;
+  const hasRedCard = events.some(e => e.type === 'RED_CARD' && !e.isAnnulled);
   
   if (!hasGoal && yellowCards === 0 && !hasRedCard) return '';
 
@@ -27,8 +28,10 @@ export const Field = (state) => {
     const contrast = getContrastColor(team.color);
     
     return team.players.filter(p => p.isStarter).map(player => {
-      const displayX = isHome ? player.x : (100 - player.x);
-      const displayY = isHome ? player.y : (100 - player.y);
+      const px = player.x ?? 50;
+      const py = player.y ?? 50;
+      const displayX = isHome ? px : (100 - px);
+      const displayY = isHome ? py : (100 - py);
 
       return `
         <div 
