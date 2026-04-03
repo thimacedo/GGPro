@@ -390,6 +390,45 @@ async function handleGenerateReport() {
   }
 }
 
+async function handleImageUpload(event, type) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  toastManager.show("IA Vision", "Analisando imagem...", "ai");
+  try {
+    const result = await processImageForPlayers(file, type === 'players' ? 'Lista de Atletas' : 'Súmula de Partida');
+    
+    if (type === 'players') {
+      // O resultado deve ser um array de jogadores
+      if (Array.isArray(result)) {
+        matchState.setState(prev => {
+          // Adiciona à equipe atual (precisaríamos saber qual equipe, o modal passa isso)
+          // Para simplificar, assumimos que o modal injetou a equipe no window
+          const teamId = window.currentImportTeamId || 'home';
+          const teamKey = teamId === 'home' ? 'homeTeam' : 'awayTeam';
+          return { ...prev, [teamKey]: { ...prev[teamKey], players: [...prev[teamKey].players, ...result] } };
+        });
+        toastManager.show("Sucesso", `${result.length} atletas importados.`, "success");
+      }
+    } else {
+      // Súmula: atualiza dados do jogo
+      matchState.setState({
+        competition: result.competition || "",
+        stadium: result.stadium || "",
+        matchDate: result.matchDate || new Date().toISOString().split('T')[0],
+        referee: result.referee || ""
+      });
+      toastManager.show("Sucesso", "Dados da súmula atualizados.", "success");
+    }
+    render();
+  } catch (e) {
+    toastManager.show("Erro", "Falha ao processar imagem.", "error");
+  }
+}
+
+// Expor handlers para o modal
+window.handleImageUpload = handleImageUpload;
+
 function handleExportClipboard() {
   const state = matchState.getState();
   const text = `📋 RELATÓRIO NARRADOR PRO\n\n` +
