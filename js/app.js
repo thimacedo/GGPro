@@ -732,6 +732,9 @@ class App {
       const otherTeamKey = teamId === 'home' ? 'awayTeam' : 'homeTeam';
 
       // --- LÓGICA DE NEGÓCIO POR TIPO DE EVENTO ---
+      const team = prev[teamKey];
+      const player = team ? team.players.find(p => p.id === playerId) : null;
+
       if (type === 'SUBSTITUTION' || type === 'CONCUSSION_SUBSTITUTION') {
         const team = { ...prev[teamKey] };
         
@@ -923,7 +926,18 @@ class App {
   }
 
   handleTeamAction(type, teamId) {
-    this.handlePlayerAction(type, null, teamId);
+    const labels = { 
+        CORNER: 'ESCANTEIO', 
+        OFFSIDE: 'IMPEDIMENTO', 
+        FOUL: 'FALTA COLETIVA', 
+        PENALTY: 'PÊNALTI', 
+        VAR: 'VAR', 
+        INJURY: 'ATENDIMENTO' 
+    };
+    const label = labels[type] || type;
+    const team = store.getState()[teamId === 'home' ? 'homeTeam' : 'awayTeam'];
+    this.addEvent(type, teamId, `${label}: ${team.shortName}`);
+    toasts.show(label, `Registrado para ${team.shortName}`, "info");
     this.closeModal();
   }
 
