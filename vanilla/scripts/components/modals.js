@@ -176,7 +176,15 @@ class ModalManager {
     if (this.activeModal) {
       this.activeModal.remove();
       this.activeModal = null;
-      // Cleanup de funções globais se necessário
+      
+      // Cleanup de funções globais temporárias
+      const globalFunctions = [
+        'handleAction', 'saveTeamSelf', 'confirmSub', 'concussionSub', 
+        'executeConcussion', 'setPos', 'savePlayerSelf', 'saveSumulaSelf'
+      ];
+      globalFunctions.forEach(fn => {
+        if (window[fn]) delete window[fn];
+      });
     }
   }
 

@@ -23,6 +23,17 @@ const ui = {
 // --- Inicialização ---
 
 function init() {
+  // Expor funções necessárias globalmente antes de qualquer renderização
+  window.render = render;
+  window.handleAction = (action) => console.log("Action:", action);
+  window.generateReport = handleGenerateReport;
+  window.exportToClipboard = handleExportClipboard;
+  window.handleImageUpload = handleImageUpload;
+  window.handleRegulationUpload = handleRegulationUpload;
+  window.handleVarReversal = handleVarReversal;
+  window.modalManager = modalManager;
+  window.generateDistinctShortName = generateDistinctShortName;
+
   // Subscrever às mudanças de estado para re-renderizar
   matchState.subscribe(() => render());
   
@@ -36,17 +47,6 @@ function init() {
       updateTimer();
     }
   }, 1000);
-
-  // Expor funções necessárias globalmente para os onclick do HTML gerado
-  window.render = render;
-  window.handleAction = (action) => console.log("Action:", action);
-  window.generateReport = handleGenerateReport;
-  window.exportToClipboard = handleExportClipboard;
-  window.handleImageUpload = handleImageUpload;
-  window.handleRegulationUpload = handleRegulationUpload;
-  window.handleVarReversal = handleVarReversal;
-  window.modalManager = modalManager;
-  window.generateDistinctShortName = generateDistinctShortName;
 }
 
 // --- Renderização ---
