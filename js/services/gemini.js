@@ -195,43 +195,42 @@ export const parseRegulationDocument = async (base64Data, mimeType) => {
   return cleanAndParseJSON(text);
 };
 
-export const processVoiceCommand = async (command, homeTeam, awayTeam, eventsSummary) => {
-  const contents = [{
-    parts: [{ text: `
-      Você é o assistente de narração "Narrador Pro".
-      Comando de Voz: "${command}"
-      Equipes: ${homeTeam.name} (${homeTeam.shortName}) vs ${awayTeam.name} (${awayTeam.shortName})
-      Contexto Atual (Eventos recentes): ${eventsSummary}
-
-      Tarefa: Converta o comando de voz em uma lista de ações estruturadas.
-      
-      Regras:
-      1. Identifique o tipo de evento: GOAL, YELLOW_CARD, RED_CARD, SUBSTITUTION, FOUL, CORNER, OFFSIDE, SHOT, VAR, ANSWER, CORRECTION.
-      2. Identifique o time (home/away).
-      3. Identifique o número do jogador, se mencionado.
-      4. Se for uma CORREÇÃO (ex: "Anule o gol", "Não foi falta"), use type: 'CORRECTION'.
-      5. Se for uma PERGUNTA sobre o jogo (ex: "Quem fez o gol?", "Quantas faltas?"), use type: 'ANSWER' e forneça a resposta em 'answerText'.
-      
-      Retorne APENAS um ARRAY JSON no formato:
-      [{
-        "type": "tipo",
-        "team": "home"|"away"|"none",
-        "playerNumber": número,
-        "description": "breve descrição em pt-BR",
-        "answerText": "texto da resposta se for ANSWER",
-        "playerOutNumber": número (se SUB),
-        "playerInNumber": número (se SUB)
-      }]
-    ` }]
-  }];
-  const text = await callGeminiREST(ULTRA_GEN_MODELS, contents);
-  const result = cleanAndParseJSON(text);
-  return Array.isArray(result) ? result : (result.actions || [result]);
+// [EXTRA] Utilitário para conversão de arquivo (Browser)
+const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = error => reject(error);
+    });
 };
 
+/**
+ * 📦 ORQUESTRADOR DE DOCUMENTOS (Processamento Unificado)
+ * Usado pelo app.js e modals.js para tratar uploads de arquivos.
+ */
+export const processMatchDocument = async (file, type) => {
+    const base64 = await fileToBase64(file);
+    const mimeType = file.type || "image/jpeg";
+
+    if (type === 'sumula') {
+        return await parsePlayersFromImage(base64, mimeType);
+    } else if (type === 'rules') {
+        return await parseRegulationDocument(base64, mimeType);
+    } else {
+        throw new Error(`Tipo de documento desconhecido: ${type}`);
+    }
+};
+
+/**
+ * 🎙️ PARSE DE COMANDOS (Linguagem Natural)
+ * Usado para interpretar comandos de voz ou texto da barra de comandos.
+ */
+export const parseMatchCommand = processVoiceCommand;
+
 export const generateMatchReport = async (context, timeline) => {
-  const contents = [{
-    parts: [{ text: `
+    const contents = [{
+        parts: [{ text: `
       Escreva uma crônica esportiva profissional, emocionante e detalhada para o site "Narrador Pro".
       
       CONTEXTO: ${context}
@@ -245,6 +244,6 @@ export const generateMatchReport = async (context, timeline) => {
       - Entre 200 e 400 palavras.
       - Use Markdown.
     ` }]
-  }];
-  return await callGeminiREST(ULTRA_GEN_MODELS, contents);
+    }];
+    return await callGeminiREST(ULTRA_GEN_MODELS, contents);
 };
