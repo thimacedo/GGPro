@@ -11,7 +11,7 @@
       "destination": "/index.html"
     },
     {
-      "source": "/diag/v",
+      "source": "/diag/v454",
       "destination": "/api/gemini.js"
     }
   ],
