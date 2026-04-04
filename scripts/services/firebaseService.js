@@ -1,5 +1,6 @@
 /**
  * @fileoverview Serviço de persistência e sincronização em tempo real (Firebase Firestore)
+ * com suporte a Offline-First e Transações Atômicas.
  */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
@@ -8,11 +9,11 @@ import {
     doc, 
     onSnapshot, 
     runTransaction, 
-    updateDoc 
+    updateDoc,
+    enableMultiTabIndexedDbPersistence
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 // Configuração injetada via pipeline/ambiente
-// [ALERTA] Substitua pelos dados do seu console Firebase
 const firebaseConfig = {
     apiKey: "INSERIR_API_KEY",
     authDomain: "INSERIR_AUTH_DOMAIN",
@@ -25,19 +26,28 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Referência fixa para a partida atual (Pode ser dinâmica via URL params no futuro)
+// Ativação da persistência offline (IndexedDB)
+enableMultiTabIndexedDbPersistence(db).catch((err) => {
+    if (err.code === 'failed-precondition') {
+        // Múltiplas abas abertas, a persistência só pode ser habilitada em uma aba por vez.
+        console.warn("Multi-tab persistence falhou: Múltiplas abas abertas simultaneamente.");
+    } else if (err.code === 'unimplemented') {
+        // O navegador atual não suporta todos os recursos necessários para a persistência.
+        console.warn("O navegador não suporta persistência offline do Firestore.");
+    }
+});
+
 const MATCH_DOC_REF = doc(db, 'matches', 'current_match');
 
 /**
  * Inscreve a aplicação para ouvir mudanças em tempo real
- * @param {Function} callback Função executada a cada atualização de estado
  */
 export function subscribeToMatch(callback) {
     return onSnapshot(MATCH_DOC_REF, (docSnap) => {
         if (docSnap.exists()) {
             callback(docSnap.data());
         } else {
-            console.warn("Documento da partida não encontrado no Firestore. Certifique-se de que o documento 'matches/current_match' existe.");
+            console.warn("Documento da partida não encontrado no Firestore. Certifique-se de que 'matches/current_match' existe.");
         }
     }, (error) => {
         console.error("Erro na sincronização do Firestore:", error);
@@ -46,7 +56,6 @@ export function subscribeToMatch(callback) {
 
 /**
  * Adiciona um novo evento à cronologia utilizando Transação Atômica.
- * Evita Race Conditions caso dois operadores registrem eventos simultâneos.
  */
 export async function addMatchEvent(newEvent, isGoal = false, teamId = null) {
     try {

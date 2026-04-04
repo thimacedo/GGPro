@@ -742,3 +742,77 @@ body {
     gap: 0.75rem;
   }
 }
+
+/* -------------------------------------------------------------------------- */
+/* TACTICAL FIELD
+/* -------------------------------------------------------------------------- */
+.field-wrapper {
+  background: var(--bg-surface);
+  border-radius: var(--radius-xl);
+  padding: 16px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-card);
+  height: 600px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.soccer-field {
+  width: 100%;
+  max-width: 800px;
+  aspect-ratio: 1.5;
+  background-color: #16a34a; /* Verde grama vibrante */
+  background-image: repeating-linear-gradient(90deg, transparent, transparent 10%, rgba(0,0,0,0.05) 10%, rgba(0,0,0,0.05) 20%);
+  position: relative;
+  border: 2px solid #ffffff;
+}
+
+.field-line { position: absolute; background: #ffffff; }
+.field-center-line { width: 2px; height: 100%; left: 50%; top: 0; transform: translateX(-50%); }
+
+.field-circle { position: absolute; border: 2px solid #ffffff; border-radius: 50%; }
+.field-center-circle { width: 20%; aspect-ratio: 1; left: 50%; top: 50%; transform: translate(-50%, -50%); }
+
+.field-box { position: absolute; border: 2px solid #ffffff; }
+.field-penalty-box-left { width: 16.5%; height: 50%; left: 0; top: 25%; border-left: none; }
+.field-goal-box-left { width: 5.5%; height: 25%; left: 0; top: 37.5%; border-left: none; }
+.field-penalty-box-right { width: 16.5%; height: 50%; right: 0; top: 25%; border-right: none; }
+.field-goal-box-right { width: 5.5%; height: 25%; right: 0; top: 37.5%; border-right: none; }
+
+.tactical-player {
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-mono);
+  font-weight: 800;
+  font-size: 0.85rem;
+  box-shadow: var(--shadow-lg);
+  z-index: 10;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.tactical-player:hover { transform: translate(-50%, -50%) scale(1.2); z-index: 50; }
+
+.tactical-player__name {
+  position: absolute;
+  bottom: -22px;
+  font-family: var(--font-family);
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(15, 23, 42, 0.85);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  pointer-events: none;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}

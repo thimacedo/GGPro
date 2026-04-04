@@ -1,6 +1,7 @@
 import { renderTimeline } from './components/timeline.js';
 import { renderMatchDetails } from './components/details.js';
 import { showMatchSettings } from './components/modals.js';
+import { renderTacticalField } from './components/field.js';
 import { parseMatchCommand } from './services/geminiService.js';
 import { subscribeToMatch, addMatchEvent, updateTeamRoster } from './services/firebaseService.js';
 
@@ -57,8 +58,8 @@ function buildAppShell() {
 
       <nav class="options-menu">
         <div class="tabs" id="view-tabs">
-          <button class="btn-view active" data-view="lista" style="padding: 0.5rem 1.5rem; border-radius: 0.75rem;">Lista</button>
-          <button class="btn-view" data-view="mapa" style="padding: 0.5rem 1.5rem; border-radius: 0.75rem;">Mapa Tático</button>
+          <button class="btn-view active" data-view="lista">Lista</button>
+          <button class="btn-view" data-view="mapa">Mapa Tático</button>
         </div>
         
         <div class="options-menu__actions">
@@ -167,12 +168,10 @@ async function processAiCommand() {
 // Reatividade Centralizada
 function updateAppUI() {
     // Placar e Nomes
-    if (document.getElementById('home-name')) {
-        document.getElementById('home-name').innerText = matchState.homeTeam?.shortName || '--';
-    }
-    if (document.getElementById('away-name')) {
-        document.getElementById('away-name').innerText = matchState.awayTeam?.shortName || '--';
-    }
+    const homeNameElem = document.getElementById('home-name');
+    const awayNameElem = document.getElementById('away-name');
+    if (homeNameElem) homeNameElem.innerText = matchState.homeTeam?.shortName || '--';
+    if (awayNameElem) awayNameElem.innerText = matchState.awayTeam?.shortName || '--';
     
     const scoreHome = document.getElementById('score-home');
     const scoreAway = document.getElementById('score-away');
@@ -187,16 +186,16 @@ function updateAppUI() {
         scoreAway.style.background = matchState.awayTeam?.color || '#10b981';
     }
 
-    if (document.getElementById('match-period')) {
-        document.getElementById('match-period').innerText = matchState.period || '1T';
-    }
+    const periodElem = document.getElementById('match-period');
+    if (periodElem) periodElem.innerText = matchState.period || '1T';
 
     // Componentes Modulares
     renderMatchDetails(matchState, 'details-container');
     renderTimeline(matchState.events || [], getPlayerById, 'timeline-container');
     
     // Atualiza a view ativa
-    const activeView = document.querySelector('.btn-view.active')?.dataset.view || 'lista';
+    const activeViewBtn = document.querySelector('.btn-view.active');
+    const activeView = activeViewBtn ? activeViewBtn.dataset.view : 'lista';
     switchView(activeView);
 }
 
@@ -221,7 +220,7 @@ function switchView(viewName) {
       </div>
     `;
   } else if (viewName === 'mapa') {
-    container.innerHTML = `<div class="field-container"><div class="field-grass"></div><div class="field-lines"></div></div>`;
+    renderTacticalField(matchState.homeTeam, matchState.awayTeam, 'primary-view-container');
   }
 }
 
