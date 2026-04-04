@@ -1,8 +1,8 @@
 import { renderTimeline } from './components/timeline.js';
 import { renderMatchDetails } from './components/details.js';
-import { showMatchSettings } from './components/modals.js';
+import { showMatchSettings, showReportModal } from './components/modals.js';
 import { renderTacticalField } from './components/field.js';
-import { parseMatchCommand } from './services/gemini.js';
+import { parseMatchCommand, generateMatchReport } from './services/gemini.js';
 import { 
     subscribeToMatch, 
     addMatchEvent, 
@@ -116,6 +116,12 @@ function buildAppShell() {
                     <section id="primary-view-container"></section>
                     <aside class="sidebar">
                         <div id="details-container" style="margin-bottom: 24px;"></div>
+                        <div class="card p-4 mb-6" id="ai-report-box">
+                            <h3 class="uppercase tracking-widest mb-3" style="font-size: 0.75rem; color:var(--primary)">Pós-Jogo AI</h3>
+                            <button class="btn-view" id="btn-generate-report" style="width: 100%; justify-content: center; gap: 10px;">
+                                <i data-lucide="sparkles"></i> Gerar Crônica AI
+                            </button>
+                        </div>
                         <div id="timeline-container"></div>
                     </aside>
                 </div>
@@ -188,6 +194,33 @@ function setupGlobalDelegation() {
         } catch (error) {
             console.error("Erro ao importar elenco:", error);
             alert("Falha ao sincronizar elenco no Firebase.");
+        }
+    });
+
+    // Crônica AI (Inteligência Pós-Jogo)
+    document.getElementById('btn-generate-report')?.addEventListener('click', async () => {
+        if (matchState.events.length < 2) {
+            alert("A crônica requer pelo menos 2 eventos registrados para ser representativa.");
+            return;
+        }
+
+        const btn = document.getElementById('btn-generate-report');
+        const icon = btn.querySelector('i');
+        const originalText = btn.innerHTML;
+
+        btn.disabled = true;
+        btn.innerHTML = `<i data-lucide="loader-2" class="animate-spin"></i> Gerando Crônica...`;
+        if (window.lucide) window.lucide.createIcons();
+
+        try {
+            const report = await generateMatchReport(matchState);
+            showReportModal(report);
+        } catch (error) {
+            alert(`Erro ao gerar crônica: ${error.message}`);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+            if (window.lucide) window.lucide.createIcons();
         }
     });
 

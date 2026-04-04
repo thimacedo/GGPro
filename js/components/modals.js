@@ -135,3 +135,37 @@ export function showMatchSettings(homeTeam, awayTeam) {
         }
     }, { signal });
 }
+
+/**
+ * 📝 MODAL DE RELATÓRIO AI (Crônica)
+ */
+export function showReportModal(reportMarkdown) {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.style.zIndex = '2000';
+    
+    // Simples parser de Markdown (Título e Negrito)
+    const formatted = reportMarkdown
+        .replace(/^# (.*$)/gim, '<h2 class="team-name-h2" style="margin-bottom:20px; color:var(--primary)">$1</h1>')
+        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\n/g, '<br>');
+
+    overlay.innerHTML = `
+        <div class="modal-card" style="max-width: 800px;">
+            <div class="modal-header-accent"></div>
+            <button class="btn-close" id="close-report"><i data-lucide="x"></i></button>
+            <div style="padding: 40px; max-height: 80vh; overflow-y: auto;" class="custom-scrollbar">
+                <div style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 8px; font-weight: 800; letter-spacing: 2px;">RELATÓRIO PÓS-JOGO • IA GEMINI</div>
+                <div style="line-height: 1.6; font-size: 1.1rem; color: var(--text-main);">
+                    ${formatted}
+                </div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+    if (window.lucide) window.lucide.createIcons();
+
+    overlay.querySelector('#close-report').onclick = () => overlay.remove();
+    overlay.onclick = (e) => { if(e.target === overlay) overlay.remove(); };
+}

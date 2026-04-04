@@ -261,22 +261,37 @@ export async function processVoiceCommand(text, state) {
 
 export const parseMatchCommand = processVoiceCommand;
 
-export const generateMatchReport = async (context, timeline) => {
+/**
+ * 📝 GERADOR DE CRÔNICA AI (Inteligência Pós-Jogo)
+ */
+export const generateMatchReport = async (matchState) => {
+    const { homeTeam, awayTeam, events } = matchState;
+    const finalScore = `${homeTeam.score} x ${awayTeam.score}`;
+    const timelineText = (events || []).map(e => `[${e.timeStr}] ${e.description}`).join('\n');
+
     const contents = [{
         parts: [{ text: `
-      Escreva uma crônica esportiva profissional, emocionante e detalhada para o site "Narrador Pro".
+      Você é um jornalista esportivo do "Narrador Pro". Escreva uma crônica emocionante para a partida:
+      # ${homeTeam.name} ${finalScore} ${awayTeam.name}
       
-      CONTEXTO: ${context}
-      CRONOLOGIA DOS EVENTOS: ${timeline}
+      ESTADO E CRONOLOGIA:
+      ${timelineText || 'Partida sem gols ou eventos capitais.'}
       
       REQUISITOS:
-      - Título impactante.
-      - Lead resumindo o resultado.
-      - Descrição dos momentos chave.
-      - Tom jornalístico de alta qualidade.
-      - Entre 200 e 400 palavras.
-      - Use Markdown.
+      - Título épico em Markdown (#).
+      - Lead jornalístico que prenda a atenção.
+      - Destaque nomes e times em **negrito**.
+      - Use estilo narrativo profissional.
+      - Máximo 400 palavras.
+      - Retorne APENAS o Markdown puro.
     ` }]
     }];
-    return await callGeminiREST(ULTRA_GEN_MODELS, contents);
+
+    try {
+        const text = await callGeminiREST(ULTRA_GEN_MODELS, contents);
+        return text.replace(/```markdown|```/g, '').trim();
+    } catch (error) {
+        console.error("Falha ao gerar crônica AI:", error);
+        throw new Error("Não foi possível gerar a crônica neste momento.");
+    }
 };
