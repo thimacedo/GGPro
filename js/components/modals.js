@@ -3,7 +3,7 @@
 // Monitoramento Ativo com AbortController e Coleta de Lixo Global
 
 import matchState from '../state.js';
-import { parsePlayersFromImage, parseRegulationDocument } from '../services/gemini.js';
+import { processImageForPlayers, parseRegulationDocument } from '../services/gemini.js';
 
 class ModalManager {
   constructor() {
