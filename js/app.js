@@ -9,7 +9,8 @@ import {
     updateTeamRoster, 
     updatePlayerCoordinates,
     toggleMatchTimer,
-    undoLastMatchEvent 
+    undoLastMatchEvent,
+    saveMatchReport 
 } from './services/firebaseService.js';
 
 let matchState = {
@@ -199,13 +200,18 @@ function setupGlobalDelegation() {
 
     // Crônica AI (Inteligência Pós-Jogo)
     document.getElementById('btn-generate-report')?.addEventListener('click', async () => {
+        // Se já existe um relatório, abre o existente sem gastar tokens
+        if (matchState.aiReport) {
+            showReportModal(matchState.aiReport);
+            return;
+        }
+
         if (matchState.events.length < 3) {
             alert("A crônica requer pelo menos 3 eventos registrados para ser representativa.");
             return;
         }
 
         const btn = document.getElementById('btn-generate-report');
-        const icon = btn.querySelector('i');
         const originalText = btn.innerHTML;
 
         btn.disabled = true;
@@ -214,6 +220,7 @@ function setupGlobalDelegation() {
 
         try {
             const report = await generateMatchReport(matchState);
+            await saveMatchReport(report); // Persiste no Firebase
             showReportModal(report);
         } catch (error) {
             alert(`Erro ao gerar crônica: ${error.message}`);
@@ -320,6 +327,21 @@ function updateAppUI() {
         timerText.classList.toggle('paused', matchState.isPaused);
     }
 
+    if (window.lucide) window.lucide.createIcons();
+
+    // Atualiza o estado visual do botão de Crônica AI
+    const reportBtn = document.getElementById('btn-generate-report');
+    if (reportBtn) {
+        if (matchState.aiReport) {
+            reportBtn.innerHTML = `<i data-lucide="file-text"></i> Ler Crônica Salva`;
+            reportBtn.style.background = 'var(--bg-accent)';
+            reportBtn.style.borderColor = 'var(--primary)';
+        } else {
+            reportBtn.innerHTML = `<i data-lucide="sparkles"></i> Gerar Crônica AI`;
+            reportBtn.style.background = '';
+            reportBtn.style.borderColor = '';
+        }
+    }
     if (window.lucide) window.lucide.createIcons();
 
     renderMatchDetails(matchState, 'details-container');

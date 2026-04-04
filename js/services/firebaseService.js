@@ -1,8 +1,3 @@
-/**
- * @fileoverview Serviço de persistência e sincronização em tempo real (Firebase Firestore).
- * Reconstruído para garantir Transações Atômicas de Gols e Sincronização do Cronômetro.
- */
-
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { 
     getFirestore, 
@@ -14,15 +9,9 @@ import {
     setDoc,
     getDoc
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { getFirebaseConfig } from './config.js';
 
-const firebaseConfig = {
-    apiKey: "INSERIR_API_KEY",
-    authDomain: "INSERIR_AUTH_DOMAIN",
-    projectId: "INSERIR_PROJECT_ID",
-    storageBucket: "INSERIR_STORAGE_BUCKET",
-    messagingSenderId: "INSERIR_SENDER_ID",
-    appId: "INSERIR_APP_ID"
-};
+const firebaseConfig = getFirebaseConfig();
 
 let app, db;
 const MATCH_ID = "live_match";
@@ -224,6 +213,25 @@ export async function toggleMatchTimer(isPaused, timeElapsed) {
         console.log(`⏱️ Sinc de tempo: ${nextStatePaused ? 'PAUSADO' : 'CORRENDO'}`);
     } catch (e) {
         console.error("Falha ao alternar timer:", e);
+    }
+}
+
+/**
+ * 📝 SALVAR CRÔNICA AI (Persistência)
+ * Salva o conteúdo da crônica no documento da partida para sincronização e economia de tokens.
+ */
+export async function saveMatchReport(reportContent) {
+    if (!db) return;
+    const matchRef = doc(db, "matches", MATCH_ID);
+    try {
+        await updateDoc(matchRef, {
+            aiReport: reportContent,
+            reportGeneratedAt: Date.now()
+        });
+        console.log("📝 Crônica AI persistida no Firebase.");
+    } catch (e) {
+        console.error("Erro ao salvar crônica no Firebase:", e);
+        throw e;
     }
 }
 

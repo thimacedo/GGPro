@@ -1,4 +1,7 @@
-// Configuração do Narrador Pro
+/**
+ * 🔑 MOTOR DE CONFIGURAÇÃO (Narrador Pro)
+ * Centraliza chaves de API e credenciais de serviços (Gemini & Firebase).
+ */
 
 export const getApiKey = () => {
   const localKey = typeof localStorage !== 'undefined' 
@@ -16,9 +19,33 @@ export const getApiKey = () => {
 
   const placeholders = ['sua_chave_api_aqui', 'YOUR_API_KEY', 'undefined', 'null', ''];
   if (placeholders.includes(cleanKey.toLowerCase())) {
-    console.error("❌ ERRO CRÍTICO: Chave de API é um placeholder ou está vazia!");
-    throw new Error("INVALID_API_KEY");
+    console.warn("⚠️ API KEY GS: Chave não configurada no Storage.");
+    return null;
   }
   
   return cleanKey;
+};
+
+export const getFirebaseConfig = () => {
+    const defaultPlaceholder = "INSERIR_VALOR";
+    
+    // Tenta carregar do localStorage para permitir configuração sem redeploy
+    const config = {
+        apiKey: localStorage.getItem('FB_API_KEY') || defaultPlaceholder,
+        authDomain: localStorage.getItem('FB_AUTH_DOMAIN') || defaultPlaceholder,
+        projectId: localStorage.getItem('FB_PROJECT_ID') || defaultPlaceholder,
+        storageBucket: localStorage.getItem('FB_STORAGE_BUCKET') || defaultPlaceholder,
+        messagingSenderId: localStorage.getItem('FB_SENDER_ID') || defaultPlaceholder,
+        appId: localStorage.getItem('FB_APP_ID') || defaultPlaceholder
+    };
+
+    const isConfigured = Object.values(config).every(val => val !== defaultPlaceholder);
+    
+    if (!isConfigured) {
+        console.warn("⚠️ Firebase: Configuração incompleta detectada.");
+    } else {
+        console.log("%c🔥 Firebase: Configuração detectada via LocalStorage.", "color: #f59e0b; font-weight: bold;");
+    }
+
+    return config;
 };
