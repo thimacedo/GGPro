@@ -52,8 +52,12 @@ app.post('/api/ai/generate', async (req, res) => {
   }
 });
 
-// Fallback SPA (Single Page Application)
-app.get('*', (req, res) => {
+/**
+ * Fallback SPA (Single Page Application)
+ * [FIX] Express 5.x (path-to-regexp@7) não suporta '*' puro como wildcard.
+ * Deve ser usado (.*) ou regex nomeado.
+ */
+app.get('(.*)', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
