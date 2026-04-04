@@ -5,7 +5,7 @@
 import matchState from './state.js';
 import { renderHeader, updateTimer } from './components/header.js';
 import { toastManager } from './components/toasts.js';
-import { modalManager } from './components/modals-v2.js';
+import { modalManager } from './components/modals.js';
 import { fieldManager } from './components/field.js';
 import { statsManager } from './components/stats.js';
 import { voice } from './services/voice.js';
