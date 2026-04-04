@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node server.js",
-    "build": "vite build",
+    "build": "echo 'Static architecture: serving from root...'",
     "lint": "echo 'Linting disabled'",
     "start": "node server.js"
   },

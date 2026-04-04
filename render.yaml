@@ -3,7 +3,7 @@ services:
     name: narrador-pro
     env: static
     buildCommand: npm run build
-    staticPublishPath: ./dist
+    staticPublishPath: ./
     envVars:
       - key: VITE_GEMINI_API_KEY
         sync: false
