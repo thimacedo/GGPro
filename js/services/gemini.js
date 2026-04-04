@@ -223,9 +223,42 @@ export const processMatchDocument = async (file, type) => {
 };
 
 /**
- * 🎙️ PARSE DE COMANDOS (Linguagem Natural)
- * Usado para interpretar comandos de voz ou texto da barra de comandos.
+ * 🎙️ MOTOR DE INTERPRETAÇÃO DE VOZ / COMANDO
+ * Converte linguagem natural em JSON de evento de partida usando a Ultra-IA.
  */
+export async function processVoiceCommand(text, state) {
+  const contents = [{
+    parts: [{ text: `
+      Você é um assistente de narração esportiva. Sua tarefa é transformar a descrição de um lance em um objeto JSON estruturado.
+      
+      LANCE: "${text}"
+      
+      CONTEXTO:
+      - Mandante: ${state.homeTeam?.name} (${state.homeTeam?.shortName})
+      - Visitante: ${state.awayTeam?.name} (${state.awayTeam?.shortName})
+      - Placar: ${state.homeTeam?.score} x ${state.awayTeam?.score}
+      
+      REGRAS DE RETORNO:
+      1. Campo "type": Escolha entre GOAL, YELLOW_CARD, RED_CARD, SUBSTITUTION, FOUL, CORNER, CHANCE.
+      2. Campo "teamSide": "home" ou "away".
+      3. Campo "playerNumber": Apenas o número (inteiro), se identificável.
+      4. Campo "description": Narração curta e profissional do lance (Ex: "GOL! Finalização precisa do camisa 10").
+      5. Campo "isGoal": true apenas se for gol confirmado.
+
+      RETORNE APENAS O JSON NO FORMATO:
+      { "type": "GOAL", "teamSide": "home", "playerNumber": 10, "description": "...", "isGoal": true }
+    ` }]
+  }];
+
+  try {
+    const resultText = await callGeminiREST(ULTRA_GEN_MODELS, contents);
+    return cleanAndParseJSON(resultText);
+  } catch (error) {
+    console.warn("Falha no parse do comando IA, usando fallback manual.", error);
+    return { type: 'CHANCE', teamSide: 'home', description: text, isGoal: false };
+  }
+}
+
 export const parseMatchCommand = processVoiceCommand;
 
 export const generateMatchReport = async (context, timeline) => {

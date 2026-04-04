@@ -1,6 +1,6 @@
 /**
- * @fileoverview Serviço de persistência e sincronização em tempo real (Firebase Firestore)
- * com suporte a Offline-First e Transações Atômicas.
+ * @fileoverview Serviço de persistência e sincronização em tempo real (Firebase Firestore).
+ * Reconstruído para garantir Transações Atômicas de Gols e Sincronização do Cronômetro.
  */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
@@ -10,7 +10,9 @@ import {
     onSnapshot, 
     runTransaction, 
     updateDoc,
-    enableMultiTabIndexedDbPersistence
+    enableMultiTabIndexedDbPersistence,
+    setDoc,
+    getDoc
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -23,102 +25,119 @@ const firebaseConfig = {
 };
 
 let app, db;
+const MATCH_ID = "live_match";
 
 /**
- * 🔒 BLINDAGEM DE INICIALIZAÇÃO (Suspeita 2)
- * Previne que a ausência de chaves interrompa o carregamento da aplicação (SPA).
+ * 🔒 BLINDAGEM DE INICIALIZAÇÃO
+ * Evita que a falta de chaves interrompa o carregamento da UI.
  */
 try {
     app = initializeApp(firebaseConfig);
     db = getFirestore(app);
     
-    // Suporte a cache offline (Persistência multi-tab)
+    // Persistência Offline (Multi-tab)
     enableMultiTabIndexedDbPersistence(db).catch((err) => {
         if (err.code === 'failed-precondition') {
-            console.warn("Persistência offline: Múltiplas abas abertas.");
+            console.warn("Persistência Offline: Múltiplas abas abertas.");
         } else if (err.code === 'unimplemented') {
-            console.warn("Persistência offline: Navegador não compatível.");
+            console.warn("Persistência Offline: Navegador sem suporte.");
         }
     });
-    
-    console.log("✅ Firebase Service: Ativo.");
+
+    console.log("✅ Firebase Service: Inicializado com sucesso.");
 } catch (e) {
-    console.warn("⚠️ Firebase aguardando chaves válidas. A UI continuará acessível mas sem sincronização em tempo real.");
+    console.warn("⚠️ Firebase: Aguardando configuração. Modo local ativo.");
 }
 
 /**
- * 🛰️ SINCRONIZAÇÃO EM TEMPO REAL
- * Mantém o estado da partida (matchState) atualizado para todos os observadores.
+ * 🛰️ SUBSCREVER À PARTIDA (Real-time)
+ * Escuta mudanças no documento central da partida.
  */
 export function subscribeToMatch(callback) {
     if (!db) return;
-    const matchDoc = doc(db, "matches", "live_match");
-    return onSnapshot(matchDoc, (snapshot) => {
+    const matchRef = doc(db, "matches", MATCH_ID);
+    
+    return onSnapshot(matchRef, (snapshot) => {
         if (snapshot.exists()) {
             callback(snapshot.data());
+        } else {
+            console.log("Criando documento inicial da partida...");
+            const initialState = {
+                period: 'PRE_MATCH',
+                timeElapsed: 0,
+                timerStartedAt: null,
+                isPaused: true,
+                homeTeam: { name: 'Mandante', shortName: 'HOME', color: '#ef4444', score: 0, players: [] },
+                awayTeam: { name: 'Visitante', shortName: 'AWAY', color: '#10b981', score: 0, players: [] },
+                events: []
+            };
+            setDoc(matchRef, initialState);
+            callback(initialState);
         }
+    }, (error) => {
+        console.error("Erro na sincronização Firebase:", error);
     });
 }
 
 /**
- * ⚽ ADIÇÃO DE EVENTO COM TRANSAÇÃO ATÔMICA
- * Garante que o placar e a cronologia sejam atualizados de forma consistente.
+ * ⚽ ADICIONAR EVENTO (Transação Atômica)
+ * Garante consistência entre a lista de eventos e o placar.
  */
-export async function addMatchEvent(event, isGoal = false, teamId = null) {
+export async function addMatchEvent(event, isGoal = false, teamSide = null) {
     if (!db) return;
-    const matchRef = doc(db, "matches", "live_match");
+    const matchRef = doc(db, "matches", MATCH_ID);
 
     try {
         await runTransaction(db, async (transaction) => {
             const matchDoc = await transaction.get(matchRef);
-            if (!matchDoc.exists()) {
-                throw new Error("Documento da partida inexistente.");
-            }
+            if (!matchDoc.exists()) throw new Error("Partida não encontrada.");
 
             const data = matchDoc.data();
             const events = data.events || [];
             
-            const updateData = {
+            const updatePayload = {
                 events: [...events, event]
             };
 
-            // Incremento do placar
-            if (isGoal && teamId) {
-                if (teamId === 'home') {
-                    updateData['homeTeam.score'] = (data.homeTeam.score || 0) + 1;
-                } else if (teamId === 'away') {
-                    updateData['awayTeam.score'] = (data.awayTeam.score || 0) + 1;
-                }
+            if (isGoal && teamSide) {
+                const teamKey = teamSide === 'home' ? 'homeTeam' : 'awayTeam';
+                const currentScore = data[teamKey]?.score || 0;
+                updatePayload[`${teamKey}.score`] = currentScore + 1;
             }
 
-            transaction.update(matchRef, updateData);
+            transaction.update(matchRef, updatePayload);
         });
+        console.log(`✅ Evento registrado: ${event.type}`);
     } catch (e) {
-        console.error("Falha ao registrar evento:", e);
+        console.error("Falha na Transação Atômica:", e);
         throw e;
     }
 }
 
 /**
- * 📋 ATUALIZAÇÃO DO ELENCO (OCR Import)
+ * 📋 ATUALIZAR ELENCO (OCR Import)
  */
 export async function updateTeamRoster(teamSide, rosterData) {
     if (!db) return;
-    const matchRef = doc(db, "matches", "live_match");
+    const matchRef = doc(db, "matches", MATCH_ID);
     
-    const updatePath = teamSide === 'home' ? 'homeTeam' : 'awayTeam';
-    await updateDoc(matchRef, {
-        [`${updatePath}.name`]: rosterData.teamName || (teamSide === 'home' ? 'Mandante' : 'Visitante'),
-        [`${updatePath}.players`]: rosterData.players || []
-    });
+    const teamKey = teamSide === 'home' ? 'homeTeam' : 'awayTeam';
+    try {
+        await updateDoc(matchRef, {
+            [`${teamKey}.name`]: rosterData.teamName || (teamSide === 'home' ? 'Mandante' : 'Visitante'),
+            [`${teamKey}.players`]: rosterData.players || []
+        });
+    } catch (e) {
+        console.error("Erro ao atualizar elenco:", e);
+    }
 }
 
 /**
- * 🗺️ PERSISTÊNCIA DE COORDENADAS TÁTICAS
+ * 🗺️ ATUALIZAR COORDENADAS TÁTICAS (Drag & Drop)
  */
 export async function updatePlayerCoordinates(teamId, playerId, x, y) {
     if (!db) return;
-    const matchRef = doc(db, "matches", "live_match");
+    const matchRef = doc(db, "matches", MATCH_ID);
 
     try {
         await runTransaction(db, async (transaction) => {
@@ -127,10 +146,10 @@ export async function updatePlayerCoordinates(teamId, playerId, x, y) {
 
             const data = matchDoc.data();
             const teamKey = teamId === 'home' ? 'homeTeam' : 'awayTeam';
-            const players = data[teamKey].players || [];
+            const players = data[teamKey]?.players || [];
             
             const updatedPlayers = players.map(p => {
-                if (p.id == playerId || p.number == playerId) {
+                if (String(p.id) === String(playerId) || String(p.number) === String(playerId)) {
                     return { ...p, coordX: x, coordY: y };
                 }
                 return p;
@@ -141,20 +160,27 @@ export async function updatePlayerCoordinates(teamId, playerId, x, y) {
             });
         });
     } catch (e) {
-        console.error("Falha ao salvar coordenadas:", e);
+        console.error("Falha ao salvar tática:", e);
     }
 }
 
 /**
- * ⏱️ CONTROLE DE CRONÔMETRO (Sincronização Atômica)
+ * ⏱️ CONTROLE DO CRONÔMETRO (Sincronização Atômica)
  */
 export async function toggleMatchTimer(isPaused, timeElapsed) {
     if (!db) return;
-    const matchRef = doc(db, "matches", "live_match");
+    const matchRef = doc(db, "matches", MATCH_ID);
 
-    await updateDoc(matchRef, {
-        isPaused: !isPaused,
-        timeElapsed: timeElapsed,
-        timerStartedAt: isPaused ? Date.now() : null
-    });
+    try {
+        const nextStatePaused = !isPaused;
+        await updateDoc(matchRef, {
+            isPaused: nextStatePaused,
+            timeElapsed: timeElapsed,
+            timerStartedAt: nextStatePaused ? null : Date.now()
+        });
+        console.log(`⏱️ Sinc de tempo: ${nextStatePaused ? 'PAUSADO' : 'CORRENDO'}`);
+    } catch (e) {
+        console.error("Falha ao alternar timer:", e);
+    }
 }
+

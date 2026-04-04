@@ -3,7 +3,13 @@ import { renderMatchDetails } from './components/details.js';
 import { showMatchSettings } from './components/modals.js';
 import { renderTacticalField } from './components/field.js';
 import { parseMatchCommand } from './services/gemini.js';
-import { subscribeToMatch, addMatchEvent,   updateTeamRoster, updatePlayerCoordinates } from './services/firebaseService.js';
+import { 
+    subscribeToMatch, 
+    addMatchEvent, 
+    updateTeamRoster, 
+    updatePlayerCoordinates,
+    toggleMatchTimer 
+} from './services/firebaseService.js';
 
 let matchState = {
     period: 'PRE_MATCH',
@@ -17,17 +23,10 @@ let matchState = {
 
 let clockInterval = null;
 
-// Hoisting para acesso global
-export async function handleImageUpload(file, type) {
-    try {
-        const result = await import('./services/gemini.js').then(m => m.processMatchDocument(file, type));
-        return result;
-    } catch (error) {
-        console.error("Falha no handleImageUpload:", error);
-        throw error;
-    }
-}
-
+/**
+ * 🛠️ MOTOR DO RELÓGIO (Engine)
+ * Calcula o tempo decorrido baseado no timestamp de início gravado no Firebase.
+ */
 function runClockEngine() {
     if (clockInterval) clearInterval(clockInterval);
 
@@ -41,14 +40,18 @@ function runClockEngine() {
         const totalMs = (matchState.timeElapsed || 0) + (now - start);
         
         const totalSeconds = Math.floor(totalMs / 1000);
-        const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
-        const seconds = String(totalSeconds % 60).padStart(2, '0');
-        
-        const timerDisplay = document.getElementById('main-timer');
-        if (timerDisplay) {
-            timerDisplay.innerText = `${minutes}:${seconds}`;
-        }
+        updateTimerDisplay(totalSeconds);
     }, 1000);
+}
+
+function updateTimerDisplay(totalSeconds) {
+    const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+    const seconds = String(totalSeconds % 60).padStart(2, '0');
+    
+    const timerDisplay = document.getElementById('main-timer');
+    if (timerDisplay) {
+        timerDisplay.innerText = `${minutes}:${seconds}`;
+    }
 }
 
 const getPlayerById = (id) => {
@@ -56,9 +59,13 @@ const getPlayerById = (id) => {
         ...(matchState.homeTeam?.players || []),
         ...(matchState.awayTeam?.players || [])
     ];
-    return allPlayers.find(p => p.id == id || p.number == id) || { id, name: `Jogador ${id}`, shortName: 'JOG', position: 'N/A' };
+    return allPlayers.find(p => String(p.id) === String(id) || String(p.number) === String(id)) 
+           || { id, name: `Jogador ${id}`, shortName: 'JOG', position: 'N/A' };
 };
 
+/**
+ * 🏗️ CONSTRUÇÃO DA INTERFACE (Shell)
+ */
 function buildAppShell() {
     const root = document.getElementById('root');
     if (!root) return;
@@ -111,11 +118,13 @@ function buildAppShell() {
                         <div id="timeline-container"></div>
                     </aside>
                 </div>
-            </nav>
+            </main>
 
             <footer class="fixed-footer">
                 <div class="footer-content">
-                    <button class="btn-play-pause" id="btn-main-action"><i data-lucide="play"></i></button>
+                    <button class="btn-play-pause" id="btn-main-action">
+                        <i data-lucide="play"></i>
+                    </button>
                     <div class="command-bar">
                         <input type="text" class="command-input" placeholder="Comando: 'Gol do 10 do Flamengo'..." id="ai-input" />
                         <button class="icon-btn" id="ai-submit"><i data-lucide="send"></i></button>
@@ -129,7 +138,11 @@ function buildAppShell() {
     setupGlobalDelegation();
 }
 
+/**
+ * 🛰️ DELEGAÇÃO DE EVENTOS E UI
+ */
 function setupGlobalDelegation() {
+    // Tabs de Visualização
     document.getElementById('view-tabs')?.addEventListener('click', (e) => {
         const btn = e.target.closest('.btn-view');
         if (!btn) return;
@@ -138,23 +151,48 @@ function setupGlobalDelegation() {
         switchView(btn.dataset.view);
     });
 
+    // Botão de Play/Pause (Cronômetro real-time)
+    document.getElementById('btn-main-action')?.addEventListener('click', async () => {
+        const btn = document.getElementById('btn-main-action');
+        btn.disabled = true;
+        
+        // Calcula o tempo atual antes de alternar para persistência correta
+        const now = Date.now();
+        const start = matchState.timerStartedAt || now;
+        const currentElapsed = matchState.isPaused ? matchState.timeElapsed : (matchState.timeElapsed + (now - start));
+
+        try {
+            await toggleMatchTimer(matchState.isPaused, currentElapsed);
+        } finally {
+            btn.disabled = false;
+        }
+    });
+
+    // Ajustes
     document.getElementById('btn-settings')?.addEventListener('click', () => {
         showMatchSettings(matchState.homeTeam, matchState.awayTeam);
     });
 
+    // Comando IA
     document.getElementById('ai-submit')?.addEventListener('click', processAiCommand);
     document.getElementById('ai-input')?.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') processAiCommand();
     });
 
+    // Listener para OCR de Elencos
     window.addEventListener('rosterImported', async (e) => {
         const { teamSide, rosterData } = e.detail;
         try {
             await updateTeamRoster(teamSide, rosterData);
-            console.log(`Dados do OCR enviados ao Firebase para o time: ${teamSide}`);
         } catch (error) {
-            alert("Falha ao salvar o elenco sincronizado no banco de dados.");
+            console.error("Erro ao importar elenco:", error);
+            alert("Falha ao sincronizar elenco no Firebase.");
         }
+    });
+
+    // Botão Desfazer (Stub para futura implementação de Pop atômico)
+    document.getElementById('btn-undo')?.addEventListener('click', () => {
+        alert("Função 'Desfazer' em desenvolvimento para sincronização atômica.");
     });
 }
 
@@ -164,7 +202,7 @@ async function processAiCommand() {
     
     const text = input.value.trim();
     input.disabled = true;
-    input.placeholder = "Processando lance...";
+    input.placeholder = "IA interpretando lance...";
 
     try {
         const aiEvent = await parseMatchCommand(text, matchState);
@@ -181,12 +219,12 @@ async function processAiCommand() {
         };
 
         const isGoal = aiEvent.type === 'GOAL';
-        await addMatchEvent(newEvent, isGoal, aiEvent.teamId);
+        await addMatchEvent(newEvent, isGoal, aiEvent.teamSide || (aiEvent.teamId === 'home' ? 'home' : 'away'));
         
         input.value = '';
     } catch (err) {
-        console.error("Erro no comando:", err);
-        alert("Falha ao interpretar comando ou sincronizar. Tente novamente.");
+        console.error("Erro no comando IA:", err);
+        alert("Falha ao interpretar comando. Verifique a conexão com o Gemini.");
     } finally {
         input.disabled = false;
         input.placeholder = "Comando: 'Gol do 10 do Flamengo'...";
@@ -218,6 +256,14 @@ function updateAppUI() {
         periodDisp.innerText = matchState.period === 'PENALTIES' ? 'PÊNALTIS' : (matchState.period || '1T');
     }
 
+    // Atualiza o botão de Play/Pause
+    const mainBtn = document.getElementById('btn-main-action');
+    if (mainBtn) {
+        mainBtn.innerHTML = matchState.isPaused ? '<i data-lucide="play"></i>' : '<i data-lucide="pause"></i>';
+        mainBtn.classList.toggle('playing', !matchState.isPaused);
+        if (window.lucide) window.lucide.createIcons();
+    }
+
     renderMatchDetails(matchState, 'details-container');
     renderTimeline(matchState.events || [], getPlayerById, 'timeline-container');
     
@@ -232,15 +278,37 @@ function switchView(viewName) {
     if (viewName === 'lista') {
         container.innerHTML = `
             <div class="card p-6">
-                <h3 class="uppercase tracking-widest mb-4">Elencos</h3>
-                <div class="grid grid-cols-2 gap-4">
+                <h3 class="uppercase tracking-widest mb-4">Elencos em Campo</h3>
+                <div class="grid grid-cols-2 gap-8">
                     <div>
-                        <p class="font-bold mb-2">${matchState.homeTeam?.name || 'Mandante'}</p>
-                        ${matchState.homeTeam?.players?.map(p => `<div class="player-item"><span class="num-tag">${p.number}</span> ${p.name}</div>`).join('') || '<p class="text-sm text-slate-500">Nenhum jogador carregado.</p>'}
+                        <p class="font-bold mb-4 flex items-center gap-2">
+                            <span class="w-2 h-4 rounded-full" style="background:${matchState.homeTeam?.color}"></span>
+                            ${matchState.homeTeam?.name || 'Mandante'}
+                        </p>
+                        <div class="player-list-grid">
+                            ${matchState.homeTeam?.players?.map(p => `
+                                <div class="player-item ${p.isStarter ? 'starter' : 'reserve'}">
+                                    <span class="num-tag">${p.number}</span>
+                                    <span class="name">${p.name}</span>
+                                    ${p.isCaptain ? '<span class="captain-tag">C</span>' : ''}
+                                </div>
+                            `).join('') || '<p class="text-xs text-slate-500">Aguardando súmula...</p>'}
+                        </div>
                     </div>
                     <div>
-                        <p class="font-bold mb-2">${matchState.awayTeam?.name || 'Visitante'}</p>
-                        ${matchState.awayTeam?.players?.map(p => `<div class="player-item"><span class="num-tag">${p.number}</span> ${p.name}</div>`).join('') || '<p class="text-sm text-slate-500">Nenhum jogador carregado.</p>'}
+                        <p class="font-bold mb-4 flex items-center gap-2">
+                            <span class="w-2 h-4 rounded-full" style="background:${matchState.awayTeam?.color}"></span>
+                            ${matchState.awayTeam?.name || 'Visitante'}
+                        </p>
+                        <div class="player-list-grid">
+                            ${matchState.awayTeam?.players?.map(p => `
+                                <div class="player-item ${p.isStarter ? 'starter' : 'reserve'}">
+                                    <span class="num-tag">${p.number}</span>
+                                    <span class="name">${p.name}</span>
+                                    ${p.isCaptain ? '<span class="captain-tag">C</span>' : ''}
+                                </div>
+                            `).join('') || '<p class="text-xs text-slate-500">Aguardando súmula...</p>'}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -258,21 +326,45 @@ function switchView(viewName) {
 }
 
 function initApp() {
-    buildAppShell();
-    runClockEngine();
+    console.log("🚀 Narrador Pro: Iniciando App...");
     
-    subscribeToMatch((newState) => {
-        matchState = newState;
-        
-        if (!matchState.isPaused && matchState.period !== 'PENALTIES') {
+    try {
+        buildAppShell();
+        console.log("✅ Shell da aplicação construído.");
+
+        if (typeof subscribeToMatch === 'function') {
+            console.log("📡 Tentando conexão com Firebase...");
+            const unsubscribe = subscribeToMatch((newState) => {
+                const wasPaused = matchState.isPaused;
+                matchState = newState;
+                
+                if (wasPaused !== matchState.isPaused) {
+                    runClockEngine();
+                }
+                
+                updateAppUI();
+            });
+
+            if (!unsubscribe) {
+                console.warn("⚠️ Firebase Offline/Indisponível. Rodando em modo local.");
+                updateAppUI();
+                runClockEngine();
+            }
+        } else {
+            updateAppUI();
             runClockEngine();
-        } else if (matchState.period === 'PENALTIES') {
-            const pDisp = document.getElementById('match-period');
-            if (pDisp) pDisp.innerText = 'PÊNALTIS';
         }
-        
-        updateAppUI();
-    });
+    } catch (error) {
+        console.error("❌ Erro crítico na inicialização:", error);
+        document.body.innerHTML = `<div style="padding:20px; color:white; background:red;">Erro ao carregar App: ${error.message}</div>`;
+    }
 }
 
-document.addEventListener('DOMContentLoaded', initApp);
+// Garantia de execução (Safe Boot)
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initApp);
+} else {
+    initApp();
+}
+
+
