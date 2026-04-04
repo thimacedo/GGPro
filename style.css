@@ -141,6 +141,18 @@ body {
   color: var(--primary);
   text-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
   letter-spacing: -2px;
+  transition: var(--transition);
+}
+
+.timer-text.paused {
+  color: var(--text-muted);
+  text-shadow: none;
+  animation: pulse-soft 2s infinite;
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
 }
 
 .period-badge {
@@ -392,7 +404,7 @@ body {
 
 .modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-    backdrop-filter: blur(8px); z-index: 1000; display: flex; items-center; justify-content: center;
+    backdrop-filter: blur(8px); z-index: 1000; display: flex; align-items: center; justify-content: center;
     opacity: 1; transition: opacity 0.2s;
 }
 

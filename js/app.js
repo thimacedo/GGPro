@@ -8,7 +8,8 @@ import {
     addMatchEvent, 
     updateTeamRoster, 
     updatePlayerCoordinates,
-    toggleMatchTimer 
+    toggleMatchTimer,
+    undoLastMatchEvent 
 } from './services/firebaseService.js';
 
 let matchState = {
@@ -190,9 +191,26 @@ function setupGlobalDelegation() {
         }
     });
 
-    // Botão Desfazer (Stub para futura implementação de Pop atômico)
-    document.getElementById('btn-undo')?.addEventListener('click', () => {
-        alert("Função 'Desfazer' em desenvolvimento para sincronização atômica.");
+    // Botão Desfazer (Anulação Atômica)
+    document.getElementById('btn-undo')?.addEventListener('click', async () => {
+        if (matchState.events.length === 0) return;
+        
+        const btn = document.getElementById('btn-undo');
+        const icon = btn.querySelector('i');
+        
+        btn.disabled = true;
+        if (icon) icon.classList.add('animate-spin');
+
+        try {
+            await undoLastMatchEvent();
+        } catch (error) {
+            console.error("Erro ao desfazer:", error);
+            alert("Não foi possível desfazer o último evento.");
+        } finally {
+            btn.disabled = false;
+            if (icon) icon.classList.remove('animate-spin');
+            if (window.lucide) window.lucide.createIcons();
+        }
     });
 }
 
@@ -256,15 +274,23 @@ function updateAppUI() {
         periodDisp.innerText = matchState.period === 'PENALTIES' ? 'PÊNALTIS' : (matchState.period || '1T');
     }
 
-    // Atualiza o botão de Play/Pause
+    // Atualiza o botão de Play/Pause e o estado do timer
     const mainBtn = document.getElementById('btn-main-action');
+    const timerText = document.getElementById('main-timer');
+    
     if (mainBtn) {
         mainBtn.innerHTML = matchState.isPaused ? '<i data-lucide="play"></i>' : '<i data-lucide="pause"></i>';
         mainBtn.classList.toggle('playing', !matchState.isPaused);
-        if (window.lucide) window.lucide.createIcons();
+    }
+    
+    if (timerText) {
+        timerText.classList.toggle('paused', matchState.isPaused);
     }
 
+    if (window.lucide) window.lucide.createIcons();
+
     renderMatchDetails(matchState, 'details-container');
+
     renderTimeline(matchState.events || [], getPlayerById, 'timeline-container');
     
     const activeView = document.querySelector('.btn-view.active')?.dataset.view || 'lista';

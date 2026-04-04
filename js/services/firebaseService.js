@@ -165,6 +165,49 @@ export async function updatePlayerCoordinates(teamId, playerId, x, y) {
 }
 
 /**
+ * ⏪ ANULAÇÃO DE EVENTO (Undo)
+ * Remove o último evento da lista de forma atômica.
+ * Se o evento removido for um GOL, o placar é automaticamente decrementado.
+ */
+export async function undoLastMatchEvent() {
+    if (!db) return;
+
+    const matchRef = doc(db, "matches", MATCH_ID);
+    
+    try {
+        await runTransaction(db, async (transaction) => {
+            const matchDoc = await transaction.get(matchRef);
+            if (!matchDoc.exists()) throw "Partida não encontrada!";
+
+            const data = matchDoc.data();
+            const events = data.events || [];
+            
+            if (events.length === 0) return; // Nada para desfazer
+
+            const lastEvent = events[events.length - 1];
+            const updatedEvents = events.slice(0, -1);
+            
+            let updates = { events: updatedEvents };
+
+            // Se o evento que estamos removendo for um GOL, subtrai do placar
+            if (lastEvent.type === 'GOAL' || lastEvent.isGoal) {
+                const teamSide = lastEvent.teamSide || (lastEvent.teamId === 'away' ? 'away' : 'home');
+                const teamKey = teamSide === 'home' ? 'homeTeam' : 'awayTeam';
+                const currentScore = data[teamKey]?.score || 0;
+                
+                updates[`${teamKey}.score`] = Math.max(0, currentScore - 1);
+            }
+
+            transaction.update(matchRef, updates);
+        });
+        return true;
+    } catch (e) {
+        console.error("Erro ao desfazer evento:", e);
+        throw e;
+    }
+}
+
+/**
  * ⏱️ CONTROLE DO CRONÔMETRO (Sincronização Atômica)
  */
 export async function toggleMatchTimer(isPaused, timeElapsed) {
