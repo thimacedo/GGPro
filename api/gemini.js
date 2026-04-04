@@ -1,25 +1,25 @@
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
-    /**
-     * ESTRATÉGIA DE SEGURANÇA E RESILIÊNCIA v4.1
-     * 1. Tenta Variáveis de Ambiente da Vercel (Seguro).
-     * 2. Fallback para chave compartilhada no prompt (Garante funcionamento imediato).
-     */
+    // API Key resolution (Env > Hardcoded Fallback)
     const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || "AIzaSyBr2sApCLzTYMTR0K2FKh-03bOdvvz4p8o";
     
     if (!apiKey) {
-        return res.status(500).json({ error: 'API Key ausente. Configure GEMINI_API_KEY na Vercel.' });
+        return res.status(500).json({ error: 'API Key ausente.' });
     }
 
     const { prompt, fileBase64, isOCR } = req.body;
     
-    // Tenta modelos em ordem de preferência (Ultra-Flash v2 -> Flash v1.5)
-    const models = ['gemini-2.0-flash', 'gemini-1.5-flash'];
+    // Lista de modelos e versões para failover máximo
+    const configurations = [
+        { model: 'gemini-1.5-flash', version: 'v1' },
+        { model: 'gemini-2.0-flash', version: 'v1beta' },
+        { model: 'gemini-1.5-flash', version: 'v1beta' }
+    ];
 
-    for (const model of models) {
+    for (const config of configurations) {
         try {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+            const url = `https://generativelanguage.googleapis.com/${config.version}/models/${config.model}:generateContent?key=${apiKey}`;
             
             const payload = {
                 contents: [{
@@ -40,7 +40,8 @@ export default async function handler(req, res) {
             const response = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(payload),
+                signal: AbortSignal.timeout(8000) // Timeout de 8s para evitar timeout da Vercel (10s)
             });
 
             const data = await response.json();
@@ -49,11 +50,11 @@ export default async function handler(req, res) {
                 return res.status(200).json(data);
             }
 
-            console.error(`Erro no modelo ${model}:`, data.error?.message || "Erro desconhecido");
+            console.error(`Falha em ${config.model} (${config.version}):`, JSON.stringify(data.error));
         } catch (error) {
-            console.error(`Falha na requisição para ${model}:`, error.message);
+            console.error(`Erro crítico em ${config.model}:`, error.message);
         }
     }
 
-    return res.status(502).json({ error: 'Serviço de IA temporariamente indisponível após várias tentativas.' });
+    return res.status(502).json({ error: 'Todos os modelos de IA falharam ou excederam o tempo limite.' });
 }
