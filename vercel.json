@@ -9,6 +9,10 @@
     {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
+    },
+    {
+      "source": "/diag/v",
+      "destination": "/api/gemini.js"
     }
   ],
   "headers": [
