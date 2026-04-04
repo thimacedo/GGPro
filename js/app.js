@@ -440,12 +440,16 @@ async function handleRegulationUpload(event) {
 function handleVarReversal() {
   const state = matchState.getState();
   const majorEvents = (state.events || []).filter(e => !e.isAnnulled);
-  if (majorEvents.length === 0) return;
+  
+  if (majorEvents.length === 0) {
+    toastManager.show("VAR", "Nenhum evento registrado para análise no momento.", "info");
+    return;
+  }
 
   modalManager.open(`
     <div class="flex flex-col gap-3">
       ${majorEvents.slice(0, 5).map(e => `
-        <button class="w-full p-4 bg-slate-800 rounded-2xl text-left" onclick="matchState.annulEvent('${e.id}'); modalManager.close();">
+        <button class="w-full p-4 bg-slate-800 rounded-2xl text-left hover:bg-slate-700 transition-all border border-white/5" onclick="matchState.annulEvent('${e.id}'); modalManager.close(); toastManager.show('VAR', 'Evento anulado após revisão.', 'warning');">
           <span class="text-white font-bold text-xs">${e.description}</span>
         </button>
       `).join('')}
