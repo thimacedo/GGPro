@@ -1,5 +1,5 @@
-// js/components/modals.js
-// Componente de Modais - Narrador Pro (v3.1)
+// js/components/modals-v2.js - v4.5.11 FORCED
+// Componente de Modais - Narrador Pro (v4.5.11)
 // Monitoramento Ativo com AbortController e Coleta de Lixo Global
 
 import matchState from '../state.js';

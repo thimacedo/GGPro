@@ -1,5 +1,5 @@
-// js/app.js
-// Ponto de entrada principal - Narrador Pro (v3.1 Estabilizada)
+// js/app.js - v4.5.11 FORCED
+// Ponto de entrada principal - Narrador Pro (v4.5.11 Estabilizada)
 // Arquitetura Modular e Reativa com Hoisting de APIs Críticas
 
 import matchState from './state.js';
