@@ -163,20 +163,54 @@ class ModalManager {
   showEditTeam(team, teamId) {
     const content = `
       <div class="flex flex-col gap-4">
-        <input type="text" id="edit_t_name" value="${team.name}" class="w-full bg-slate-800 rounded-xl p-3 text-white">
-        <button class="w-full p-4 bg-blue-600 rounded-2xl text-xs font-black uppercase text-white" onclick="saveTeamSelf()">SALVAR</button>
+        <div class="space-y-1">
+          <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2">Nome da Equipe</label>
+          <input type="text" id="edit_t_name" value="${team.name}" class="w-full bg-slate-800 border border-white/5 rounded-xl p-3 text-sm text-white focus:ring-2 focus:ring-blue-500 transition-all outline-none">
+        </div>
+        
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-1">
+            <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2">Sigla (3 Letras)</label>
+            <input type="text" id="edit_t_shortname" value="${team.shortName || ''}" maxlength="3" class="w-full bg-slate-800 border border-white/5 rounded-xl p-3 text-sm text-white uppercase text-center focus:ring-2 focus:ring-blue-500 transition-all outline-none">
+          </div>
+          <div class="space-y-1">
+            <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2">Cor Principal</label>
+            <div class="relative group">
+              <input type="color" id="edit_t_color" value="${team.color || '#3b82f6'}" class="w-full h-[46px] bg-slate-800 border border-white/5 rounded-xl p-1 cursor-pointer appearance-none outline-none">
+              <div class="absolute inset-0 pointer-events-none flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <span class="text-[8px] font-black text-white uppercase drop-shadow-md">Alterar</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button class="w-full p-4 mt-2 bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-900/20 rounded-2xl text-xs font-black uppercase text-white transition-all active:scale-95" onclick="saveTeamSelf()">
+          💾 SALVAR ALTERAÇÕES
+        </button>
       </div>
     `;
 
     window.saveTeamSelf = () => {
       const name = document.getElementById('edit_t_name').value;
+      const shortName = document.getElementById('edit_t_shortname').value.toUpperCase().slice(0, 3) || name.substring(0, 3).toUpperCase();
+      const color = document.getElementById('edit_t_color').value;
+
       matchState.setState(prev => {
         const key = teamId === 'home' ? 'homeTeam' : 'awayTeam';
-        return { ...prev, [key]: { ...prev[key], name } };
+        return { 
+          ...prev, 
+          [key]: { 
+            ...prev[key], 
+            name,
+            shortName,
+            color
+          } 
+        };
       });
+      
       this.close();
     };
-    this.open(content, 'Editar Equipe');
+    this.open(content, `Editar ${teamId === 'home' ? 'Mandante' : 'Visitante'}`);
   }
 }
 
