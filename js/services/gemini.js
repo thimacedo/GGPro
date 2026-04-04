@@ -1,164 +1,123 @@
-async function callGeminiProxy(modelName, contents) {
-  console.log(`%c🚀 Chamando Proxy: ${modelName}`, "color: #3b82f6; font-weight: bold;");
-  
-  try {
-    const response = await fetch('/api/ai/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents, model: modelName })
+/**
+ * @fileoverview Serviço de integração com Google Gemini via Proxy Seguro
+ * Implementa validação estrita de payload e tratamento de exceções (Fail-Fast).
+ */
+
+const PROXY_ENDPOINT = '/api/ai/generate';
+
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        if (!file) return reject(new Error("Arquivo inválido ou inexistente."));
+        
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve({
+            inlineData: {
+                data: reader.result.split(',')[1],
+                mimeType: file.type
+            }
+        });
+        reader.onerror = error => reject(new Error(`Falha na leitura do arquivo: ${error.message}`));
     });
-
-    const data = await response.json();
-    if (!response.ok) {
-        throw new Error(data.error || "Erro no Proxy AI");
-    }
-
-    if (data.candidates && data.candidates[0]?.content?.parts[0]?.text) {
-      return data.candidates[0].content.parts[0].text;
-    }
-    throw new Error("Resposta inválida da IA.");
-  } catch (e) {
-    console.error("Falha no Proxy AI:", e.message);
-    throw e;
-  }
 }
 
-const cleanAndParseJSON = (text) => {
-  try {
-    let clean = text.replace(/```json/g, '').replace(/```/g, '');
-    const firstBrace = clean.indexOf('{');
-    const lastBrace = clean.lastIndexOf('}');
-    if (firstBrace !== -1 && lastBrace !== -1) {
-      return JSON.parse(clean.substring(firstBrace, lastBrace + 1));
+function validateResponseSchema(data, expectedType) {
+    if (!data || !data.candidates || !data.candidates.length) {
+        throw new Error("Resposta vazia ou formato inválido retornado pela API.");
     }
-  } catch (e) {
-    console.warn("Falha no parse JSON", e);
-  }
-  return {};
-};
 
-const ULTRA_GEN_MODELS = [
-  "gemini-2.0-flash",
-  "gemini-1.5-flash",
-  "gemini-flash-latest"
-];
-
-export const parsePlayersFromText = async (textList) => {
-  const lines = textList.split(/\r?\n/);
-  const players = [];
-  let starterCount = 0;
-  for (let line of lines) {
-    line = line.trim();
-    if (!line || line.length < 3) continue;
-    const match = line.match(/^[\D]*(\d{1,2})[\s\-\.\,:]+(.+)$/);
-    let num = 0, name = '';
-    if (match) {
-      num = parseInt(match[1], 10);
-      name = match[2].trim().replace(/[\*\-\_]/g, '').trim(); 
-    } else {
-      name = line.replace(/^[\d\s\-\.\,:]+/, '').replace(/[\*\-\_]/g, '').trim();
-      num = players.length + 1; 
+    const rawText = data.candidates[0].content?.parts?.[0]?.text;
+    if (!rawText) {
+        throw new Error("Ausência de conteúdo estruturado na resposta da IA.");
     }
-    if (name.length > 2 && !name.toLowerCase().includes('treinador')) {
-      let isGK = false;
-      if (/(\(gol\)|\(gk\)|goleiro)/i.test(name) || (num === 1 && starterCount === 0)) {
-        isGK = true;
-        name = name.replace(/\(gol\)|\(gk\)|goleiro|\(\)/ig, '').trim();
-      }
-      players.push({ id: Math.random().toString(36).substr(2, 9), name: name.substring(0, 20), number: num, position: isGK ? 'GK' : 'MF', isStarter: starterCount < 11 });
-      starterCount++;
-    }
-  }
-  return { players };
-};
 
-export const parsePlayersFromImage = async (base64Image, mimeType = "image/jpeg") => {
-  const contents = [{
-    parts: [
-      { inline_data: { mime_type: mimeType, data: base64Image } },
-      { text: `Extraia JSON de jogadores: { "teams": [{ "teamName": "X", "players": [{ "name": "Y", "number": 1, "isStarter": true, "position": "GK" }], "commission": "..." }], "matchDetails": {...} }` }
-    ]
-  }];
-  
-  for (const model of ULTRA_GEN_MODELS) {
     try {
-      const text = await callGeminiProxy(model, contents);
-      return cleanAndParseJSON(text);
-    } catch (e) {
-      console.warn(`Próximo modelo: ${model} falhou.`);
+        const parsed = JSON.parse(rawText);
+        
+        if (expectedType === 'event' && !parsed.type) {
+            throw new Error("Payload de evento inválido: propriedade 'type' ausente.");
+        }
+        if (expectedType === 'roster' && (!parsed.players || !Array.isArray(parsed.players))) {
+            throw new Error("Payload de elenco inválido: array 'players' ausente.");
+        }
+        
+        return parsed;
+    } catch (error) {
+        throw new Error(`Falha no parsing do JSON retornado pela IA: ${error.message}`);
     }
-  }
-  throw new Error("Todos os modelos de IA falharam.");
-};
+}
 
-export const parseMatchBannerFromImage = async (base64Image) => {
-  const contents = [{
-    parts: [
-      { inline_data: { mime_type: "image/jpeg", data: base64Image } },
-      { text: `Extraia JSON dos jogos: { "matches": [ { "homeTeam": "A", "awayTeam": "B", "competition": "X", "stadium": "Y", "date": "Z", "time": "W" } ] }` }
-    ]
-  }];
-  
-  for (const model of ULTRA_GEN_MODELS) {
-    try {
-      const text = await callGeminiProxy(model, contents);
-      const data = cleanAndParseJSON(text);
-      return data.matches ? data : { matches: [] };
-    } catch (e) {
-      console.warn(`Próximo modelo: ${model} falhou.`);
-    }
-  }
-  return { matches: [] };
-};
+export async function processMatchDocument(file, type) {
+    if (!file) throw new Error("Arquivo não fornecido.");
 
-export const parseRegulationDocument = async (base64, mimeType = "application/pdf") => {
-  const contents = [{
-    parts: [
-      { inline_data: { mime_type: mimeType, data: base64 } },
-      { text: `Analise as regras do torneio e retorne JSON: { "halfDuration": number, "maxSubstitutions": number, "penaltyKicks": number, "extraTime": boolean, "summary": "string" }` }
-    ]
-  }];
-  
-  for (const model of ULTRA_GEN_MODELS) {
-    try {
-      const text = await callGeminiProxy(model, contents);
-      return cleanAndParseJSON(text);
-    } catch (e) {
-      console.warn(`IA: Falha ao ler regulamento com ${model}`);
-    }
-  }
-  throw new Error("Não foi possível analisar o regulamento.");
-};
+    const model = type === 'rules' ? 'gemini-2.5-pro' : 'gemini-2.5-flash';
+    const filePart = await fileToBase64(file);
+    
+    const prompt = type === 'rules' 
+        ? `Analise este regulamento e extraia regras de tempo de jogo, limites de substituição e critérios de desempate em formato JSON. Estrutura esperada: {"halfDuration": number, "maxSubstitutions": number, "penaltyKicks": number, "summary": string}`
+        : `Analise esta súmula/escalação. Extraia os jogadores e retorne estritamente JSON: { "teamName": "Nome", "players": [{ "number": 0, "name": "Nome", "position": "GK|DF|MF|FW", "isStarter": true }] }`;
 
-export const processVoiceCommand = async (command, homeTeam, awayTeam, eventsSummary) => {
-  const contents = [{
-    parts: [{ text: `Comando: "${command}". Equipes: ${homeTeam.name} vs ${awayTeam.name}. Eventos: ${eventsSummary}. 
-      Retorne ARRAY JSON: [{type: 'GOAL'|'CARD'|'SUB'|'CORRECTION'|'ANSWER'|'INVALID', team: 'home'|'away'|'none', playerNumber: number, description: string, answerText?: string, targetEventId?: string}].
-      Se for pergunta, use 'ANSWER' e coloque a resposta em 'answerText'. Se for correção (ex: 'Anule o último gol'), use 'CORRECTION' e aponte para o tipo.` }]
-  }];
-  
-  for (const model of ULTRA_GEN_MODELS) {
-    try {
-      const text = await callGeminiProxy(model, contents);
-      return cleanAndParseJSON(text);
-    } catch (e) {
-      console.warn(`Próximo modelo: ${model} falhou.`);
-    }
-  }
-  return [];
-};
+    const payload = {
+        model: model,
+        contents: [{ parts: [{ text: prompt }, filePart] }],
+        generationConfig: { temperature: 0.1, responseMimeType: "application/json" }
+    };
 
-export const generateMatchReport = async (context, timeline) => {
-  const contents = [{
-    parts: [{ text: `Escreva uma crônica esportiva profissional e emocionante baseada no seguinte contexto e eventos. Contexto: ${context}, Eventos: ${timeline}. O texto deve ter entre 200 e 400 palavras.` }]
-  }];
-  
-  for (const model of ULTRA_GEN_MODELS) {
     try {
-      return await callGeminiProxy(model, contents);
-    } catch (e) {
-      console.warn(`Próximo modelo: ${model} falhou na geração de crônica.`);
+        const response = await fetch(PROXY_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || `HTTP Error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return validateResponseSchema(data, type === 'rules' ? 'rules' : 'roster');
+    } catch (error) {
+        console.error(`[Gemini OCR Error]:`, error);
+        throw error;
     }
-  }
-  return "Não foi possível gerar a crônica no momento.";
-};
+}
+
+export async function parseMatchCommand(command, matchState) {
+    if (!command || !command.trim()) throw new Error("Comando de narração vazio.");
+
+    const context = `
+        Mandante: ${matchState.homeTeam?.name || 'UND'}
+        Visitante: ${matchState.awayTeam?.name || 'UND'}
+        Período Atual: ${matchState.period || 'PRE_MATCH'}
+    `;
+    
+    const instruction = `Converta a ação em JSON válido: { "type": "GOAL" | "YELLOW_CARD" | "RED_CARD" | "SUBSTITUTION" | "SHOT" | "FOUL" | "VAR" | "OFFSIDE", "teamId": "home" | "away" | "none", "playerNumber": number, "description": "Resumo" }`;
+
+    const payload = {
+        model: 'gemini-2.5-flash',
+        contents: [{
+            parts: [{ text: `${context}\n${instruction}\nComando: "${command}"` }]
+        }],
+        generationConfig: { temperature: 0.1, responseMimeType: "application/json" }
+    };
+
+    try {
+        const response = await fetch(PROXY_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({}));
+            throw new Error(err.error || `HTTP Error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return validateResponseSchema(data, 'event');
+    } catch (error) {
+        console.error("[Gemini NLU Error]:", error);
+        throw error; // Propaga para o UI Layer (app.js/voice.js) exibir o feedback visual
+    }
+}
