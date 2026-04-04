@@ -1,8 +1,9 @@
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
-    // API Key (Vercel Dash Settings)
-    const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+    // API Key (Vercel Dash Settings + Fallback)
+    const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || "AIzaSyBr2sApCLzTYMTR0K2FKh-03bOdvvz4p8o";
+    
     if (!apiKey) return res.status(500).json({ error: 'API Key do servidor ausente.' });
 
     const { prompt, fileBase64 } = req.body;
@@ -24,7 +25,13 @@ export default async function handler(req, res) {
         });
 
         const data = await response.json();
-        return res.status(200).json(data);
+
+        if (response.ok) {
+            return res.status(200).json(data);
+        } else {
+            console.error("Erro da Google API:", JSON.stringify(data));
+            return res.status(response.status).json(data);
+        }
     } catch (error) {
         console.error("Erro no proxy serverless:", error.message);
         return res.status(502).json({ error: 'Erro no proxy da IA.' });
