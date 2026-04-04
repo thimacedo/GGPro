@@ -469,3 +469,22 @@ if (document.readyState === 'loading') {
 } else {
   init();
 }
+
+/**
+ * ⚓ EXPOSIÇÃO DE GLOBAIS PARA O DOM (Inline Handlers)
+ * Necessário para que botões com 'onclick' em templates HTML
+ * consigam acessar funções encapsuladas no Módulo ES (app.js).
+ */
+window.matchState = matchState;
+window.modalManager = modalManager;
+window.handleVarReversal = handleVarReversal;
+window.handleAdvancePeriod = handleAdvancePeriod;
+window.handleAction = (action) => console.log("Ação do Operador:", action);
+window.handleGenerateReport = handleGenerateReport;
+window.handleExportClipboard = handleExportClipboard;
+window.undoBtn = () => {
+    if (matchState.undo()) {
+      toastManager.show("Undo", "Evento desfeito.", "info");
+      render();
+    }
+};
