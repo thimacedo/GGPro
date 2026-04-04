@@ -1,37 +1,17 @@
 {
-  "name": "narrador-pro---dashboard-de-futebol",
+  "name": "narrador-pro",
   "private": true,
-  "version": "0.0.0",
+  "version": "4.3.0",
   "type": "module",
+  "description": "Narrador Pro - Pure Vanilla JS Edition",
   "scripts": {
-    "dev": "node server.js",
-    "lint": "echo 'Linting disabled'",
-    "start": "node server.js"
+    "start": "echo 'Serving static files from root'"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.21.0",
     "@vercel/analytics": "^2.0.1",
-    "@vercel/speed-insights": "^2.0.0",
-    "cors": "^2.8.6",
-    "dotenv": "^17.4.0",
-    "express": "^5.2.1",
-    "firebase": "^12.10.0",
-    "lucide-react": "^0.562.0",
-    "react": "^19.2.3",
-    "react-dom": "^19.2.3",
-    "recharts": "^3.6.0"
+    "@vercel/speed-insights": "^2.0.0"
   },
   "devDependencies": {
-    "@types/cors": "^2.8.19",
-    "@types/express": "^5.0.6",
-    "@types/node": "^22.14.0",
-    "@vitejs/plugin-react": "^5.0.0",
-    "autoprefixer": "^10.4.20",
-    "postcss": "^8.4.40",
-    "tailwindcss": "^3.4.17",
-    "tsx": "^4.21.0",
-    "typescript": "~5.8.2",
-    "vite": "^6.2.0",
-    "vite-plugin-pwa": "^1.2.0"
+    "vercel": "latest"
   }
 }

@@ -1,109 +1,75 @@
 // js/services/gemini.js
-// Motor de IA Geradora - Versão Ultra-Flash (Engine v7.0 Serverless)
-// Fail-Fast Validation & Schema Enforcement
+// Motor de IA Geradora - Versão Ultra-Flash (Engine v7.1 Proxy)
+// Fixo: STOP AND FIX directive v4.3
 
 /**
- * 🛠️ MOTOR DE ENGENHARIA v7.0 (Proxy Serverless)
- * Delega a chamada para a Vercel Function /api/gemini para proteger a API Key
- * e garantir resiliência entre modelos Pro e Flash.
+ * 🛠️ CHAMA O PROXY SERVERLESS (BACKEND)
+ * Nunca bate direto no Google. Nunca usa localStorage.
  */
-async function callGeminiAPI({ prompt, fileBase64 = null, isOCR = false }) {
-  try {
+async function callProxyAI({ prompt, fileBase64 = null }) {
     const response = await fetch('/api/gemini', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ prompt, fileBase64, isOCR })
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt, fileBase64 })
     });
 
-    const data = await response.json();
-
     if (!response.ok) {
-      throw new Error(data.error || "Erro ao consultar a IA via servidor.");
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Falha na comunicação com a IA (Serverless Error)');
     }
 
-    // Extração segura do texto da resposta padrão do Gemini (retornado pela API serverless)
-    const extractedText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-    if (extractedText) {
-      return extractedText;
-    } else {
-      console.warn("Resposta da IA em formato inesperado:", JSON.stringify(data, null, 2));
-      throw new Error('Texto não encontrado na resposta da IA.');
-    }
-  } catch (e) {
-    console.error("Erro na comunicação Serverless:", e);
-    throw e;
-  }
+    const data = await response.json();
+    return data; 
 }
 
-const cleanAndParseJSON = (text) => {
-  try {
-    let clean = text.replace(/```json/g, '').replace(/```/g, '');
-    const firstBrace = clean.indexOf('{');
-    const lastBrace = clean.lastIndexOf('}');
-    if (firstBrace !== -1 && lastBrace !== -1) {
-      return JSON.parse(clean.substring(firstBrace, lastBrace + 1));
+const cleanAndParseJSON = (data) => {
+    try {
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        let clean = text.replace(/```json/g, '').replace(/```/g, '');
+        const firstBrace = clean.indexOf('{');
+        const lastBrace = clean.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace !== -1) {
+            return JSON.parse(clean.substring(firstBrace, lastBrace + 1));
+        }
+    } catch (e) {
+        console.warn("Falha no parse JSON da IA:", e);
     }
-  } catch (e) {
-    console.warn("Falha no parse JSON da IA:", e);
-  }
-  return { players: [], events: [], actions: [] };
+    return { players: [], events: [], actions: [] };
 };
 
 export const processImageForPlayers = async (file, type) => {
-  const base64 = await fileToBase64(file);
-  const prompt = `Analise esta súmula de futebol ou lista de jogadores. Extraia os dados e retorne APENAS um JSON no formato: { "players": [{ "name": "Nome Completo", "number": 10, "position": "Goleiro/Zagueiro/Etc" }] }`;
-  
-  const text = await callGeminiAPI({ 
-    prompt, 
-    fileBase64: base64, 
-    isOCR: true 
-  });
-  
-  const parsed = cleanAndParseJSON(text);
-  return parsed.players || [];
+    const reader = new FileReader();
+    const base64 = await new Promise((resolve) => {
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.readAsDataURL(file);
+    });
+
+    const prompt = `Extraia JSON de jogadores: { "players": [{ "name": "...", "number": 10 }] }`;
+    const data = await callProxyAI({ prompt, fileBase64: base64 });
+    const parsed = cleanAndParseJSON(data);
+    return parsed.players || [];
 };
 
 export const parseRegulationDocument = async (file, mimeType) => {
-    const base64 = await fileToBase64(file);
-    const prompt = `Analise este regulamento de competição de futebol. Extraia os parâmetros técnicos e retorne APENAS um JSON no formato: { "halfDuration": 45, "maxSubstitutions": 5, "extraTime": true }`;
-    
-    const text = await callGeminiAPI({ 
-        prompt, 
-        fileBase64: base64, 
-        isOCR: true 
+    const reader = new FileReader();
+    const base64 = await new Promise((resolve) => {
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.readAsDataURL(file);
     });
-    
-    return cleanAndParseJSON(text);
+
+    const prompt = `Extraia JSON de regras: { "halfDuration": 30, "maxSubstitutions": 5 }`;
+    const data = await callProxyAI({ prompt, fileBase64: base64 });
+    return cleanAndParseJSON(data);
 };
 
 export async function parseMatchCommand(command, state) {
-  const prompt = `Atue como um analista de dados de futebol. Converta a narração abaixo em um evento tático JSON.
-  Contexto da Partida: ${state.homeTeam.name} vs ${state.awayTeam.name}
-  Narração: "${command}"
-  Retorno esperado: { "type": "GOAL|CARD|SUB|FOUL", "teamId": "home|away", "playerNumber": 10, "description": "Resumo curto" }`;
-
-  const resultText = await callGeminiAPI({ prompt });
-  return cleanAndParseJSON(resultText);
+    const prompt = `Contexto: ${state.homeTeam.name} vs ${state.awayTeam.name}. Narração: "${command}". Retorno esperado JSON: { "type": "GOAL|CARD", "description": "..." }`;
+    const data = await callProxyAI({ prompt });
+    return cleanAndParseJSON(data);
 }
 
 export const generateMatchReport = async (context, timeline) => {
-  const prompt = `Escreva uma crônica esportiva profissional e emocionante baseada nos eventos abaixo.
-  Contexto: ${context}
-  Cronologia:
-  ${timeline}
-  Retorne o texto formatado para leitura.`;
-
-  return await callGeminiAPI({ prompt });
-};
-
-const fileToBase64 = (file) => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = error => reject(error);
-    });
+    const prompt = `Escreva uma crônica baseada em: ${context} e Cronologia: ${timeline}`;
+    const data = await callProxyAI({ prompt });
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || "Falha na geração do texto.";
 };
