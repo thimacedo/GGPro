@@ -1,10 +1,11 @@
 {
   "name": "narrador-pro",
   "private": true,
-  "version": "4.3.0",
+  "version": "4.3.1",
   "type": "module",
   "description": "Narrador Pro - Pure Vanilla JS Edition",
   "scripts": {
+    "build": "echo 'Skipping build for Pure Vanilla JS architecture'",
     "start": "echo 'Serving static files from root'"
   },
   "dependencies": {
