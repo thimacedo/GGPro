@@ -2,6 +2,7 @@
 // Ponto de entrada principal - Narrador Pro (v3.1 Estabilizada)
 // Arquitetura Modular e Reativa com Hoisting de APIs Críticas
 
+import { injectSpeedInsights } from '@vercel/speed-insights';
 import matchState from './state.js';
 import { renderHeader, updateTimer } from './components/header.js';
 import { toastManager } from './components/toasts.js';
@@ -39,6 +40,9 @@ const ui = {
 // --- Inicialização ---
 
 function init() {
+  // Inicializa Vercel Speed Insights
+  injectSpeedInsights();
+  
   // Subscrever às mudanças de estado para re-renderizar
   matchState.subscribe(() => render());
   
