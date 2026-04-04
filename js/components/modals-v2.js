@@ -141,94 +141,116 @@ class ModalManager {
 
   showSumula() {
     const state = matchState.getState();
+    const home = state.homeTeam;
+    const away = state.awayTeam;
+
     const content = `
-      <div class="flex flex-col gap-4">
-        <button onclick="document.getElementById('img_sumula').click()" class="w-full p-4 bg-slate-800 rounded-2xl flex items-center gap-3">
-          <span>📄</span> <span class="text-xs font-bold uppercase">Importar Súmula (IA)</span>
+      <div class="flex flex-col gap-6">
+        <!-- IMPORTAÇÃO IA -->
+        <button onclick="document.getElementById('img_sumula').click()" class="w-full p-4 bg-slate-800/50 border border-white/5 rounded-2xl flex items-center justify-center gap-3 hover:bg-slate-800 transition-all group">
+          <span class="text-xl group-hover:scale-110 transition-transform">📄</span> 
+          <span class="text-xs font-black uppercase tracking-widest text-slate-300">Importar Súmula (IA Gemini)</span>
         </button>
         <input type="file" id="img_sumula" hidden accept="image/*" onchange="window.handleImageUpload(event, 'players')">
-        <div class="grid grid-cols-2 gap-4">
-          <button onclick="modalManager.showEditTeam(matchState.getState().homeTeam, 'home')" class="p-4 bg-slate-800 rounded-2xl">
-            <span class="text-xs font-bold text-white">${state.homeTeam.shortName}</span>
-          </button>
-          <button onclick="modalManager.showEditTeam(matchState.getState().awayTeam, 'away')" class="p-4 bg-slate-800 rounded-2xl">
-            <span class="text-xs font-bold text-white">${state.awayTeam.shortName}</span>
-          </button>
-        </div>
-      </div>
-    `;
-    this.open(content, 'Ajustes de Súmula');
-  }
 
-  showEditTeam(team, teamId) {
-    const isHome = teamId === 'home';
-    const content = `
-      <div class="flex flex-col gap-4">
-        <div class="space-y-1">
-          <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2">Nome da Equipe</label>
-          <input type="text" id="edit-team-name" value="${team.name}" class="w-full bg-slate-800 border border-white/5 rounded-xl p-3 text-sm text-white focus:ring-2 focus:ring-blue-500 transition-all outline-none">
-        </div>
-        
-        <div class="mt-4 flex gap-4">
-            <div class="flex-1">
-                <label class="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-1 block ml-2">Sigla (Max 3)</label>
-                <input type="text" id="edit-team-shortname" maxlength="3" value="${team.shortName || (isHome ? 'CAS' : 'VIS')}" class="w-full bg-slate-900 border border-white/10 text-white p-3 rounded-xl uppercase font-black focus:border-blue-500 outline-none">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- TIME CASA -->
+          <div class="space-y-4 p-4 bg-slate-800/30 rounded-3xl border border-white/5">
+            <h3 class="text-[10px] font-black text-blue-500 uppercase tracking-[0.2em] mb-2 px-2">Mandante</h3>
+            <div class="space-y-1">
+              <label class="text-[9px] font-bold text-slate-500 uppercase ml-2">Nome</label>
+              <input type="text" id="home-team-name" value="${home.name}" class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-blue-500 outline-none transition-all">
             </div>
-            <div class="w-24">
-                <label class="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-1 block ml-2">Cor</label>
-                <input type="color" id="edit-team-color" value="${team.color || (isHome ? '#3b82f6' : '#ef4444')}" class="w-full h-12 bg-slate-900 border border-white/10 p-1 rounded-xl cursor-pointer">
+            <div class="flex gap-3">
+              <div class="flex-1 space-y-1">
+                <label class="text-[9px] font-bold text-slate-500 uppercase ml-2">Sigla</label>
+                <input type="text" id="home-team-short" value="${home.shortName}" maxlength="3" class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm text-white uppercase text-center focus:border-blue-500 outline-none transition-all">
+              </div>
+              <div class="w-20 space-y-1">
+                <label class="text-[9px] font-bold text-slate-500 uppercase ml-2">Cor</label>
+                <input type="color" id="home-team-color" value="${home.color}" class="w-full h-[46px] bg-slate-900 border border-white/10 rounded-xl p-1 cursor-pointer">
+              </div>
             </div>
+          </div>
+
+          <!-- TIME VISITANTE -->
+          <div class="space-y-4 p-4 bg-slate-800/30 rounded-3xl border border-white/5">
+            <h3 class="text-[10px] font-black text-red-500 uppercase tracking-[0.2em] mb-2 px-2">Visitante</h3>
+            <div class="space-y-1">
+              <label class="text-[9px] font-bold text-slate-500 uppercase ml-2">Nome</label>
+              <input type="text" id="away-team-name" value="${away.name}" class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-red-500 outline-none transition-all">
+            </div>
+            <div class="flex gap-3">
+              <div class="flex-1 space-y-1">
+                <label class="text-[9px] font-bold text-slate-500 uppercase ml-2">Sigla</label>
+                <input type="text" id="away-team-short" value="${away.shortName}" maxlength="3" class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm text-white uppercase text-center focus:border-red-500 outline-none transition-all">
+              </div>
+              <div class="w-20 space-y-1">
+                <label class="text-[9px] font-bold text-slate-500 uppercase ml-2">Cor</label>
+                <input type="color" id="away-team-color" value="${away.color}" class="w-full h-[46px] bg-slate-900 border border-white/10 rounded-xl p-1 cursor-pointer">
+              </div>
+            </div>
+          </div>
         </div>
 
-        <button class="w-full p-4 mt-2 bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-900/20 rounded-2xl text-xs font-black uppercase text-white transition-all active:scale-95" onclick="saveTeamSelf()">
-          💾 SALVAR ALTERAÇÕES
+        <button onclick="window.saveSumulaSelf()" class="w-full p-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-xl shadow-blue-900/40 rounded-2xl text-xs font-black uppercase tracking-widest text-white transition-all active:scale-[0.98]">
+          💾 SALVAR DADOS DA PARTIDA
         </button>
       </div>
     `;
 
-    window.saveTeamSelf = () => {
-      const newName = document.getElementById('edit-team-name').value;
-      const newShortName = document.getElementById('edit-team-shortname').value.toUpperCase().slice(0, 3) || (isHome ? 'CAS' : 'VIS');
-      const newColor = document.getElementById('edit-team-color').value;
+    window.saveSumulaSelf = () => {
+      // 1. Captura os valores do formulário duplo
+      const hName = document.getElementById('home-team-name')?.value || home.name;
+      const hShort = document.getElementById('home-team-short')?.value.toUpperCase() || 'CAS';
+      const hColor = document.getElementById('home-team-color')?.value || '#3b82f6';
+      
+      const aName = document.getElementById('away-team-name')?.value || away.name;
+      const aShort = document.getElementById('away-team-short')?.value.toUpperCase() || 'VIS';
+      const aColor = document.getElementById('away-team-color')?.value || '#ef4444';
 
-      // 1. Sincroniza Estado Global
-      matchState.setState(prev => {
-        const key = isHome ? 'homeTeam' : 'awayTeam';
-        return { 
-          ...prev, 
-          [key]: { 
-            ...prev[key], 
-            name: newName,
-            shortName: newShortName,
-            color: newColor
-          } 
-        };
-      });
+      // 2. Atualiza o Estado Global (matchState)
+      matchState.setState(prev => ({
+        ...prev,
+        homeTeam: { ...prev.homeTeam, name: hName, shortName: hShort, color: hColor },
+        awayTeam: { ...prev.awayTeam, name: aName, shortName: aShort, color: aColor }
+      }));
 
-      // 2. Forçar Mutação do DOM (Brute Force Sync)
-      if (isHome) {
-          // Atualiza Nome/Sigla no Header
-          const homeTitle = document.querySelector('[data-team="home"]');
-          if (homeTitle) {
-              homeTitle.innerHTML = `<svg class="w-2 h-2 md:w-3 md:h-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg> ${newShortName}`;
-          }
-          // Atualiza Cor de Fundo no Placar
-          const homeScoreDiv = document.getElementById('home-score-display');
-          if (homeScoreDiv) homeScoreDiv.style.backgroundColor = newColor;
-      } else {
-          // Atualiza Nome/Sigla no Header
-          const awayTitle = document.querySelector('[data-team="away"]');
-          if (awayTitle) {
-              awayTitle.innerHTML = `${newShortName} <svg class="w-2 h-2 md:w-3 md:h-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>`;
-          }
-          // Atualiza Cor de Fundo no Placar
-          const awayScoreDiv = document.getElementById('away-score-display');
-          if (awayScoreDiv) awayScoreDiv.style.backgroundColor = newColor;
+      // 3. Injeção Bruta no DOM (Atualização Visual Imediata)
+      try {
+        // Siglas no Header
+        const homeTitle = document.querySelector('[data-team="home"]');
+        const awayTitle = document.querySelector('[data-team="away"]');
+        
+        if (homeTitle) {
+          homeTitle.innerHTML = `<svg class="w-2 h-2 md:w-3 md:h-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg> ${hShort}`;
+        }
+        if (awayTitle) {
+          awayTitle.innerHTML = `${aShort} <svg class="w-2 h-2 md:w-3 md:h-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>`;
+        }
+
+        // Fundos dos Placares
+        const hBox = document.getElementById('home-score-box');
+        const aBox = document.getElementById('away-score-box');
+        if (hBox) hBox.style.backgroundColor = hColor;
+        if (aBox) aBox.style.backgroundColor = aColor;
+
+        // Variáveis CSS Globais
+        document.documentElement.style.setProperty('--home-color', hColor);
+        document.documentElement.style.setProperty('--away-color', aColor);
+      } catch (e) {
+        console.warn('DOM Sync Partial Failure:', e);
       }
       
       this.close();
     };
-    this.open(content, `Editar ${isHome ? 'Mandante' : 'Visitante'}`);
+
+    this.open(content, 'Ajustes da Súmula');
+  }
+
+  // Fallback para edição individual via clique no nome
+  showEditTeam(team, teamId) {
+    this.showSumula(); // Redireciona para o modal unificado conforme nova lógica de UX
   }
 }
 
