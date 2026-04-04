@@ -40,7 +40,7 @@ export function renderHeader(container, callbacks) {
           </div>
           
           <div class="flex flex-col items-center">
-            <div id="home-score-display" class="rounded-lg md:rounded-2xl flex items-center justify-center font-black shadow-xl transition-all w-8 h-8 md:w-14 md:h-14 text-sm md:text-3xl ${homeContrast}" style="background-color: ${state.homeTeam.color}">
+            <div id="home-score-box" class="rounded-lg md:rounded-2xl flex items-center justify-center font-black shadow-xl transition-all w-8 h-8 md:w-14 md:h-14 text-sm md:text-3xl ${homeContrast}" style="background-color: ${state.homeTeam.color}">
               ${safeEventsCountHome}
             </div>
             ${state.period === 'PENALTIES' ? `<span class="text-[10px] md:text-lg font-black text-blue-500 mt-1">(${state.penaltyScore?.home || 0})</span>` : ''}
@@ -71,7 +71,7 @@ export function renderHeader(container, callbacks) {
         <!-- AWAY TEAM -->
         <div class="flex flex-1 items-center justify-start gap-1 md:gap-4 min-w-0">
           <div class="flex flex-col items-center">
-            <div id="away-score-display" class="rounded-lg md:rounded-2xl flex items-center justify-center font-black shadow-xl transition-all w-8 h-8 md:w-14 md:h-14 text-sm md:text-3xl ${awayContrast}" style="background-color: ${state.awayTeam.color}">
+            <div id="away-score-box" class="rounded-lg md:rounded-2xl flex items-center justify-center font-black shadow-xl transition-all w-8 h-8 md:w-14 md:h-14 text-sm md:text-3xl ${awayContrast}" style="background-color: ${state.awayTeam.color}">
               ${safeEventsCountAway}
             </div>
             ${state.period === 'PENALTIES' ? `<span class="text-[10px] md:text-lg font-black text-blue-500 mt-1">(${state.penaltyScore?.away || 0})</span>` : ''}
