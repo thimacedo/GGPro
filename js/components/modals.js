@@ -1,4 +1,4 @@
-// js/components/modals-v2.js - v4.5.11 FORCED
+// js/components/modals.js - v4.5.11 CONSOLIDATED
 // Componente de Modais - Narrador Pro (v4.5.11)
 // Monitoramento Ativo com AbortController e Coleta de Lixo Global
 
@@ -161,15 +161,16 @@ class ModalManager {
               <label class="text-[9px] font-bold text-slate-500 uppercase ml-2">Nome</label>
               <input type="text" id="home-team-name" value="${home.name}" class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-blue-500 outline-none transition-all">
             </div>
-            <div class="flex gap-3">
-              <div class="flex-1 space-y-1">
-                <label class="text-[9px] font-bold text-slate-500 uppercase ml-2">Sigla</label>
-                <input type="text" id="home-team-short" value="${home.shortName}" maxlength="3" class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm text-white uppercase text-center focus:border-blue-500 outline-none transition-all">
-              </div>
-              <div class="w-20 space-y-1">
-                <label class="text-[9px] font-bold text-slate-500 uppercase ml-2">Cor</label>
-                <input type="color" id="home-team-color" value="${home.color}" class="w-full h-[46px] bg-slate-900 border border-white/10 rounded-xl p-1 cursor-pointer">
-              </div>
+            
+            <div class="flex gap-2 mt-2">
+                <div class="flex-1">
+                    <label class="text-[10px] text-slate-400 font-bold ml-2">SIGLA (3 Letras)</label>
+                    <input type="text" id="home-team-short" maxlength="3" value="${home.shortName || 'CAS'}" class="w-full bg-slate-950 border border-white/10 text-white p-2 rounded uppercase font-black text-center focus:border-blue-500 outline-none">
+                </div>
+                <div class="w-16">
+                    <label class="text-[10px] text-slate-400 font-bold">COR</label>
+                    <input type="color" id="home-team-color" value="${home.color || '#3b82f6'}" class="w-full h-9 bg-slate-950 border border-white/10 rounded cursor-pointer p-0.5">
+                </div>
             </div>
           </div>
 
@@ -180,15 +181,16 @@ class ModalManager {
               <label class="text-[9px] font-bold text-slate-500 uppercase ml-2">Nome</label>
               <input type="text" id="away-team-name" value="${away.name}" class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm text-white focus:border-red-500 outline-none transition-all">
             </div>
-            <div class="flex gap-3">
-              <div class="flex-1 space-y-1">
-                <label class="text-[9px] font-bold text-slate-500 uppercase ml-2">Sigla</label>
-                <input type="text" id="away-team-short" value="${away.shortName}" maxlength="3" class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm text-white uppercase text-center focus:border-red-500 outline-none transition-all">
-              </div>
-              <div class="w-20 space-y-1">
-                <label class="text-[9px] font-bold text-slate-500 uppercase ml-2">Cor</label>
-                <input type="color" id="away-team-color" value="${away.color}" class="w-full h-[46px] bg-slate-900 border border-white/10 rounded-xl p-1 cursor-pointer">
-              </div>
+            
+            <div class="flex gap-2 mt-2">
+                <div class="flex-1">
+                    <label class="text-[10px] text-slate-400 font-bold ml-2">SIGLA (3 Letras)</label>
+                    <input type="text" id="away-team-short" maxlength="3" value="${away.shortName || 'VIS'}" class="w-full bg-slate-950 border border-white/10 text-white p-2 rounded uppercase font-black text-center focus:border-red-500 outline-none">
+                </div>
+                <div class="w-16">
+                    <label class="text-[10px] text-slate-400 font-bold">COR</label>
+                    <input type="color" id="away-team-color" value="${away.color || '#ef4444'}" class="w-full h-9 bg-slate-950 border border-white/10 rounded cursor-pointer p-0.5">
+                </div>
             </div>
           </div>
         </div>
