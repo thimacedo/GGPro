@@ -5,8 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node server.js",
-    "prebuild": "node scripts/clean.js",
-    "build": "echo 'No build step needed for Vanilla JS'",
+    "build": "vite build",
     "lint": "echo 'Linting disabled'",
     "start": "node server.js"
   },

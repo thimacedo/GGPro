@@ -3,131 +3,69 @@
  * Implementado em Vanilla JS puro com suporte a Drag & Drop e sincronização Real-time.
  */
 
-let dragHandler = null;
+import matchState from '../state.js';
 
-export function renderTacticalField(homeTeam, awayTeam, containerId, onUpdate) {
-    const container = document.getElementById(containerId);
-    if (!container) return;
+class FieldManager {
+  constructor() {
+    this.activePlayer = null;
+  }
 
-    // Renderiza a estrutura básica do campo
-    container.innerHTML = `
-        <div class="tactical-field-wrapper">
-            <div class="tactical-pitch" id="tactical-pitch">
-                <div class="pitch-lines">
-                    <div class="pitch-center-circle"></div>
-                    <div class="pitch-center-line"></div>
-                    <div class="pitch-penalty-area home"></div>
-                    <div class="pitch-penalty-area away"></div>
-                </div>
-                
-                <div class="players-layer" id="players-layer">
-                    ${renderPlayers(homeTeam, 'home')}
-                    ${renderPlayers(awayTeam, 'away')}
-                </div>
+  render(state, isFullscreen = false) {
+    const homeTeam = state.homeTeam;
+    const awayTeam = state.awayTeam;
 
-                <div class="field-overlay-instruction">
-                    <i data-lucide="mouse-pointer-2"></i>
-                    MAPA TÁTICO INTERATIVO • ARRASTE PARA POSICIONAR
-                </div>
-            </div>
+    return `
+      <div class="tactical-field-wrapper ${isFullscreen ? 'h-full' : ''}">
+        <div class="tactical-pitch relative bg-emerald-900/40 rounded-[2.5rem] border-4 border-white/10 overflow-hidden shadow-2xl backdrop-blur-sm" id="tactical-pitch" style="aspect-ratio: 16/9; min-height: 300px;">
+          <div class="pitch-lines absolute inset-0 pointer-events-none opacity-30">
+            <div class="absolute inset-0 border-2 border-white/50 m-4"></div>
+            <div class="absolute top-0 bottom-0 left-1/2 w-0.5 bg-white/50"></div>
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 border-2 border-white/50 rounded-full"></div>
+            <!-- Áreas -->
+            <div class="absolute top-1/4 bottom-1/4 left-4 w-24 border-2 border-white/50 border-l-0"></div>
+            <div class="absolute top-1/4 bottom-1/4 right-4 w-24 border-2 border-white/50 border-r-0"></div>
+          </div>
+          
+          <div class="players-layer absolute inset-0" id="players-layer">
+            ${this.renderPlayers(homeTeam, 'home')}
+            ${this.renderPlayers(awayTeam, 'away')}
+          </div>
+
+          <div class="absolute bottom-4 left-1/2 -translate-x-1/2 text-[8px] font-black uppercase tracking-[0.3em] text-white/40 flex items-center gap-2">
+            <span>🏟️ MAPA TÁTICO INTERATIVO</span>
+          </div>
         </div>
+      </div>
     `;
+  }
 
-    if (window.lucide) window.lucide.createIcons();
-
-    setupDragListeners(container, onUpdate);
-}
-
-function renderPlayers(team, teamSide) {
+  renderPlayers(team, teamSide) {
     const isHome = teamSide === 'home';
     const players = team.players || [];
     
-    // Filtra apenas titulares (isStarter) para não poluir o campo
     return players.filter(p => p.isStarter).map(p => {
-        const x = isHome ? (p.coordX || 25) : (p.coordX || 75);
-        const y = p.coordY || 50;
+      const x = isHome ? (p.coordX || 25) : (p.coordX || 75);
+      const y = p.coordY || 50;
 
-        return `
-            <div class="player-marker" 
-                 style="left: ${x}%; top: ${y}%; background: ${team.color || (isHome ? '#ef4444' : '#10b981')}"
-                 data-player-id="${p.id}" 
-                 data-team-id="${teamSide}">
-                <div class="player-marker-number">${p.number}</div>
-                <div class="player-marker-name">${p.name.split(' ')[0]}</div>
-            </div>
-        `;
+      return `
+        <div class="player-marker absolute -translate-x-1/2 -translate-y-1/2 cursor-grab active:cursor-grabbing transition-shadow z-10 hover:z-20 group" 
+             style="left: ${x}%; top: ${y}%;"
+             data-player-id="${p.id}" 
+             data-team-id="${teamSide}">
+          <div class="w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center text-[10px] md:text-xs font-black text-white shadow-xl border-2 border-white/20 group-hover:scale-110 transition-transform" 
+               style="background-color: ${team.color}">
+            ${p.number}
+          </div>
+          <div class="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap bg-slate-900/80 px-2 py-0.5 rounded text-[8px] font-black text-white uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+            ${p.name.split(' ')[0]}
+          </div>
+        </div>
+      `;
     }).join('');
+  }
+
+  // Nota: A lógica de Drag & Drop para o root app será vinculada via delegação de eventos ou após o render no app.js
+  // Para manter a pureza do render, deixamos o setup de listeners para o app principal ou um hook de lifecycle.
 }
 
-function setupDragListeners(container, onUpdate) {
-    const pitch = container.querySelector('#tactical-pitch');
-    const players = container.querySelectorAll('.player-marker');
-    let activePlayer = null;
-
-    players.forEach(player => {
-        player.addEventListener('mousedown', (e) => {
-            activePlayer = player;
-            player.classList.add('dragging');
-        });
-    });
-
-    document.addEventListener('mousemove', (e) => {
-        if (!activePlayer || !pitch) return;
-
-        const rect = pitch.getBoundingClientRect();
-        let x = ((e.clientX - rect.left) / rect.width) * 100;
-        let y = ((e.clientY - rect.top) / rect.height) * 100;
-
-        // Limites (5% a 95%)
-        x = Math.max(5, Math.min(95, x));
-        y = Math.max(5, Math.min(95, y));
-
-        activePlayer.style.left = `${x}%`;
-        activePlayer.style.top = `${y}%`;
-    });
-
-    document.addEventListener('mouseup', () => {
-        if (!activePlayer) return;
-
-        const playerId = activePlayer.dataset.playerId;
-        const teamId = activePlayer.dataset.teamId;
-        const x = parseFloat(activePlayer.style.left);
-        const y = parseFloat(activePlayer.style.top);
-
-        activePlayer.classList.remove('dragging');
-        
-        // Callback para sincronizar com o Firebase
-        if (onUpdate) onUpdate(teamId, playerId, x, y);
-        
-        activePlayer = null;
-    });
-
-    // Touch Support
-    players.forEach(player => {
-        player.addEventListener('touchstart', (e) => {
-            activePlayer = player;
-            player.classList.add('dragging');
-        }, { passive: false });
-    });
-
-    document.addEventListener('touchmove', (e) => {
-        if (!activePlayer || !pitch) return;
-        const touch = e.touches[0];
-        const rect = pitch.getBoundingClientRect();
-        let x = ((touch.clientX - rect.left) / rect.width) * 100;
-        let y = ((touch.clientY - rect.top) / rect.height) * 100;
-        x = Math.max(5, Math.min(95, x));
-        y = Math.max(5, Math.min(95, y));
-        activePlayer.style.left = `${x}%`;
-        activePlayer.style.top = `${y}%`;
-    }, { passive: false });
-
-    document.addEventListener('touchend', () => {
-        if (activePlayer && onUpdate) {
-            onUpdate(activePlayer.dataset.teamId, activePlayer.dataset.playerId, parseFloat(activePlayer.style.left), parseFloat(activePlayer.style.top));
-        }
-        if (activePlayer) activePlayer.classList.remove('dragging');
-        activePlayer = null;
-    });
-}
-
+export const fieldManager = new FieldManager();
