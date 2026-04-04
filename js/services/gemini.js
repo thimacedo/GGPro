@@ -263,35 +263,51 @@ export const parseMatchCommand = processVoiceCommand;
 
 /**
  * 📝 GERADOR DE CRÔNICA AI (Inteligência Pós-Jogo)
+ * Cria uma narrativa emocionante baseada nos eventos e dados da partida.
  */
 export const generateMatchReport = async (matchState) => {
-    const { homeTeam, awayTeam, events } = matchState;
+    const { homeTeam, awayTeam, events, period } = matchState;
     const finalScore = `${homeTeam.score} x ${awayTeam.score}`;
-    const timelineText = (events || []).map(e => `[${e.timeStr}] ${e.description}`).join('\n');
+    
+    // Filtrar apenas eventos relevantes para não estourar o contexto se for uma partida longa
+    const timelineText = (events || [])
+        .map(e => `[${e.timeStr || (e.minute + "'")}] ${e.description}`)
+        .join('\n');
 
     const contents = [{
         parts: [{ text: `
-      Você é um jornalista esportivo do "Narrador Pro". Escreva uma crônica emocionante para a partida:
-      # ${homeTeam.name} ${finalScore} ${awayTeam.name}
+      Você é um jornalista esportivo de elite do "Narrador Pro". 
+      Sua missão é transformar os dados brutos de uma partida de futebol em uma crônica épica e emocionante.
+
+      CONTEXTO DA PARTIDA:
+      - Mandante: ${homeTeam.name} (${homeTeam.shortName}) - Placar: ${homeTeam.score}
+      - Visitante: ${awayTeam.name} (${awayTeam.shortName}) - Placar: ${awayTeam.score}
+      - Placar Final: ${finalScore}
+      - Status Final: ${period}
+
+      LINHA DO TEMPO DOS EVENTOS:
+      ${timelineText || 'A partida terminou sem eventos capitais registrados.'}
       
-      ESTADO E CRONOLOGIA:
-      ${timelineText || 'Partida sem gols ou eventos capitais.'}
-      
-      REQUISITOS:
-      - Título épico em Markdown (#).
-      - Lead jornalístico que prenda a atenção.
-      - Destaque nomes e times em **negrito**.
-      - Use estilo narrativo profissional.
-      - Máximo 400 palavras.
-      - Retorne APENAS o Markdown puro.
+      DIRETRIZES DA CRÔNICA:
+      1. TÍTULO: Crie um título impactante usando Markdown (#).
+      2. ESTILO: Narrativa dinâmica, profissional e emocionante. Use termos técnicos do futebol brasileiro.
+      3. DESTAQUES: Utilize **negrito** para nomes de jogadores e times.
+      4. ESTRUTURA: Inicie com um lead forte, descreva os momentos decisivos e termine com uma conclusão sobre o impacto do resultado.
+      5. LIMITE: Máximo de 500 palavras.
+
+      REGRAS DE FORMATAÇÃO:
+      - Retorne APENAS o texto em Markdown.
+      - NÃO inclua blocos de código (ex: \`\`\`markdown ou \`\`\`).
+      - NÃO inclua introduções como "Aqui está a crônica...".
     ` }]
     }];
 
     try {
         const text = await callGeminiREST(ULTRA_GEN_MODELS, contents);
-        return text.replace(/```markdown|```/g, '').trim();
+        // Limpeza agressiva de delimitadores de bloco de código se a IA insistir neles
+        return text.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '').trim();
     } catch (error) {
         console.error("Falha ao gerar crônica AI:", error);
-        throw new Error("Não foi possível gerar a crônica neste momento.");
+        throw new Error("O servidor de crônicas está temporariamente indisponível.");
     }
 };

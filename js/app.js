@@ -199,8 +199,8 @@ function setupGlobalDelegation() {
 
     // Crônica AI (Inteligência Pós-Jogo)
     document.getElementById('btn-generate-report')?.addEventListener('click', async () => {
-        if (matchState.events.length < 2) {
-            alert("A crônica requer pelo menos 2 eventos registrados para ser representativa.");
+        if (matchState.events.length < 3) {
+            alert("A crônica requer pelo menos 3 eventos registrados para ser representativa.");
             return;
         }
 

@@ -138,26 +138,48 @@ export function showMatchSettings(homeTeam, awayTeam) {
 
 /**
  * 📝 MODAL DE RELATÓRIO AI (Crônica)
+ * Exibe a narrativa gerada pela IA com tipografia premium e suporte a Markdown.
  */
 export function showReportModal(reportMarkdown) {
+    if (activeModalController) activeModalController.abort();
+    activeModalController = new AbortController();
+    const { signal } = activeModalController;
+
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
-    overlay.style.zIndex = '2000';
+    overlay.id = 'report-modal-overlay';
+    overlay.style.zIndex = '3000';
     
-    // Simples parser de Markdown (Título e Negrito)
+    // Parser de Markdown Resiliente (Suporte a H1, H2, Negrito, Listas e Quebras)
     const formatted = reportMarkdown
-        .replace(/^# (.*$)/gim, '<h2 class="team-name-h2" style="margin-bottom:20px; color:var(--primary)">$1</h1>')
+        .replace(/^# (.*$)/gim, '<h1 class="report-title">$1</h1>')
+        .replace(/^## (.*$)/gim, '<h2 class="report-subtitle">$1</h2>')
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+        .replace(/^\- (.*$)/gim, '<li class="report-item">$1</li>')
         .replace(/\n/g, '<br>');
 
     overlay.innerHTML = `
-        <div class="modal-card" style="max-width: 800px;">
-            <div class="modal-header-accent"></div>
+        <div class="modal-card report-card">
+            <div class="modal-header-accent ai-accent"></div>
             <button class="btn-close" id="close-report"><i data-lucide="x"></i></button>
-            <div style="padding: 40px; max-height: 80vh; overflow-y: auto;" class="custom-scrollbar">
-                <div style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 8px; font-weight: 800; letter-spacing: 2px;">RELATÓRIO PÓS-JOGO • IA GEMINI</div>
-                <div style="line-height: 1.6; font-size: 1.1rem; color: var(--text-main);">
+            
+            <div class="report-container custom-scrollbar">
+                <div class="report-badge">
+                    <i data-lucide="sparkles"></i>
+                    INTELIGÊNCIA PÓS-JOGO • GEMINI ULTRA
+                </div>
+                
+                <article class="report-body">
                     ${formatted}
+                </article>
+
+                <div class="report-footer">
+                    <button class="btn-view" id="btn-copy-report">
+                        <i data-lucide="copy"></i> Copiar Crônica
+                    </button>
+                    <button class="btn-view" id="btn-share-report" style="background: var(--primary); color: white;">
+                        <i data-lucide="share-2"></i> Compartilhar
+                    </button>
                 </div>
             </div>
         </div>
@@ -166,6 +188,37 @@ export function showReportModal(reportMarkdown) {
     document.body.appendChild(overlay);
     if (window.lucide) window.lucide.createIcons();
 
-    overlay.querySelector('#close-report').onclick = () => overlay.remove();
-    overlay.onclick = (e) => { if(e.target === overlay) overlay.remove(); };
+    const closeReport = () => {
+        overlay.classList.add('closing');
+        setTimeout(() => overlay.remove(), 200);
+    };
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target.id === 'close-report' || e.target.closest('#close-report') || e.target === overlay) {
+            closeReport();
+        }
+        
+        if (e.target.closest('#btn-copy-report')) {
+            navigator.clipboard.writeText(reportMarkdown);
+            const btn = e.target.closest('#btn-copy-report');
+            const original = btn.innerHTML;
+            btn.innerHTML = `<i data-lucide="check"></i> Copiado!`;
+            if (window.lucide) window.lucide.createIcons();
+            setTimeout(() => {
+                btn.innerHTML = original;
+                if (window.lucide) window.lucide.createIcons();
+            }, 2000);
+        }
+
+        if (e.target.closest('#btn-share-report')) {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Crônica da Partida - Narrador Pro',
+                    text: reportMarkdown
+                }).catch(() => {});
+            } else {
+                alert("Compartilhamento não suportado neste navegador.");
+            }
+        }
+    }, { signal });
 }

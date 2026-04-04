@@ -419,9 +419,105 @@ body {
 .modal-header-accent { height: 6px; background: var(--primary); }
 .btn-close { position: absolute; top: 16px; right: 16px; background: transparent; border: none; color: white; cursor: pointer; }
 
-/* UTILS */
-.animate-spin { animation: spin 1s linear infinite; }
-@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+/* -------------------------------------------------------------------------- */
+/* CRÔNICA AI (REPORT MODAL)
+/* -------------------------------------------------------------------------- */
 
-.custom-scrollbar::-webkit-scrollbar { width: 6px; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: var(--bg-accent); border-radius: 10px; }
+.report-card { 
+    max-width: 800px; 
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5), var(--shadow-glow);
+}
+
+.ai-accent { 
+    background: linear-gradient(90deg, #3b82f6, #8b5cf6); 
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.4);
+}
+
+.report-container { 
+    padding: 40px; 
+    max-height: 85vh; 
+    overflow-y: auto; 
+}
+
+.report-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(139, 92, 246, 0.1);
+    color: #a78bfa;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    margin-bottom: 24px;
+    border: 1px solid rgba(139, 92, 246, 0.2);
+}
+
+.report-body {
+    line-height: 1.8;
+    font-size: 1.15rem;
+    color: #e2e8f0;
+    font-weight: 400;
+}
+
+.report-title {
+    font-size: 2.25rem;
+    font-weight: 900;
+    color: var(--text-main);
+    margin-bottom: 24px;
+    line-height: 1.2;
+    letter-spacing: -1px;
+}
+
+.report-subtitle {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--primary);
+    margin: 32px 0 16px 0;
+}
+
+.report-item {
+    margin-bottom: 12px;
+    padding-left: 20px;
+    position: relative;
+}
+
+.report-item::before {
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: var(--primary);
+    font-weight: bold;
+}
+
+.report-footer {
+    margin-top: 48px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+/* Animações e Transições */
+.modal-overlay.closing {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.modal-overlay.closing .modal-card {
+    transform: scale(0.95);
+    opacity: 0;
+    transition: var(--transition);
+}
+
+.animate-spin { 
+    animation: spin 1s linear infinite; 
+}
+
+@keyframes spin { 
+    from { transform: rotate(0deg); } 
+    to { transform: rotate(360deg); } 
+}
