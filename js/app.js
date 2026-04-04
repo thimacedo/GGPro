@@ -3,7 +3,7 @@ import { renderMatchDetails } from './components/details.js';
 import { showMatchSettings } from './components/modals.js';
 import { renderTacticalField } from './components/field.js';
 import { parseMatchCommand } from './services/gemini.js';
-import { subscribeToMatch, addMatchEvent, updateTeamRoster, updatePlayerCoordinates, toggleMatchTimer } from './services/firebaseService.js';
+import { subscribeToMatch, addMatchEvent,   updateTeamRoster, updatePlayerCoordinates } from './services/firebaseService.js';
 
 let matchState = {
     period: 'PRE_MATCH',
@@ -111,7 +111,7 @@ function buildAppShell() {
                         <div id="timeline-container"></div>
                     </aside>
                 </div>
-            </main>
+            </nav>
 
             <footer class="fixed-footer">
                 <div class="footer-content">
@@ -136,14 +136,6 @@ function setupGlobalDelegation() {
         document.querySelectorAll('#view-tabs .btn-view').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         switchView(btn.dataset.view);
-    });
-
-    document.getElementById('btn-main-action')?.addEventListener('click', () => {
-        let timeToSave = matchState.timeElapsed || 0;
-        if (!matchState.isPaused && matchState.timerStartedAt) {
-            timeToSave = (Date.now() - matchState.timerStartedAt) + (matchState.timeElapsed || 0);
-        }
-        toggleMatchTimer(matchState.isPaused, timeToSave);
     });
 
     document.getElementById('btn-settings')?.addEventListener('click', () => {
@@ -203,16 +195,10 @@ async function processAiCommand() {
 }
 
 function updateAppUI() {
-    // Atualiza o visual do botão de play/pause
-    const playBtn = document.getElementById('btn-main-action');
-    if (playBtn) {
-        const isPlaying = !matchState.isPaused;
-        playBtn.innerHTML = `<i data-lucide="${isPlaying ? 'pause' : 'play'}"></i>`;
-        if (window.lucide) window.lucide.createIcons();
-    }
-
-    document.getElementById('home-name').innerText = matchState.homeTeam?.shortName || '--';
-    document.getElementById('away-name').innerText = matchState.awayTeam?.shortName || '--';
+    const homeNameDisp = document.getElementById('home-name');
+    const awayNameDisp = document.getElementById('away-name');
+    if (homeNameDisp) homeNameDisp.innerText = matchState.homeTeam?.shortName || '--';
+    if (awayNameDisp) awayNameDisp.innerText = matchState.awayTeam?.shortName || '--';
     
     const scoreHome = document.getElementById('score-home');
     const scoreAway = document.getElementById('score-away');
@@ -227,8 +213,9 @@ function updateAppUI() {
         scoreAway.style.background = matchState.awayTeam?.color || '#10b981';
     }
 
-    if (document.getElementById('match-period')) {
-        document.getElementById('match-period').innerText = matchState.period === 'PENALTIES' ? 'PÊNALTIS' : (matchState.period || '1T');
+    const periodDisp = document.getElementById('match-period');
+    if (periodDisp) {
+        periodDisp.innerText = matchState.period === 'PENALTIES' ? 'PÊNALTIS' : (matchState.period || '1T');
     }
 
     renderMatchDetails(matchState, 'details-container');
@@ -280,7 +267,8 @@ function initApp() {
         if (!matchState.isPaused && matchState.period !== 'PENALTIES') {
             runClockEngine();
         } else if (matchState.period === 'PENALTIES') {
-            document.getElementById('match-period').innerText = 'PÊNALTIS';
+            const pDisp = document.getElementById('match-period');
+            if (pDisp) pDisp.innerText = 'PÊNALTIS';
         }
         
         updateAppUI();

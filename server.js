@@ -1,9 +1,8 @@
-import express from "express";
-import path from "path";
-import cors from "cors";
-import { exec } from "child_process";
-import { fileURLToPath } from 'url';
+import express from 'express';
+import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
 
@@ -13,15 +12,12 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// O limite de 50mb previne bloqueios de payload no upload de imagens em Base64
 app.use(cors());
-app.use(express.json({ limit: "50mb" }));
+app.use(express.json({ limit: '50mb' }));
 
-// Middleware para servir arquivos estáticos
-app.use(express.static(process.cwd()));
-app.use('/js', express.static(path.join(process.cwd(), 'js')));
+// Libera o acesso estático recursivo à raiz do projeto (onde estão /js, /css, index.html)
+app.use(express.static(__dirname));
 
-// PROXY REVERSO PARA GEMINI (Proteção de Chaves + Payload Estendido)
 app.post('/api/ai/generate', async (req, res) => {
   const { contents, model, version = 'v1beta', generationConfig } = req.body;
   const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
@@ -56,17 +52,12 @@ app.post('/api/ai/generate', async (req, res) => {
   }
 });
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(process.cwd(), 'index.html'));
+// Fallback SPA (Single Page Application)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(`\n🚀 GGPro Server running on http://localhost:${PORT}`);
+app.listen(PORT, () => {
+  console.log(`\n🚀 Narrador Pro Server running on http://localhost:${PORT}`);
   console.log(`🔑 Proxy AI Ativo (Gemini 2.5 Ready)`);
-  
-  if (process.env.NODE_ENV !== "production") {
-    const url = `http://localhost:${PORT}`;
-    const command = process.platform === 'win32' ? `start ${url}` : process.platform === 'darwin' ? `open ${url}` : `xdg-open ${url}`;
-    exec(command);
-  }
 });
