@@ -161,27 +161,23 @@ class ModalManager {
   }
 
   showEditTeam(team, teamId) {
+    const isHome = teamId === 'home';
     const content = `
       <div class="flex flex-col gap-4">
         <div class="space-y-1">
           <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2">Nome da Equipe</label>
-          <input type="text" id="edit_t_name" value="${team.name}" class="w-full bg-slate-800 border border-white/5 rounded-xl p-3 text-sm text-white focus:ring-2 focus:ring-blue-500 transition-all outline-none">
+          <input type="text" id="edit-team-name" value="${team.name}" class="w-full bg-slate-800 border border-white/5 rounded-xl p-3 text-sm text-white focus:ring-2 focus:ring-blue-500 transition-all outline-none">
         </div>
         
-        <div class="grid grid-cols-2 gap-3">
-          <div class="space-y-1">
-            <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2">Sigla (3 Letras)</label>
-            <input type="text" id="edit_t_shortname" value="${team.shortName || ''}" maxlength="3" class="w-full bg-slate-800 border border-white/5 rounded-xl p-3 text-sm text-white uppercase text-center focus:ring-2 focus:ring-blue-500 transition-all outline-none">
-          </div>
-          <div class="space-y-1">
-            <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-2">Cor Principal</label>
-            <div class="relative group">
-              <input type="color" id="edit_t_color" value="${team.color || '#3b82f6'}" class="w-full h-[46px] bg-slate-800 border border-white/5 rounded-xl p-1 cursor-pointer appearance-none outline-none">
-              <div class="absolute inset-0 pointer-events-none flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <span class="text-[8px] font-black text-white uppercase drop-shadow-md">Alterar</span>
-              </div>
+        <div class="mt-4 flex gap-4">
+            <div class="flex-1">
+                <label class="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-1 block ml-2">Sigla (Max 3)</label>
+                <input type="text" id="edit-team-shortname" maxlength="3" value="${team.shortName || (isHome ? 'CAS' : 'VIS')}" class="w-full bg-slate-900 border border-white/10 text-white p-3 rounded-xl uppercase font-black focus:border-blue-500 outline-none">
             </div>
-          </div>
+            <div class="w-24">
+                <label class="text-[10px] uppercase tracking-widest text-slate-400 font-bold mb-1 block ml-2">Cor</label>
+                <input type="color" id="edit-team-color" value="${team.color || (isHome ? '#3b82f6' : '#ef4444')}" class="w-full h-12 bg-slate-900 border border-white/10 p-1 rounded-xl cursor-pointer">
+            </div>
         </div>
 
         <button class="w-full p-4 mt-2 bg-blue-600 hover:bg-blue-500 shadow-lg shadow-blue-900/20 rounded-2xl text-xs font-black uppercase text-white transition-all active:scale-95" onclick="saveTeamSelf()">
@@ -191,26 +187,48 @@ class ModalManager {
     `;
 
     window.saveTeamSelf = () => {
-      const name = document.getElementById('edit_t_name').value;
-      const shortName = document.getElementById('edit_t_shortname').value.toUpperCase().slice(0, 3) || name.substring(0, 3).toUpperCase();
-      const color = document.getElementById('edit_t_color').value;
+      const newName = document.getElementById('edit-team-name').value;
+      const newShortName = document.getElementById('edit-team-shortname').value.toUpperCase().slice(0, 3) || (isHome ? 'CAS' : 'VIS');
+      const newColor = document.getElementById('edit-team-color').value;
 
+      // 1. Sincroniza Estado Global
       matchState.setState(prev => {
-        const key = teamId === 'home' ? 'homeTeam' : 'awayTeam';
+        const key = isHome ? 'homeTeam' : 'awayTeam';
         return { 
           ...prev, 
           [key]: { 
             ...prev[key], 
-            name,
-            shortName,
-            color
+            name: newName,
+            shortName: newShortName,
+            color: newColor
           } 
         };
       });
+
+      // 2. Forçar Mutação do DOM (Brute Force Sync)
+      if (isHome) {
+          // Atualiza Nome/Sigla no Header
+          const homeTitle = document.querySelector('[data-team="home"]');
+          if (homeTitle) {
+              homeTitle.innerHTML = `<svg class="w-2 h-2 md:w-3 md:h-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg> ${newShortName}`;
+          }
+          // Atualiza Cor de Fundo no Placar
+          const homeScoreDiv = document.getElementById('home-score-display');
+          if (homeScoreDiv) homeScoreDiv.style.backgroundColor = newColor;
+      } else {
+          // Atualiza Nome/Sigla no Header
+          const awayTitle = document.querySelector('[data-team="away"]');
+          if (awayTitle) {
+              awayTitle.innerHTML = `${newShortName} <svg class="w-2 h-2 md:w-3 md:h-3 opacity-100 md:opacity-0 md:group-hover:opacity-100 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>`;
+          }
+          // Atualiza Cor de Fundo no Placar
+          const awayScoreDiv = document.getElementById('away-score-display');
+          if (awayScoreDiv) awayScoreDiv.style.backgroundColor = newColor;
+      }
       
       this.close();
     };
-    this.open(content, `Editar ${teamId === 'home' ? 'Mandante' : 'Visitante'}`);
+    this.open(content, `Editar ${isHome ? 'Mandante' : 'Visitante'}`);
   }
 }
 
