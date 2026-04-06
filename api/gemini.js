@@ -1,8 +1,8 @@
 export default async function handler(req, res) {
     if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
-    const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || "AIzaSyBr2sApCLzTYMTR0K2FKh-03bOdvvz4p8o";
-    if (!apiKey) return res.status(500).json({ error: 'API Key do servidor ausente.' });
+    const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+    if (!apiKey) return res.status(500).json({ error: 'API Key do servidor ausente. Configure GEMINI_API_KEY.' });
 
     try {
         const { prompt, fileBase64 } = req.body;

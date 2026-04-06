@@ -19,7 +19,7 @@ export const getApiKey = () => {
 
   const cleanKey = key.toString().trim().replace(/^["']|["']$/g, '');
 
-  console.log(`%c🔑 Detecção de IA: Origem=${source} | Valor=${cleanKey.substring(0, 4)}...`, "color: #3b82f6; font-weight: bold;");
+  if (source !== 'NENHUMA') console.log("%c🔑 Detecção de IA: Chave carregada.", "color: #3b82f6; font-weight: bold;");
 
   const placeholders = ['sua_chave_api_aqui', 'YOUR_API_KEY', 'undefined', 'null', ''];
   if (!cleanKey || placeholders.includes(cleanKey.toLowerCase())) {

@@ -114,7 +114,7 @@ class MatchState {
     const currentMin = Math.floor(currentMs / 60000);
 
     const newEvent = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2, 9),
       type: eventData.type || 'GENERIC',
       teamId: eventData.teamId || 'none',
       playerId: eventData.playerId,
@@ -148,7 +148,7 @@ class MatchState {
     );
 
     const varEvent = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2, 9),
       type: 'VAR',
       teamId: 'none',
       minute: Math.floor(this.state.timeElapsed / 60000),
@@ -164,7 +164,7 @@ class MatchState {
     const nextPeriod = target || this.getNextPeriod(this.state.period);
     
     const periodEvent = {
-      id: Math.random().toString(36).substr(2, 9),
+      id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2, 9),
       type: 'PERIOD_START',
       teamId: 'none',
       minute: 0,
