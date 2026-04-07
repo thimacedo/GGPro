@@ -22,7 +22,10 @@ class ModalManager {
       'handleAction', 'saveTeamSelf', 'confirmSub', 'concussionSub',
       'executeConcussion', 'setPos', 'savePlayerSelf', 'saveSumulaSelf',
       'currentImportTeamId', 'savePreMatchSelf', 'saveCoachSelf',
-      'saveEditPlayerSelf', 'importListSelf', 'executeEndGame', 'copyReportSelf'
+      'saveEditPlayerSelf', 'importListSelf', 'executeEndGame', 'copyReportSelf',
+      'handleImageUploadTeam', 'importTextListTeam',
+      'executeResetSelf', 'copyReportSelf_report', 'downloadReportSelf_report',
+      'registerPenaltyResult', 'executeSub', 'modalActionSelf'
     ];
     registry.forEach(fn => {
       if (window[fn]) { delete window[fn]; }
@@ -242,20 +245,62 @@ class ModalManager {
 
     const content = `
       <div class="flex flex-col gap-4">
-        <div class="grid grid-cols-2 gap-3">
-          <button onclick="document.getElementById('img_sumula').click()" class="p-3 bg-slate-800/50 border border-white/5 rounded-2xl text-center hover:bg-slate-800 transition-all">
-            <span class="text-lg">📄</span><br/>
-            <span class="text-[10px] font-black text-slate-300 uppercase">OCR Súmula</span>
-          </button>
-          <input type="file" id="img_sumula" hidden accept="image/*" onchange="window.handleImageUpload(event, 'players')"/>
-          <button onclick="document.getElementById('file_sumula').click()" class="p-3 bg-slate-800/50 border border-white/5 rounded-2xl text-center hover:bg-slate-800 transition-all">
-            <span class="text-lg">📋</span><br/>
-            <span class="text-[10px] font-black text-slate-300 uppercase">Importar Texto</span>
-          </button>
-          <input type="file" id="file_sumula" hidden accept=".txt,.csv" onchange="window.importTextList(event)"/>
+        <!-- IMPORT: Mandante -->
+        <div class="p-3 bg-slate-800/30 rounded-2xl border border-white/5">
+          <h4 class="text-[10px] font-black uppercase tracking-widest mb-2" style="color: ${home.color}">⬆ Importar ${home.name || 'Mandante'}</h4>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="window.currentImportTeamId='home'; document.getElementById('img_home').click()" class="p-3 bg-slate-800 border border-white/5 rounded-xl text-center hover:bg-slate-700 transition-all">
+              <span class="text-lg">📄</span><br/>
+              <span class="text-[9px] font-black text-slate-300 uppercase">OCR Imagem</span>
+            </button>
+            <input type="file" id="img_home" hidden accept="image/*" onchange="window.handleImageUploadTeam(event, 'home')"/>
+            <button onclick="window.currentImportTeamId='home'; document.getElementById('txt_home').click()" class="p-3 bg-slate-800 border border-white/5 rounded-xl text-center hover:bg-slate-700 transition-all">
+              <span class="text-lg">📋</span><br/>
+              <span class="text-[9px] font-black text-slate-300 uppercase">Texto/Lista</span>
+            </button>
+            <input type="file" id="txt_home" hidden accept=".txt,.csv,.text" onchange="window.importTextListTeam(event, 'home')"/>
+          </div>
         </div>
 
-        ${conflict ? `<div class="p-3 bg-amber-900/20 border border-amber-500/30 rounded-xl text-xs text-amber-400 font-bold text-center">⚠️ Cores semelhantes detectadas! Ajuste abaixo.</div>` : ''}
+        <!-- IMPORT: Visitante -->
+        <div class="p-3 bg-slate-800/30 rounded-2xl border border-white/5">
+          <h4 class="text-[10px] font-black uppercase tracking-widest mb-2" style="color: ${away.color}">⬆ Importar ${away.name || 'Visitante'}</h4>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="window.currentImportTeamId='away'; document.getElementById('img_away').click()" class="p-3 bg-slate-800 border border-white/5 rounded-xl text-center hover:bg-slate-700 transition-all">
+              <span class="text-lg">📄</span><br/>
+              <span class="text-[9px] font-black text-slate-300 uppercase">OCR Imagem</span>
+            </button>
+            <input type="file" id="img_away" hidden accept="image/*" onchange="window.handleImageUploadTeam(event, 'away')"/>
+            <button onclick="window.currentImportTeamId='away'; document.getElementById('txt_away').click()" class="p-3 bg-slate-800 border border-white/5 rounded-xl text-center hover:bg-slate-700 transition-all">
+              <span class="text-lg">📋</span><br/>
+              <span class="text-[9px] font-black text-slate-300 uppercase">Texto/Lista</span>
+            </button>
+            <input type="file" id="txt_away" hidden accept=".txt,.csv,.text" onchange="window.importTextListTeam(event, 'away')"/>
+          </div>
+        </div>
+
+        <!-- Regras extraídas por IA -->
+        ${state.extractedRules ? `
+          <div class="p-3 bg-emerald-900/20 border border-emerald-500/30 rounded-xl space-y-1">
+            <p class="text-[10px] font-black text-emerald-400 uppercase">📋 Regras Extraídas</p>
+            <p class="text-xs text-slate-300">Tempo: ${state.extractedRules.halfDuration || '?'}min | Subst: ${state.extractedRules.maxSubstitutions || '?'}</p>
+          </div>
+        ` : `
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="document.getElementById('banner_img_sumula').click()" class="p-3 bg-slate-800/50 border border-white/5 rounded-xl text-center hover:bg-slate-800 transition-all">
+              <span class="text-lg">🏷️</span><br/>
+              <span class="text-[9px] font-black text-slate-300 uppercase">OCR Banner</span>
+            </button>
+            <input type="file" id="banner_img_sumula" hidden accept="image/*" onchange="window.handleBannerUpload(event)"/>
+            <button onclick="document.getElementById('reg_file_sumula').click()" class="p-3 bg-slate-800/50 border border-white/5 rounded-xl text-center hover:bg-slate-800 transition-all">
+              <span class="text-lg">📑</span><br/>
+              <span class="text-[9px] font-black text-slate-300 uppercase">Regulamento</span>
+            </button>
+            <input type="file" id="reg_file_sumula" hidden accept="image/*,.pdf" onchange="window.handleRegulationUpload(event)"/>
+          </div>
+        `}
+
+        ${conflict ? `<div class="p-3 bg-amber-900/20 border border-amber-500/30 rounded-xl text-xs text-amber-400 font-bold text-center">⚠️ Cores semelhantes detectadas!</div>` : ''}
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="space-y-3 p-4 bg-slate-800/30 rounded-2xl border border-white/5">
@@ -338,25 +383,82 @@ class ModalManager {
       this.close();
     };
 
-    window.importTextList = async (event) => {
+    // Upload de imagem por time (OCR)
+    window.handleImageUploadTeam = async (event, teamId) => {
       const file = event.target.files[0];
       if (!file) return;
-      const text = await file.text();
-      const lines = text.split('\n').filter(l => l.trim());
-      const players = lines.map((line, i) => {
-        const parts = line.trim().split(/\s*,\s*|\s+/);
-        const number = parseInt(parts[0]) || (i + 1);
-        const name = parts.slice(1).join(' ') || line.trim();
-        return { id: crypto.randomUUID?.() || Date.now().toString(36)+Math.random().toString(36).substr(2,5), name, number, position: i === 0 ? 'GK' : 'MF', isStarter: true, hasLeftGame: false };
-      });
+      const teamName = teamId === 'home' ? home.name : away.name;
+      window.toastManager?.show(`OCR ${teamName}`, 'Analisando imagem...', 'ai');
+      try {
+        const result = await processImageForPlayers(file, 'players');
+        window.currentImportTeamId = teamId;
+        if (Array.isArray(result)) {
+          const teamKey = teamId === 'home' ? 'homeTeam' : 'awayTeam';
+          matchState.setState(prev => {
+            const existing = prev[teamKey].players || [];
+            const existingNumbers = new Set(existing.map(p => p.number));
+            const newPlayers = result.filter(p => !existingNumbers.has(p.number));
+            return { ...prev, [teamKey]: { ...prev[teamKey], players: [...existing, ...newPlayers] } };
+          });
+          window.toastManager?.show('Sucesso', `${result.length} jogadores importados para ${teamName}.`, 'success');
+        }
+      } catch (e) {
+        window.toastManager?.show('Erro', e.message || 'Falha no OCR.', 'error');
+      }
+    };
 
-      // Attach to current import team or default to home
-      const teamKey = window.currentImportTeamId === 'away' ? 'awayTeam' : 'homeTeam';
-      matchState.setState(prev => ({
-        ...prev,
-        [teamKey]: { ...prev[teamKey], players: [...prev[teamKey].players, ...players] }
-      }));
-      this.close();
+    // Import por texto por time
+    window.importTextListTeam = async (event, teamId) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      const teamName = teamId === 'home' ? home.name : away.name;
+      try {
+        const text = await file.text();
+        const lines = text.split('\n').filter(l => l.trim());
+
+        // Tenta parse com IA primeiro para texto bruto
+        if (lines.length > 3) {
+          window.toastManager?.show(`IA ${teamName}`, 'Processando lista...', 'ai');
+          try {
+            const { processTextForPlayers } = await import('../services/gemini.js');
+            const result = await processTextForPlayers(text);
+            if (Array.isArray(result) && result.length > 0) {
+              const teamKey = teamId === 'home' ? 'homeTeam' : 'awayTeam';
+              matchState.setState(prev => {
+                const existing = prev[teamKey].players || [];
+                const existingNumbers = new Set(existing.map(p => p.number));
+                const newPlayers = result.filter(p => !existingNumbers.has(p.number));
+                return { ...prev, [teamKey]: { ...prev[teamKey], players: [...existing, ...newPlayers] } };
+              });
+              window.toastManager?.show('Sucesso', `${result.length} jogadores importados para ${teamName}.`, 'success');
+              return;
+            }
+          } catch (e) {
+            console.warn('IA text parse failed, falling back to manual', e);
+          }
+        }
+
+        // Fallback manual para texto simples
+        const players = lines.map((line, i) => {
+          const parts = line.trim().split(/\s*,\s*|\s+/);
+          const number = parseInt(parts[0]) || (i + 1);
+          const name = parts.slice(1).join(' ') || line.trim();
+          return {
+            id: crypto.randomUUID?.() || Date.now().toString(36) + Math.random().toString(36).substr(2, 5),
+            name, number,
+            position: i === 0 ? 'GK' : 'MF',
+            isStarter: true, hasLeftGame: false
+          };
+        });
+        const teamKey = teamId === 'home' ? 'homeTeam' : 'awayTeam';
+        matchState.setState(prev => ({
+          ...prev,
+          [teamKey]: { ...prev[teamKey], players: [...prev[teamKey].players, ...players] }
+        }));
+        window.toastManager?.show('Sucesso', `${players.length} jogadores importados para ${teamName}.`, 'success');
+      } catch (e) {
+        window.toastManager?.show('Erro', 'Falha ao importar lista.', 'error');
+      }
     };
 
     this.open(content, 'Súmula da Partida');
