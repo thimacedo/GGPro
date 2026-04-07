@@ -96,16 +96,22 @@ export function renderHeader(container, callbacks) {
       <div class="w-full bg-slate-950/50 border-t border-white/5 py-1 px-4 flex justify-center items-center gap-4 md:gap-8 text-[8px] md:text-[10px] text-slate-400 uppercase tracking-widest font-bold">
           <span class="flex items-center gap-1">
             <svg class="w-3 h-3 text-yellow-500" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-            ${state.competition || "Camp. Não Definido"}
+            ${state.matchDetails?.competition || "Camp. Não Definido"}
           </span>
           <span class="hidden sm:flex items-center gap-1">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-            ${state.stadium || "Local"}
+            ${state.matchDetails?.stadium || "Local"}
           </span>
           <span class="hidden sm:flex items-center gap-1">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
-            ${state.referee || "Árbitro"}
+            ${state.matchDetails?.referee || "Árbitro"}
           </span>
+          ${(state.homeCoach || state.awayCoach) ? `
+          <span class="hidden md:flex items-center gap-1">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 8a6 6 0 016 6v7h-6v-2H8v2H2v-7a6 6 0 016-6 4 4 0 100-8 4 4 0 00-6 0 4 4 0 000 8"/></svg>
+            ${state.homeCoach || ''}${state.homeCoach && state.awayCoach ? ' / ' : ''}${state.awayCoach || ''}
+          </span>
+          ` : ''}
       </div>
       ` : ''}
     </header>

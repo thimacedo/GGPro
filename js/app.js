@@ -1,6 +1,5 @@
-// js/app.js - v4.5.11 FORCED
-// Ponto de entrada principal - Narrador Pro (v4.5.11 Estabilizada)
-// Arquitetura Modular e Reativa com Hoisting de APIs Críticas
+// js/app.js - v5.0 COMPLETE
+// Ponto de entrada principal - Narrador Pro com todas as funcionalidades do original
 
 import matchState from './state.js';
 import { renderHeader, updateTimer } from './components/header.js';
@@ -10,12 +9,13 @@ import { fieldManager } from './components/field.js';
 import { statsManager } from './components/stats.js';
 import { voice } from './services/voice.js';
 import { processImageForPlayers, generateMatchReport, parseRegulationDocument } from './services/gemini.js';
-import { TEAM_ABBREVIATIONS } from './constants.js';
+import { FORMATIONS, TEAM_ABBREVIATIONS } from './constants.js';
+
+// Expor FORMATIONS globalmente para modais
+window.FORMATIONS = FORMATIONS;
 
 /**
- * ⚓ HOISTING DE APIS GLOBAIS
- * Garante que as funções necessárias para eventos inline e modais 
- * estejam disponíveis no objeto window antes de qualquer injeção no DOM.
+ *  HOISTING DE APIS GLOBAIS
  */
 window.handleImageUpload = handleImageUpload;
 window.handleRegulationUpload = handleRegulationUpload;
@@ -39,36 +39,39 @@ const ui = {
 // --- Inicialização ---
 
 function init() {
-  // Subscrever às mudanças de estado para re-renderizar
   matchState.subscribe(() => render());
-  
-  // Renderização inicial
   render();
-  
-  // Inicia o motor do cronômetro
   runClockEngine();
+  runPenaltyEngine();
 }
 
 /**
- * ⏰ MOTOR DO CRONÔMETRO (Engine)
- * Refatorado com Padrão Bouncer (Early Return) para máxima estabilidade e precisão.
+ *  MOTOR DO CRONÔMETRO
  */
 function runClockEngine() {
   setInterval(() => {
     const state = matchState.getState();
-    
-    // Pattern: Early Return (Bouncer)
-    if (
-      state.isPaused || 
-      state.period === 'PENALTIES' || 
-      state.period === 'FINISHED' || 
-      state.period === 'HALFTIME'
-    ) {
+    if (state.isPaused || state.period === 'PENALTIES' || state.period === 'FINISHED' || state.period === 'HALFTIME') {
       return;
     }
-
     updateTimer();
   }, 1000);
+}
+
+/**
+ *  MOTOR DE PÊNALIS
+ * Monitora transição para período de pênaltis
+ */
+function runPenaltyEngine() {
+  matchState.subscribe((state) => {
+    if (state.isPenaltyShootoutActive && state.period === 'PENALTIES') {
+      const overlay = document.getElementById('modalOverlay');
+      if (!overlay) {
+        // Auto-abrir modal de pênaltis se ainda não houver modal
+        setTimeout(() => modalManager.showPenaltyShootout(), 500);
+      }
+    }
+  });
 }
 
 // --- Renderização ---
@@ -81,35 +84,36 @@ function render() {
 
   root.innerHTML = `
     <div class="h-screen flex flex-col font-sans selection:bg-blue-500/20 overflow-hidden transition-colors duration-500 ${ui.isLightMode ? 'claro' : 'bg-slate-950 text-slate-50'}">
-      
+
       <!-- Componente Header -->
       <div id="headerContainer"></div>
-      
+
       <!-- Conteúdo Principal -->
       <main class="flex-1 flex flex-col px-2 md:px-4 min-h-0 ${ui.isFullscreen ? 'overflow-hidden pb-24 pt-2' : 'overflow-y-auto pb-40 pt-4'} custom-scrollbar">
         <div class="w-full max-w-7xl mx-auto flex flex-col min-h-0 ${ui.isFullscreen ? 'h-full' : 'gap-4 md:gap-6'}">
-          
+
           <!-- Tabs -->
-          ${!ui.isFullscreen ? `
-          <div class="flex justify-center gap-2 bg-slate-900/50 p-1.5 rounded-2xl w-fit mx-auto border border-white/5 backdrop-blur-xl">
-            <button id="tabMain" class="px-8 py-2.5 rounded-xl font-black text-[10px] tracking-widest transition-all ${ui.activeTab === 'main' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-500 hover:text-white'}">NARRAÇÃO</button>
-            <button id="tabStats" class="px-8 py-2.5 rounded-xl font-black text-[10px] tracking-widest transition-all ${ui.activeTab === 'stats' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-500 hover:text-white'}">ESTATÍSTICAS</button>
+          <div id="tabsContainer" class="flex justify-center gap-2 ${ui.isFullscreen ? 'hidden' : ''}">
+            <div class="flex justify-center gap-2 bg-slate-900/50 p-1.5 rounded-2xl w-fit mx-auto border border-white/5 backdrop-blur-xl">
+              <button id="tabMain" class="px-8 py-2.5 rounded-xl font-black text-[10px] tracking-widest transition-all ${ui.activeTab === 'main' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-500 hover:text-white'}">NARRAÇÃO</button>
+              <button id="tabStats" class="px-8 py-2.5 rounded-xl font-black text-[10px] tracking-widest transition-all ${ui.activeTab === 'stats' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-500 hover:text-white'}">ESTATÍSTICAS</button>
+              <button id="tabReport" class="px-8 py-2.5 rounded-xl font-black text-[10px] tracking-widest transition-all ${ui.activeTab === 'report' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-500 hover:text-white'}">RELATÓRIO</button>
+            </div>
           </div>
-          ` : ''}
-          
+
           <div id="tabContent" class="flex-1 min-h-0">
             ${renderActiveTab(state)}
           </div>
         </div>
       </main>
-      
+
       <!-- Command Bar -->
       ${renderCommandBar(state)}
 
-      <!-- Atalhos Flutuantes -->
+      <!-- Quick Action Buttons (top right) -->
       <div class="absolute top-4 right-4 z-[70] flex gap-2">
-        <button id="toggleContrast" class="p-3 rounded-2xl bg-slate-900/80 text-white border border-white/10 backdrop-blur-md shadow-2xl hover:bg-slate-800 transition-all">🌓</button>
-        <button id="openSettings" class="p-3 rounded-2xl bg-slate-900/80 text-white border border-white/10 backdrop-blur-md shadow-2xl hover:bg-slate-800 transition-all">⚙️</button>
+        <button id="toggleContrast" class="p-3 rounded-2xl bg-slate-900/80 text-white border border-white/10 backdrop-blur-md shadow-2xl hover:bg-slate-800 transition-all" title="Modo Claro/Escuro">🌓</button>
+        <button id="openSettings" class="p-3 rounded-2xl bg-slate-900/80 text-white border border-white/10 backdrop-blur-md shadow-2xl hover:bg-slate-800 transition-all" title="Menu Técnico">⚙️</button>
       </div>
 
       <!-- Settings Menu -->
@@ -131,12 +135,12 @@ function renderActiveTab(state) {
             <button id="setViewField" class="flex-1 py-3 rounded-2xl font-black text-[9px] uppercase tracking-widest border transition-all ${ui.viewMode === 'field' ? 'bg-blue-600 border-blue-400 text-white' : 'bg-slate-900 border-white/5 text-slate-500'}">🏟 Mapa Tático</button>
             <button id="toggleFullscreen" class="p-3 rounded-2xl bg-slate-900 border border-white/5 text-slate-500 hover:text-white transition-all">${ui.isFullscreen ? '⊟' : '⊞'}</button>
           </div>
-          
+
           <div id="mainDisplay" class="relative flex-1 min-h-0">
             ${ui.viewMode === 'field' ? fieldManager.render(state, ui.isFullscreen) : renderPlayerLists(state)}
           </div>
         </div>
-        
+
         <div class="${ui.isFullscreen ? 'lg:col-span-3 flex flex-col h-full min-h-0' : 'lg:col-span-4 flex flex-col'}">
           <div class="bg-slate-900/50 rounded-[2.5rem] border border-white/5 flex flex-col overflow-hidden shadow-2xl flex-1 min-h-0 backdrop-blur-xl">
             <div class="p-6 border-b border-white/5 bg-white/5 flex justify-between items-center">
@@ -155,7 +159,32 @@ function renderActiveTab(state) {
       </div>
     `;
   }
-  return statsManager.render(state);
+
+  if (ui.activeTab === 'stats') {
+    return statsManager.render(state);
+  }
+
+  if (ui.activeTab === 'report') {
+    return renderReportTab(state);
+  }
+
+  return '';
+}
+
+function renderReportTab(state) {
+  const report = matchState.generateStructuredReport();
+  return `
+    <div class="max-w-3xl mx-auto w-full">
+      <div class="bg-slate-900/50 rounded-[2.5rem] border border-white/5 p-8 shadow-2xl backdrop-blur-xl">
+        <h3 class="text-sm font-black uppercase tracking-widest text-slate-400 mb-6 text-center">📄 Relatório da Partida</h3>
+        <pre class="text-sm text-slate-300 whitespace-pre-wrap font-mono bg-slate-800/50 p-6 rounded-2xl max-h-96 overflow-y-auto custom-scrollbar border border-white/5">${report}</pre>
+        <div class="grid grid-cols-2 gap-3 mt-6">
+          <button onclick="window.copyReportSelf_report()" class="p-4 bg-blue-600 hover:bg-blue-500 rounded-2xl text-[11px] font-black uppercase text-white transition-all">📋 Copiar</button>
+          <button onclick="window.downloadReportSelf_report()" class="p-4 bg-emerald-600 hover:bg-emerald-500 rounded-2xl text-[11px] font-black uppercase text-white transition-all">💾 Salvar .txt</button>
+        </div>
+      </div>
+    </div>
+  `;
 }
 
 function renderCommandBar(state) {
@@ -165,20 +194,20 @@ function renderCommandBar(state) {
         <button id="playPauseBottom" class="w-16 h-16 rounded-2xl shadow-2xl transition-all shrink-0 flex items-center justify-center text-2xl ${state.isPaused ? 'bg-emerald-600 text-white shadow-emerald-900/20' : 'bg-amber-500 text-slate-950 shadow-amber-900/20'}">
           ${state.isPaused ? '▶' : '⏸'}
         </button>
-        
+
         <div class="flex-1 bg-slate-900/95 border border-white/10 p-2 rounded-3xl shadow-[0_30px_60px_-15px_rgba(0,0,0,0.7)] flex items-center gap-2 backdrop-blur-3xl ring-1 ring-white/5 overflow-hidden">
           <button id="micBtn" class="p-4 rounded-2xl transition-all shrink-0 hover:bg-white/5 relative group">
             <span class="text-2xl group-active:scale-95 transition-transform block">🎙️</span>
             <div id="micPulse" class="absolute inset-0 bg-red-600/20 rounded-2xl hidden animate-pulse"></div>
           </button>
-          
-          <input 
-            type="text" 
+
+          <input
+            type="text"
             id="commandInput"
-            placeholder="Narre algo (ex: 'Gol do Flamengo n 10'...)" 
-            class="flex-1 bg-transparent border-none py-3 px-2 font-bold text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-0" 
+            placeholder="Narre algo (ex: 'Gol do Flamengo n 10'...)"
+            class="flex-1 bg-transparent border-none py-3 px-2 font-bold text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-0"
           />
-          
+
           <button id="sendBtn" class="p-4 bg-blue-600 rounded-2xl text-white hover:bg-blue-500 transition-all shadow-xl shadow-blue-900/30 flex items-center justify-center">
             <span class="text-xl">➤</span>
           </button>
@@ -190,25 +219,46 @@ function renderCommandBar(state) {
 
 function renderSettingsMenu(state) {
   if (!ui.isSettingsOpen) return '';
+  const isEndPeriod = ['INTERVAL', '2T', '2ET'].includes(state.period);
+
   return `
     <div id="settingsOverlay" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[75] animate-fade-in"></div>
     <div class="fixed top-20 right-4 w-80 bg-slate-900 border border-white/10 rounded-[2.5rem] shadow-2xl p-6 z-[80] animate-slide-up flex flex-col gap-3">
       <h4 class="text-[10px] font-black uppercase text-slate-500 tracking-[0.3em] mb-4 text-center">Menu Técnico</h4>
-      
+
+      <button onclick="modalManager.showPreMatchSetup()" class="w-full p-4 bg-slate-800 hover:bg-slate-700 rounded-2xl text-left flex items-center gap-4 transition-all">
+        <span class="text-xl">🏷️</span>
+        <span class="text-xs font-black uppercase tracking-widest text-white">Pré-Jogo</span>
+      </button>
+
       <button onclick="modalManager.showSumula()" class="w-full p-4 bg-slate-800 hover:bg-slate-700 rounded-2xl text-left flex items-center gap-4 transition-all">
         <span class="text-xl">📋</span>
         <span class="text-xs font-black uppercase tracking-widest text-white">Editar Súmula</span>
       </button>
-      
+
+      ${isEndPeriod ? `
+      <button onclick="modalManager.showEndGameOptions()" class="w-full p-4 bg-amber-600/20 border border-amber-500/30 hover:bg-amber-600 rounded-2xl text-left flex items-center gap-4 transition-all">
+        <span class="text-xl">⏳</span>
+        <span class="text-xs font-black uppercase tracking-widest text-amber-400">Fim do Período</span>
+      </button>
+      ` : `
       <button id="btnNextPeriod" class="w-full p-4 bg-slate-800 hover:bg-blue-600 rounded-2xl text-left flex items-center gap-4 transition-all">
         <span class="text-xl">⏳</span>
         <span class="text-xs font-black uppercase tracking-widest text-white">Próximo Período</span>
       </button>
+      `}
 
       <button onclick="handleVarReversal()" class="w-full p-4 bg-slate-800 hover:bg-amber-600 rounded-2xl text-left flex items-center gap-4 transition-all group">
         <span class="text-xl group-hover:scale-110 transition-transform">📺</span>
         <span class="text-xs font-black uppercase tracking-widest text-white">Reversão de VAR</span>
       </button>
+
+      ${state.period === 'PENALTIES' ? `
+      <button onclick="modalManager.showPenaltyShootout()" class="w-full p-4 bg-blue-600/20 border border-blue-500/30 hover:bg-blue-600 rounded-2xl text-left flex items-center gap-4 transition-all">
+        <span class="text-xl">🥅</span>
+        <span class="text-xs font-black uppercase tracking-widest text-blue-400">Disputa de Pênaltis</span>
+      </button>
+      ` : ''}
 
       <button id="btnFinalize" class="w-full p-4 bg-red-600/10 border border-red-600/20 hover:bg-red-600 rounded-2xl text-left flex items-center gap-4 transition-all text-red-500 hover:text-white">
         <span class="text-xl">🏁</span>
@@ -220,8 +270,8 @@ function renderSettingsMenu(state) {
       <button id="btnExport" class="w-full p-3 bg-slate-800/50 hover:bg-slate-800 rounded-xl text-center text-[10px] font-black uppercase tracking-widest text-slate-400">
         Salvar Backup (JSON)
       </button>
-      
-      <button id="btnReset" class="w-full p-3 bg-red-900/20 hover:bg-red-900/40 rounded-xl text-center text-[10px] font-black uppercase tracking-widest text-red-400 mt-2">
+
+      <button onclick="modalManager.showResetConfirm()" class="w-full p-3 bg-red-900/20 hover:bg-red-900/40 rounded-xl text-center text-[10px] font-black uppercase tracking-widest text-red-400 mt-2">
         Resetar Partida
       </button>
     </div>
@@ -254,17 +304,17 @@ function renderPlayerLists(state) {
 }
 
 function renderPlayerList(team, teamId) {
-  const starters = team.players.filter(p => p.isStarter).sort((a,b) => a.number - b.number);
+  const starters = team.players.filter(p => p.isStarter && !p.hasLeftGame).sort((a,b) => a.number - b.number);
   return `
     <div class="space-y-2">
       ${starters.map(p => `
-        <button class="w-full p-3 bg-slate-800/40 hover:bg-slate-800 rounded-2xl flex items-center gap-4 transition-all border border-white/5 group" onclick="modalManager.showPlayerActions(JSON.parse(this.dataset.player), JSON.parse(this.dataset.team), '${teamId}')" data-player='${JSON.stringify(p)}' data-team='${JSON.stringify(team)}'>
+        <button class="w-full p-3 bg-slate-800/40 hover:bg-slate-800 rounded-2xl flex items-center gap-4 transition-all border border-white/5 group" data-player='${JSON.stringify(p).replace(/'/g, '&#39;')}' data-team='${JSON.stringify(team).replace(/'/g, '&#39;')}' data-teamid="${teamId}">
           <div class="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-black text-white shrink-0 group-hover:scale-110 transition-transform shadow-lg" style="background-color: ${team.color}">
             ${p.number}
           </div>
           <div class="flex flex-col items-start overflow-hidden">
             <span class="text-white font-black text-[11px] truncate w-full uppercase">${p.name}</span>
-            <span class="text-[9px] font-black text-slate-500 uppercase">${p.position}</span>
+            <span class="text-[9px] font-black text-slate-500 uppercase">${p.position}${p.position === 'GK' ? ' 🧤' : ''}</span>
           </div>
         </button>
       `).join('')}
@@ -276,7 +326,7 @@ function renderTimelineEvent(event, state) {
   const team = event.teamId === 'home' ? state.homeTeam : state.awayTeam;
   const isAnnulled = event.isAnnulled;
   const color = isAnnulled ? '#475569' : (team?.color || '#ffffff');
-  
+
   return `
     <div class="flex gap-4 group relative ${isAnnulled ? 'opacity-40 grayscale pointer-events-none' : ''}">
       <div class="flex flex-col items-center">
@@ -314,12 +364,13 @@ function attachHeader(state) {
 function attachEventListeners() {
   document.getElementById('tabMain')?.addEventListener('click', () => { ui.activeTab = 'main'; render(); });
   document.getElementById('tabStats')?.addEventListener('click', () => { ui.activeTab = 'stats'; render(); });
+  document.getElementById('tabReport')?.addEventListener('click', () => { ui.activeTab = 'report'; render(); });
   document.getElementById('setViewList')?.addEventListener('click', () => { ui.viewMode = 'list'; render(); });
   document.getElementById('setViewField')?.addEventListener('click', () => { ui.viewMode = 'field'; render(); });
   document.getElementById('toggleFullscreen')?.addEventListener('click', () => { ui.isFullscreen = !ui.isFullscreen; render(); });
   document.getElementById('playPauseBottom')?.addEventListener('click', () => matchState.handlePlayPauseToggle());
   document.getElementById('micBtn')?.addEventListener('click', () => voice.toggle());
-  
+
   const cmdInput = document.getElementById('commandInput');
   cmdInput?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') { handleCommandSubmit(cmdInput.value); cmdInput.value = ''; }
@@ -331,26 +382,35 @@ function attachEventListeners() {
   document.getElementById('openSettings')?.addEventListener('click', () => { ui.isSettingsOpen = true; render(); });
   document.getElementById('settingsOverlay')?.addEventListener('click', () => { ui.isSettingsOpen = false; render(); });
   document.getElementById('toggleContrast')?.addEventListener('click', () => { ui.isLightMode = !ui.isLightMode; render(); });
-  
+
   document.getElementById('btnNextPeriod')?.addEventListener('click', handleAdvancePeriod);
   document.getElementById('btnFinalize')?.addEventListener('click', () => {
-    if (confirm("Encerrar partida e gerar relatório final?")) {
-      matchState.handleFinalizeMatch();
-      toastManager.show("Fim de Jogo", "A partida foi encerrada oficialmente.", "success");
-      ui.isSettingsOpen = false;
-      render();
-    }
+    modalManager.showEndGameOptions();
   });
 
-  document.getElementById('btnReset')?.addEventListener('click', () => {
-    if (confirm("ATENÇÃO: Isso apagará TODOS os dados. Continuar?")) {
-      matchState.handleReset();
-      toastManager.show("Reset", "Estado inicial restaurado.", "warning");
-      ui.isSettingsOpen = false;
-      render();
-    }
+  document.getElementById('btnExport')?.addEventListener('click', () => {
+    const data = matchState.exportMatchData();
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `narrador_pro_backup_${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toastManager.show('Backup', 'Backup JSON exportado.', 'success');
   });
 
+  // Player list clicks
+  document.querySelectorAll('[data-player]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const player = JSON.parse(btn.dataset.player);
+      const team = JSON.parse(btn.dataset.team);
+      const teamId = btn.dataset.teamid;
+      modalManager.showPlayerActions(player, team, teamId);
+    });
+  });
+
+  // Undo
   document.getElementById('undoBtn')?.addEventListener('click', () => {
     if (matchState.undo()) {
       toastManager.show("Undo", "Evento desfeito.", "info");
@@ -358,23 +418,34 @@ function attachEventListeners() {
     }
   });
 
+  voice.notifyUI();
+
   window.addEventListener('voiceStateChange', (e) => {
-    const { isRecording } = e.detail;
+    const { isRecording, isProcessing } = e.detail;
     const pulse = document.getElementById('micPulse');
     if (pulse) isRecording ? pulse.classList.remove('hidden') : pulse.classList.add('hidden');
   });
+
+  window.copyReportSelf_report = () => {
+    navigator.clipboard.writeText(matchState.generateStructuredReport());
+    toastManager.show('Copiado', 'Relatório copiado.', 'success');
+  };
+  window.downloadReportSelf_report = () => {
+    const report = matchState.generateStructuredReport();
+    const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `relatorio_${new Date().toISOString().slice(0,10)}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 }
 
 function handleAdvancePeriod() {
   const state = matchState.getState();
   if (state.period === '2T' || state.period === '2ET') {
-    modalManager.open(`
-      <div class="flex flex-col gap-4">
-        <p class="text-xs text-slate-400">O tempo acabou. Como deseja proceder?</p>
-        <button class="w-full p-4 bg-red-600 rounded-2xl text-xs font-black uppercase text-white" onclick="matchState.advancePeriod('FINISHED'); modalManager.close();">Encerrar Partida</button>
-        <button class="w-full p-4 bg-slate-800 rounded-2xl text-xs font-black uppercase text-slate-400" onclick="modalManager.close();">Voltar</button>
-      </div>
-    `, 'Fim do Tempo');
+    modalManager.showEndGameOptions();
   } else {
     matchState.advancePeriod();
     toastManager.show("Período", `Início de ${matchState.formatPeriodName(matchState.getState().period)}`, "info");
@@ -387,21 +458,22 @@ async function handleCommandSubmit(text) {
   try {
     await voice.processCommand(text);
   } catch (e) {
-    toastManager.show("Erro", "Falha na IA.", "error");
+    toastManager.show("Erro", e.message || "Falha na IA.", "error");
   }
 }
 
 async function handleGenerateReport() {
   const state = matchState.getState();
-  const timeline = (state.events || []).map(e => `${e.minute}' - ${e.description}`).join('\n');
-  const context = `Resultado: ${state.homeTeam.name} x ${state.awayTeam.name}`;
-  
+  const timeline = (state.events || []).filter(e => !e.isAnnulled).map(e => `${e.minute}' - ${e.description}`).join('\n');
+  const context = `Resultado: ${state.homeTeam.name} ${state.score.home} x ${state.score.away} ${state.awayTeam.name}`;
+
   toastManager.show("Escritor AI", "Gerando crônica...", "ai");
   try {
     const report = await generateMatchReport(context, timeline);
     modalManager.open(`<div class="prose prose-invert text-slate-300 text-sm">${report.replace(/\n/g, '<br>')}</div>`, "Crônica");
   } catch (e) {
-    toastManager.show("Erro", "Falha na geração.", "error");
+    // Fallback to structured report
+    modalManager.showMatchReport();
   }
 }
 
@@ -413,14 +485,18 @@ async function handleImageUpload(event, type) {
   try {
     const result = await processImageForPlayers(file, type);
     if (type === 'players' && Array.isArray(result)) {
+      const teamKey = window.currentImportTeamId === 'away' ? 'awayTeam' : 'homeTeam';
       matchState.setState(prev => {
-        const teamKey = window.currentImportTeamId === 'away' ? 'awayTeam' : 'homeTeam';
-        return { ...prev, [teamKey]: { ...prev[teamKey], players: [...prev[teamKey].players, ...result] } };
+        const existing = prev[teamKey].players || [];
+        // Merge avoiding duplicates by number
+        const existingNumbers = new Set(existing.map(p => p.number));
+        const newPlayers = result.filter(p => !existingNumbers.has(p.number));
+        return { ...prev, [teamKey]: { ...prev[teamKey], players: [...existing, ...newPlayers] } };
       });
-      toastManager.show("Sucesso", "Atletas importados.", "success");
+      toastManager.show("Sucesso", `${result.length} atletas importados.`, "success");
     }
   } catch (e) {
-    toastManager.show("Erro", "Falha no processamento.", "error");
+    toastManager.show("Erro", e.message || "Falha no processamento.", "error");
   }
 }
 
@@ -429,18 +505,17 @@ async function handleRegulationUpload(event) {
   if (!file) return;
   try {
     const rules = await parseRegulationDocument(file, file.type);
-    matchState.setState(prev => ({ ...prev, rules: { ...prev.rules, ...rules } }));
+    matchState.setState(prev => ({ ...prev, rules: { ...prev.rules, ...rules }, extractedRules: rules }));
     toastManager.show("Regras", "Configuração atualizada.", "success");
-    modalManager.close();
   } catch (e) {
-    toastManager.show("Erro", "Erro ao ler PDF.", "error");
+    toastManager.show("Erro", "Erro ao ler documento.", "error");
   }
 }
 
 function handleVarReversal() {
   const state = matchState.getState();
   const majorEvents = (state.events || []).filter(e => !e.isAnnulled);
-  
+
   if (majorEvents.length === 0) {
     toastManager.show("VAR", "Nenhum evento registrado para análise no momento.", "info");
     return;
@@ -462,9 +537,9 @@ function generateDistinctShortName(name) {
 }
 
 function handleExportClipboard() {
-  const text = `RELATÓRIO NARRADOR PRO - ${new Date().toLocaleDateString()}`;
-  navigator.clipboard.writeText(text);
-  toastManager.show("Copiado", "Dados na área de transferência.", "success");
+  const report = matchState.generateStructuredReport();
+  navigator.clipboard.writeText(report);
+  toastManager.show("Copiado", "Relatório na área de transferência.", "success");
 }
 
 // Iniciar Aplicação com DOM Pronto segura
@@ -475,9 +550,7 @@ if (document.readyState === 'loading') {
 }
 
 /**
- * ⚓ EXPOSIÇÃO DE GLOBAIS PARA O DOM (Inline Handlers)
- * Necessário para que botões com 'onclick' em templates HTML
- * consigam acessar funções encapsuladas no Módulo ES (app.js).
+ *  EXPOSIÇÃO DE GLOBAIS PARA O DOM (Inline Handlers)
  */
 window.matchState = matchState;
 window.modalManager = modalManager;
@@ -486,9 +559,3 @@ window.handleAdvancePeriod = handleAdvancePeriod;
 window.handleAction = (action) => console.log("Ação do Operador:", action);
 window.handleGenerateReport = handleGenerateReport;
 window.handleExportClipboard = handleExportClipboard;
-window.undoBtn = () => {
-    if (matchState.undo()) {
-      toastManager.show("Undo", "Evento desfeito.", "info");
-      render();
-    }
-};

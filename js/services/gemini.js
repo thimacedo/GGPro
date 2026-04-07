@@ -84,3 +84,14 @@ export const generateMatchReport = async (context, timeline) => {
     const prompt = `Escreva uma crônica esportiva profissional com base em: ${context} e Cronologia: ${timeline}`;
     return await callProxyAI({ prompt });
 };
+
+export const processTextForPlayers = async (text) => {
+    const prompt = `Analise esta lista de jogadores e extraia em JSON: { "players": [{ "name": "...", "number": 10, "position": "MF" }] }.\nLista:\n${text}`;
+    const result = await callProxyAI({ prompt });
+    return cleanAndParseJSON(result).players || [];
+};
+
+export const callBannerAI = async (fileBase64) => {
+    const prompt = `Extraia dados do banner da partida: competição, times, estádio, data, hora. Formato JSON: {"competition":"...","stadium":"...","date":"...","time":"...","referee":"...","homeTeam":"...","awayTeam":"..."}`;
+    return await callProxyAI({ prompt, fileBase64, isOCR: true });
+};
