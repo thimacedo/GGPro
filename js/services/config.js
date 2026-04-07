@@ -1,32 +1,32 @@
 /**
  * 🔑 MOTOR DE CONFIGURAÇÃO (Narrador Pro)
- * Centraliza chaves de API e credenciais de serviços (Gemini & Firebase).
+ * Centraliza chaves de API e credenciais de serviços (Groq & Firebase).
  */
 
 export const getApiKey = () => {
   // Prioriza o localStorage para ambiente de produção estático (Vercel)
-  const localKey = typeof localStorage !== 'undefined' 
-    ? (localStorage.getItem('VITE_GEMINI_API_KEY') || localStorage.getItem('GEMINI_API_KEY') || localStorage.getItem('gemini_api_key'))
+  const localKey = typeof localStorage !== 'undefined'
+    ? (localStorage.getItem('VITE_GROQ_API_KEY') || localStorage.getItem('GROQ_API_KEY') || localStorage.getItem('groq_api_key'))
     : undefined;
 
   let key = '';
   let source = 'NENHUMA';
 
-  if (localKey) { 
-    key = localKey; 
-    source = 'LOCALSTORAGE'; 
+  if (localKey) {
+    key = localKey;
+    source = 'LOCALSTORAGE';
   }
 
   const cleanKey = key.toString().trim().replace(/^["']|["']$/g, '');
 
-  if (source !== 'NENHUMA') console.log("%c🔑 Detecção de IA: Chave carregada.", "color: #3b82f6; font-weight: bold;");
+  if (source !== 'NENHUMA') console.log("%c🔑 Groq AI: Chave carregada.", "color: #3b82f6; font-weight: bold;");
 
   const placeholders = ['sua_chave_api_aqui', 'YOUR_API_KEY', 'undefined', 'null', ''];
   if (!cleanKey || placeholders.includes(cleanKey.toLowerCase())) {
     console.warn("⚠️ API KEY GS: Chave não configurada no Storage.");
     return null;
   }
-  
+
   return cleanKey;
 };
 

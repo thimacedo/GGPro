@@ -71,7 +71,7 @@ class VoiceController {
       
       /**
        * 🚀 CHAMADA ISOLADA
-       * Bloco try/catch específico para a API Gemini conforme diretiva v3.1.
+       * Bloco try/catch específico para a API Groq conforme diretiva v3.1.
        */
       const result = await parseMatchCommand(text, state);
 
