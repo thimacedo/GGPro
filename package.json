@@ -10,8 +10,7 @@
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
-    "@vercel/speed-insights": "^2.0.0",
-    "tesseract.js": "^6.0.5"
+    "@vercel/speed-insights": "^2.0.0"
   },
   "devDependencies": {
     "vercel": "latest"
