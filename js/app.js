@@ -253,6 +253,11 @@ function renderSettingsMenu(state) {
         <span class="text-xs font-black uppercase tracking-widest text-white">Reversão de VAR</span>
       </button>
 
+      <button onclick="modalManager.showAiConfig()" class="w-full p-4 bg-slate-800 hover:bg-blue-600 rounded-2xl text-left flex items-center gap-4 transition-all group">
+        <span class="text-xl group-hover:scale-110 transition-transform">🤖</span>
+        <span class="text-xs font-black uppercase tracking-widest text-white">Configuração de IA</span>
+      </button>
+
       ${state.period === 'PENALTIES' ? `
       <button onclick="modalManager.showPenaltyShootout()" class="w-full p-4 bg-blue-600/20 border border-blue-500/30 hover:bg-blue-600 rounded-2xl text-left flex items-center gap-4 transition-all">
         <span class="text-xl">🥅</span>

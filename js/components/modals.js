@@ -19,11 +19,11 @@ class ModalManager {
 
   cleanupGlobalFunctions() {
     const registry = [
-      'handleAction', 'saveTeamSelf', 'confirmSub', 'concussionSub',
+      'handleAction', 'saveTeamSelf', 'confirmSub', 'confirmConcussion', 'concussionSub',
       'executeConcussion', 'setPos', 'savePlayerSelf', 'saveSumulaSelf',
       'currentImportTeamId', 'savePreMatchSelf', 'saveCoachSelf',
       'saveEditPlayerSelf', 'importListSelf', 'executeEndGame', 'copyReportSelf',
-      'handleImageUploadTeam', 'importTextListTeam',
+      'handleImageUploadTeam', 'importTextListTeam', 'saveAiConfigSelf',
       'executeResetSelf', 'copyReportSelf_report', 'downloadReportSelf_report',
       'registerPenaltyResult', 'executeSub', 'modalActionSelf'
     ];
@@ -697,6 +697,60 @@ class ModalManager {
     };
 
     this.open(content, 'Confirmar Reset');
+  }
+
+  // ============================================================
+  // AI CONFIGURATION
+  // ============================================================
+  showAiConfig() {
+    const geminiKey = localStorage.getItem('GGPRO_GEMINI_KEY') || '';
+    const groqKey = localStorage.getItem('GGPRO_GROQ_KEY') || '';
+
+    const content = `
+      <div class="flex flex-col gap-5 p-2">
+        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest leading-relaxed">
+          Configure suas chaves de API para garantir o funcionamento ininterrupto da IA durante a transmissão. 
+          As chaves são salvas apenas no seu navegador.
+        </p>
+
+        <div class="space-y-4">
+          <div class="flex flex-col gap-2">
+            <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Google Gemini API Key</label>
+            <input type="password" id="geminiKeyInput" value="${geminiKey}" placeholder="Insira sua chave Gemini..." 
+                   class="w-full bg-slate-800 border border-white/10 rounded-xl p-4 text-xs text-white outline-none focus:border-blue-500/50 transition-all shadow-inner" />
+          </div>
+
+          <div class="flex flex-col gap-2">
+            <label class="text-[9px] font-black text-slate-400 uppercase tracking-widest ml-1">Groq API Key (Llama 3 Fallback)</label>
+            <input type="password" id="groqKeyInput" value="${groqKey}" placeholder="Insira sua chave Groq..." 
+                   class="w-full bg-slate-800 border border-white/10 rounded-xl p-4 text-xs text-white outline-none focus:border-blue-500/50 transition-all shadow-inner" />
+          </div>
+        </div>
+
+        <div class="h-px bg-white/5 my-2"></div>
+
+        <button onclick="window.saveAiConfigSelf()" class="w-full p-5 bg-blue-600 hover:bg-blue-500 rounded-2xl text-xs font-black uppercase text-white transition-all shadow-lg shadow-blue-900/20 active:scale-95">
+          💾 SALVAR CONFIGURAÇÕES
+        </button>
+
+        <p class="text-[8px] text-slate-600 text-center italic font-medium">
+          Dica: Use chaves próprias para evitar limites de token do servidor público.
+        </p>
+      </div>
+    `;
+
+    window.saveAiConfigSelf = () => {
+      const gKey = document.getElementById('geminiKeyInput')?.value;
+      const grKey = document.getElementById('groqKeyInput')?.value;
+      
+      localStorage.setItem('GGPRO_GEMINI_KEY', gKey || '');
+      localStorage.setItem('GGPRO_GROQ_KEY', grKey || '');
+      
+      window.toastManager?.show('Configurado', 'Chaves de IA atualizadas com sucesso.', 'success');
+      this.close();
+    };
+
+    this.open(content, 'Configuração de IA Ultra');
   }
 }
 
