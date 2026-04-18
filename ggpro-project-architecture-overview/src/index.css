@@ -1,0 +1,166 @@
+@import "tailwindcss";
+
+/* ============================================
+   GGPro — Design System v2.0
+   Broadcast-First, Mobile-First
+   ============================================ */
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    touch-action: manipulation;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    background: #000;
+    color: #fff;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', system-ui, sans-serif;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
+  }
+
+  #root {
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Prevent zoom on iOS */
+  input, textarea, select, button {
+    font-size: 16px !important;
+    border-radius: 0;
+  }
+
+  /* Safe areas */
+  .safe-top { padding-top: env(safe-area-inset-top, 0px); }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .safe-left { padding-left: env(safe-area-inset-left, 0px); }
+  .safe-right { padding-right: env(safe-area-inset-right, 0px); }
+}
+
+/* ============================================
+   CUSTOM SCROLLBAR
+   ============================================ */
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  .thin-scrollbar::-webkit-scrollbar { width: 3px; height: 3px; }
+  .thin-scrollbar::-webkit-scrollbar-track { background: transparent; }
+  .thin-scrollbar::-webkit-scrollbar-thumb { 
+    background: rgba(255,255,255,0.15); 
+    border-radius: 10px; 
+  }
+}
+
+/* ============================================
+   ANIMATIONS
+   ============================================ */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes goalFlash {
+  0%, 100% { background-color: transparent; }
+  50% { background-color: rgba(250, 204, 21, 0.3); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+@keyframes ripple {
+  to { transform: scale(2); opacity: 0; }
+}
+
+.animate-slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+.animate-slide-down { animation: slideDown 0.25s ease-out; }
+.animate-fade-in { animation: fadeIn 0.2s ease-out; }
+.animate-scale-in { animation: scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+.animate-pulse-live { animation: pulse 1.5s ease-in-out infinite; }
+.animate-goal-flash { animation: goalFlash 0.4s ease-in-out 3; }
+.animate-shake { animation: shake 0.4s ease-in-out; }
+
+/* ============================================
+   DESIGN TOKENS
+   ============================================ */
+:root {
+  /* Backgrounds */
+  --bg-primary: #000;
+  --bg-secondary: #0a0a0a;
+  --bg-tertiary: #141414;
+  --bg-card: #1a1a1a;
+  
+  /* Text */
+  --text-primary: #fff;
+  --text-secondary: #a0a0a0;
+  --text-muted: #525252;
+  
+  /* Accents */
+  --accent-home: #22c55e;
+  --accent-away: #f97316;
+  --accent-live: #facc15;
+  
+  /* Event Colors */
+  --event-goal: #facc15;
+  --event-yellow: #fbbf24;
+  --event-red: #ef4444;
+  --event-sub: #3b82f6;
+  --event-foul: #f97316;
+  --event-corner: #06b6d4;
+  --event-var: #a855f7;
+  --event-offside: #ec4899;
+  
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 24px;
+  
+  /* Touch targets */
+  --touch-min: 44px;
+  --touch-comfortable: 56px;
+  --touch-large: 64px;
+  
+  /* Border radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+}

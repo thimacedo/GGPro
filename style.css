@@ -2,35 +2,56 @@
 
 :root {
   /* Cores Profissionais - Inspiradas em La Liga e broadcast moderno */
-  --bg-main: #0f172a;
-  --bg-surface: #1e293b;
-  --bg-accent: #334155;
+  --bg-main: #020617;
+  --bg-surface: #0f172a;
+  --bg-accent: #1e293b;
   --primary: #3b82f6;
-  --secondary: #94a3b8;
+  --secondary: #64748b;
   --text-main: #f8fafc;
   --text-muted: #94a3b8;
-  --border: rgba(255, 255, 255, 0.1);
+  --border: rgba(255, 255, 255, 0.06);
   
   --red-500: #ef4444;
   --emerald-500: #10b981;
   --amber-500: #f59e0b;
+  --live-accent: #fbbf24;
 
   /* Tokens de Layout */
+  --radius-sm: 8px;
   --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-glow: 0 0 20px rgba(59, 130, 246, 0.3);
+  --radius-lg: 20px;
+  --radius-xl: 32px;
+  --radius-full: 9999px;
+  
+  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --shadow-glow: 0 0 30px rgba(59, 130, 246, 0.2);
   
   --font-mono: 'JetBrains Mono', monospace;
-  --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+/* Animações de Broadcast */
+@keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pulseLive { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(0.95); } }
+@keyframes goalFlash { 0%, 100% { background: transparent; } 50% { background: rgba(251, 191, 36, 0.2); } }
+
+.animate-slide-up { animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.animate-fade-in { animation: fadeIn 0.3s ease-out forwards; }
+.animate-pulse-live { animation: pulseLive 2s infinite ease-in-out; }
+
+/* Scrollbar Customizada */
+.custom-scrollbar::-webkit-scrollbar { width: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--secondary); }
 
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
   -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {

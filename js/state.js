@@ -31,6 +31,11 @@ class MatchState {
       // Técnico/comissão
       homeCoach: '',
       awayCoach: '',
+      // NOVOS CAMPOS v6.0
+      quickNotes: [],
+      possession: { home: 50, away: 50 },
+      possessionHistory: [], // Histórico para gráfico de domínio
+      matchHistory: [] // Lista de IDs de partidas salvas
     };
 
     if (saved) {
@@ -652,6 +657,12 @@ class MatchState {
       report += `\n`;
     }
 
+    if (state.quickNotes && state.quickNotes.length > 0) {
+      report += `📝 ANOTAÇÕES TÉCNICAS:\n`;
+      state.quickNotes.forEach(n => { report += `  ${n.minute}' [${n.period}] - ${n.text}\n`; });
+      report += `\n`;
+    }
+
     if (others.length > 0) {
       report += `📋 OUTROS EVENTOS:\n`;
       others.forEach(o => { report += `  ${o.minute}' - ${o.description}\n`; });
@@ -659,7 +670,58 @@ class MatchState {
 
     return report;
   }
+
+  // --- MÉTODOS v6.0 ---
+  addQuickNote(text) {
+    const now = Date.now();
+    const currentMs = this.state.timeElapsed + (this.state.timerStartedAt ? now - this.state.timerStartedAt : 0);
+    const minute = Math.floor(currentMs / 60000);
+    
+    const note = {
+      id: genId(),
+      text,
+      minute,
+      period: this.state.period,
+      timestamp: now
+    };
+    
+    this.setState(prev => ({
+      quickNotes: [...(prev.quickNotes || []), note]
+    }));
+  }
+
+  removeQuickNote(id) {
+    this.setState(prev => ({
+      quickNotes: (prev.quickNotes || []).filter(n => n.id !== id)
+    }));
+  }
+
+  updatePossession(homePercent) {
+    const awayPercent = 100 - homePercent;
+    this.setState({
+      possession: { home: homePercent, away: awayPercent }
+    });
+  }
+
+  saveMatchToHistory() {
+    const history = JSON.parse(localStorage.getItem('GGPRO_MATCH_HISTORY') || '[]');
+    const matchData = {
+      id: genId(),
+      date: new Date().toISOString(),
+      details: { ...this.state.matchDetails },
+      teams: { home: this.state.homeTeam.name, away: this.state.awayTeam.name },
+      score: { ...this.state.score },
+      state: JSON.parse(JSON.stringify(this.state))
+    };
+    
+    history.push(matchData);
+    localStorage.setItem('GGPRO_MATCH_HISTORY', JSON.stringify(history.slice(-20))); // Mantém últimas 20
+    this.setState({ matchHistory: history.map(m => m.id) });
+  }
 }
+
+// Helper externo
+const genId = () => crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
 
 const matchState = new MatchState();
 export default matchState;
