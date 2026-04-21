@@ -6,7 +6,7 @@ import { pressureService } from '../js/services/pressureService.js';
 import matchState from '../js/state.js';
 
 // Importar tudo de gemini para mockar
-import * as gemini from '../js/services/gemini.js?v=2';
+import * as gemini from '../js/services/gemini-api.js';
 
 // Spy no método callAI
 const callAISpy = vi.spyOn(gemini, 'callAI').mockImplementation(() => Promise.resolve(JSON.stringify({

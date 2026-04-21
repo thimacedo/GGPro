@@ -420,7 +420,7 @@ class ModalManager {
         if (lines.length > 3) {
           window.toastManager?.show(`IA ${teamName}`, 'Processando lista...', 'ai');
           try {
-            const { processTextForPlayers } = await import('../services/gemini.js?v=2');
+            const { processTextForPlayers } = await import('../services/gemini-api.js');
             const result = await processTextForPlayers(text);
             if (Array.isArray(result) && result.length > 0) {
               const teamKey = teamId === 'home' ? 'homeTeam' : 'awayTeam';
@@ -517,7 +517,7 @@ class ModalManager {
         const reader = new FileReader();
         reader.onloadend = async () => {
           const prompt = `Extraia dados do banner da partida: competição, times, estádio, data, hora. Formato JSON: {"competition":"...","stadium":"...","date":"...","homeTeam":"...","awayTeam":"..."}`;
-          const { callBannerAI } = await import('../services/gemini.js?v=2');
+          const { callBannerAI } = await import('../services/gemini-api.js');
           const text = await callBannerAI(reader.result);
           const parsed = cleanAndParseJSON(text);
           matchState.setState(prev => ({

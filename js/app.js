@@ -9,10 +9,12 @@ import { fieldManager } from './components/field.js';
 import { statsManager } from './components/stats.js';
 import { renderVoiceHud } from './components/voice-hud.js';
 import { renderPressureGauge } from './components/pressure-gauge.js';
+import { renderTimelineEvent } from './components/timeline.js';
+import { renderPlayerLists } from './components/details.js';
 import { voice } from './services/voice.js';
 import { pressureService } from './services/pressureService.js';
 import { obsService } from './services/obsService.js';
-import { processImageForPlayers, generateMatchReport, parseRegulationDocument } from './services/gemini.js?v=2';
+import { processImageForPlayers, generateMatchReport, parseRegulationDocument } from './services/gemini-api.js';
 import { FORMATIONS, TEAM_ABBREVIATIONS, BROADCAST_THEMES } from './constants.js';
 
 // Expor FORMATIONS globalmente para modais

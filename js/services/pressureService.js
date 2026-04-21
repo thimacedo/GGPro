@@ -2,7 +2,7 @@
 // Usa IA para interpretar o domínio de jogo baseado em eventos recentes.
 
 import matchState from '../state.js';
-import { callAI } from './gemini.js?v=2';
+import { callAI } from './gemini-api.js';
 
 class PressureService {
   constructor() {
