@@ -1,7 +1,7 @@
 // js/services/obsService.js - Integração Narrador Pro & OBS Studio v1.0
 // Automatiza troca de cenas e elementos visuais no OBS via WebSocket.
 
-import OBSWebSocket from 'https://cdn.jsdelivr.net/npm/obs-websocket-js@5.0.5/+esm';
+import OBSWebSocket from './obs-ws.js';
 import { toastManager } from '../components/toasts.js';
 
 class OBSService {
