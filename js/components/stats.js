@@ -46,7 +46,7 @@ class StatsManager {
           <div class="flex items-center justify-between mb-12 pb-8 border-b border-white/5">
             <div class="flex flex-col items-center gap-4 w-1/3">
               <div class="w-16 h-16 md:w-20 md:h-20 rounded-[2rem] flex items-center justify-center text-2xl md:text-3xl font-black shadow-2xl text-white border-2 border-white/10" style="background-color: ${state.homeTeam.color}">
-                ${state.homeTeam.shortName.substring(0, 1)}
+                ${(state.homeTeam.shortName || 'M').substring(0, 1)}
               </div>
               <span class="text-white font-black uppercase text-[10px] md:text-xs text-center tracking-widest">${state.homeTeam.name}</span>
             </div>
@@ -67,7 +67,7 @@ class StatsManager {
             
             <div class="flex flex-col items-center gap-4 w-1/3">
               <div class="w-16 h-16 md:w-20 md:h-20 rounded-[2rem] flex items-center justify-center text-2xl md:text-3xl font-black shadow-2xl text-white border-2 border-white/10" style="background-color: ${state.awayTeam.color}">
-                ${state.awayTeam.shortName.substring(0, 1)}
+                ${(state.awayTeam.shortName || 'V').substring(0, 1)}
               </div>
               <span class="text-white font-black uppercase text-[10px] md:text-xs text-center tracking-widest">${state.awayTeam.name}</span>
             </div>

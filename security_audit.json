@@ -1,0 +1,1099 @@
+﻿{
+  "auditReportVersion": 2,
+  "vulnerabilities": {
+    "@tootallnate/once": {
+      "name": "@tootallnate/once",
+      "severity": "low",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1113977,
+          "name": "@tootallnate/once",
+          "dependency": "@tootallnate/once",
+          "title": "@tootallnate/once vulnerable to Incorrect Control Flow Scoping",
+          "url": "https://github.com/advisories/GHSA-vpq2-c234-7xj6",
+          "severity": "low",
+          "cwe": [
+            "CWE-705"
+          ],
+          "cvss": {
+            "score": 3.3,
+            "vectorString": "CVSS:3.1/AV:L/AC:L/PR:L/UI:N/S:U/C:N/I:N/A:L"
+          },
+          "range": "<3.0.1"
+        }
+      ],
+      "effects": [
+        "@vercel/fun"
+      ],
+      "range": "<3.0.1",
+      "nodes": [
+        "node_modules/@tootallnate/once"
+      ],
+      "fixAvailable": {
+        "name": "vercel",
+        "version": "32.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@vercel/backends": {
+      "name": "@vercel/backends",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@vercel/build-utils",
+        "path-to-regexp",
+        "srvx"
+      ],
+      "effects": [
+        "@vercel/cervel",
+        "vercel"
+      ],
+      "range": "*",
+      "nodes": [
+        "node_modules/@vercel/backends"
+      ],
+      "fixAvailable": {
+        "name": "vercel",
+        "version": "32.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@vercel/build-utils": {
+      "name": "@vercel/build-utils",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@vercel/python-analysis"
+      ],
+      "effects": [
+        "@vercel/backends",
+        "@vercel/gatsby-plugin-vercel-builder",
+        "@vercel/node",
+        "vercel"
+      ],
+      "range": ">=13.3.1",
+      "nodes": [
+        "node_modules/@vercel/build-utils"
+      ],
+      "fixAvailable": {
+        "name": "vercel",
+        "version": "32.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@vercel/cervel": {
+      "name": "@vercel/cervel",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@vercel/backends"
+      ],
+      "effects": [
+        "@vercel/express"
+      ],
+      "range": ">=0.0.12",
+      "nodes": [
+        "node_modules/@vercel/cervel"
+      ],
+      "fixAvailable": {
+        "name": "vercel",
+        "version": "32.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@vercel/elysia": {
+      "name": "@vercel/elysia",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@vercel/node",
+        "@vercel/static-config"
+      ],
+      "effects": [
+        "vercel"
+      ],
+      "range": "*",
+      "nodes": [
+        "node_modules/@vercel/elysia"
+      ],
+      "fixAvailable": {
+        "name": "vercel",
+        "version": "32.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@vercel/express": {
+      "name": "@vercel/express",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@vercel/cervel",
+        "@vercel/node",
+        "@vercel/static-config",
+        "path-to-regexp"
+      ],
+      "effects": [
+        "vercel"
+      ],
+      "range": "*",
+      "nodes": [
+        "node_modules/@vercel/express"
+      ],
+      "fixAvailable": {
+        "name": "vercel",
+        "version": "32.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@vercel/fastify": {
+      "name": "@vercel/fastify",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@vercel/node",
+        "@vercel/static-config"
+      ],
+      "effects": [
+        "vercel"
+      ],
+      "range": "*",
+      "nodes": [
+        "node_modules/@vercel/fastify"
+      ],
+      "fixAvailable": {
+        "name": "vercel",
+        "version": "32.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@vercel/fun": {
+      "name": "@vercel/fun",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@tootallnate/once",
+        "path-to-regexp",
+        "tar"
+      ],
+      "effects": [
+        "vercel"
+      ],
+      "range": "*",
+      "nodes": [
+        "node_modules/@vercel/fun"
+      ],
+      "fixAvailable": {
+        "name": "vercel",
+        "version": "32.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@vercel/gatsby-plugin-vercel-builder": {
+      "name": "@vercel/gatsby-plugin-vercel-builder",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@vercel/build-utils"
+      ],
+      "effects": [
+        "@vercel/static-build"
+      ],
+      "range": ">=2.0.130",
+      "nodes": [
+        "node_modules/@vercel/gatsby-plugin-vercel-builder"
+      ],
+      "fixAvailable": {
+        "name": "vercel",
+        "version": "32.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@vercel/h3": {
+      "name": "@vercel/h3",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@vercel/node",
+        "@vercel/static-config"
+      ],
+      "effects": [
+        "vercel"
+      ],
+      "range": "*",
+      "nodes": [
+        "node_modules/@vercel/h3"
+      ],
+      "fixAvailable": {
+        "name": "vercel",
+        "version": "32.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@vercel/hono": {
+      "name": "@vercel/hono",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@vercel/node",
+        "@vercel/static-config",
+        "path-to-regexp"
+      ],
+      "effects": [
+        "vercel"
+      ],
+      "range": "*",
+      "nodes": [
+        "node_modules/@vercel/hono"
+      ],
+      "fixAvailable": {
+        "name": "vercel",
+        "version": "32.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@vercel/hydrogen": {
+      "name": "@vercel/hydrogen",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "@vercel/static-config"
+      ],
+      "effects": [
+        "vercel"
+      ],
+      "range": ">=1.0.1",
+      "nodes": [
+        "node_modules/@vercel/hydrogen"
+      ],
+      "fixAvailable": {
+        "name": "vercel",
+        "version": "32.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@vercel/koa": {
+      "name": "@vercel/koa",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@vercel/node",
+        "@vercel/static-config"
+      ],
+      "effects": [
+        "vercel"
+      ],
+      "range": "*",
+      "nodes": [
+        "node_modules/@vercel/koa"
+      ],
+      "fixAvailable": {
+        "name": "vercel",
+        "version": "32.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@vercel/nestjs": {
+      "name": "@vercel/nestjs",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@vercel/node",
+        "@vercel/static-config"
+      ],
+      "effects": [
+        "vercel"
+      ],
+      "range": "*",
+      "nodes": [
+        "node_modules/@vercel/nestjs"
+      ],
+      "fixAvailable": {
+        "name": "vercel",
+        "version": "32.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@vercel/node": {
+      "name": "@vercel/node",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@vercel/build-utils",
+        "@vercel/static-config",
+        "path-to-regexp",
+        "undici"
+      ],
+      "effects": [
+        "@vercel/elysia",
+        "@vercel/express",
+        "@vercel/fastify",
+        "@vercel/h3",
+        "@vercel/hono",
+        "@vercel/koa",
+        "@vercel/nestjs",
+        "vercel"
+      ],
+      "range": ">=2.1.1-canary.0",
+      "nodes": [
+        "node_modules/@vercel/node"
+      ],
+      "fixAvailable": {
+        "name": "vercel",
+        "version": "32.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@vercel/python": {
+      "name": "@vercel/python",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@vercel/python-analysis"
+      ],
+      "effects": [
+        "vercel"
+      ],
+      "range": "6.11.0 - 6.12.0 || >=6.14.1",
+      "nodes": [
+        "node_modules/@vercel/python"
+      ],
+      "fixAvailable": {
+        "name": "vercel",
+        "version": "32.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@vercel/python-analysis": {
+      "name": "@vercel/python-analysis",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "minimatch",
+        "smol-toml"
+      ],
+      "effects": [
+        "@vercel/build-utils",
+        "@vercel/python"
+      ],
+      "range": "*",
+      "nodes": [
+        "node_modules/@vercel/python-analysis"
+      ],
+      "fixAvailable": {
+        "name": "vercel",
+        "version": "32.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@vercel/redwood": {
+      "name": "@vercel/redwood",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "@vercel/static-config"
+      ],
+      "effects": [
+        "vercel"
+      ],
+      "range": ">=2.1.0",
+      "nodes": [
+        "node_modules/@vercel/redwood"
+      ],
+      "fixAvailable": {
+        "name": "vercel",
+        "version": "32.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@vercel/remix-builder": {
+      "name": "@vercel/remix-builder",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@vercel/static-config",
+        "path-to-regexp"
+      ],
+      "effects": [
+        "vercel"
+      ],
+      "range": "*",
+      "nodes": [
+        "node_modules/@vercel/remix-builder"
+      ],
+      "fixAvailable": {
+        "name": "vercel",
+        "version": "32.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@vercel/rust": {
+      "name": "@vercel/rust",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "smol-toml"
+      ],
+      "effects": [
+        "vercel"
+      ],
+      "range": ">=1.0.6",
+      "nodes": [
+        "node_modules/@vercel/rust"
+      ],
+      "fixAvailable": {
+        "name": "vercel",
+        "version": "32.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@vercel/static-build": {
+      "name": "@vercel/static-build",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        "@vercel/gatsby-plugin-vercel-builder",
+        "@vercel/static-config"
+      ],
+      "effects": [
+        "vercel"
+      ],
+      "range": "1.3.31 || >=2.0.7",
+      "nodes": [
+        "node_modules/@vercel/static-build"
+      ],
+      "fixAvailable": {
+        "name": "vercel",
+        "version": "32.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "@vercel/static-config": {
+      "name": "@vercel/static-config",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        "ajv"
+      ],
+      "effects": [
+        "@vercel/hydrogen",
+        "@vercel/node",
+        "@vercel/redwood",
+        "@vercel/remix-builder",
+        "@vercel/static-build"
+      ],
+      "range": "*",
+      "nodes": [
+        "node_modules/@vercel/static-config"
+      ],
+      "fixAvailable": {
+        "name": "vercel",
+        "version": "32.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "ajv": {
+      "name": "ajv",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1113715,
+          "name": "ajv",
+          "dependency": "ajv",
+          "title": "ajv has ReDoS when using `$data` option",
+          "url": "https://github.com/advisories/GHSA-2g4f-4pwh-qvx6",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-400",
+            "CWE-1333"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": ">=7.0.0-alpha.0 <8.18.0"
+        }
+      ],
+      "effects": [
+        "@vercel/static-config"
+      ],
+      "range": "7.0.0-alpha.0 - 8.17.1",
+      "nodes": [
+        "node_modules/@vercel/static-config/node_modules/ajv"
+      ],
+      "fixAvailable": {
+        "name": "vercel",
+        "version": "32.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "basic-ftp": {
+      "name": "basic-ftp",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1116454,
+          "name": "basic-ftp",
+          "dependency": "basic-ftp",
+          "title": "basic-ftp: Incomplete CRLF Injection Protection Allows Arbitrary FTP Command Execution via Credentials and MKD Commands",
+          "url": "https://github.com/advisories/GHSA-6v7q-wjvx-w8wg",
+          "severity": "high",
+          "cwe": [
+            "CWE-93"
+          ],
+          "cvss": {
+            "score": 8.2,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:H/A:L"
+          },
+          "range": "<=5.2.1"
+        },
+        {
+          "source": 1116478,
+          "name": "basic-ftp",
+          "dependency": "basic-ftp",
+          "title": "basic-ftp has FTP Command Injection via CRLF",
+          "url": "https://github.com/advisories/GHSA-chqc-8p9q-pq6q",
+          "severity": "high",
+          "cwe": [
+            "CWE-93"
+          ],
+          "cvss": {
+            "score": 8.6,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:H/A:L"
+          },
+          "range": "=5.2.0"
+        },
+        {
+          "source": 1116720,
+          "name": "basic-ftp",
+          "dependency": "basic-ftp",
+          "title": "basic-ftp vulnerable to denial of service via unbounded memory consumption in Client.list()",
+          "url": "https://github.com/advisories/GHSA-rp42-5vxx-qpwr",
+          "severity": "high",
+          "cwe": [
+            "CWE-400",
+            "CWE-770"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": "<=5.2.2"
+        }
+      ],
+      "effects": [],
+      "range": "<=5.2.2",
+      "nodes": [
+        "node_modules/basic-ftp"
+      ],
+      "fixAvailable": true
+    },
+    "minimatch": {
+      "name": "minimatch",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1113466,
+          "name": "minimatch",
+          "dependency": "minimatch",
+          "title": "minimatch has a ReDoS via repeated wildcards with non-matching literal in pattern",
+          "url": "https://github.com/advisories/GHSA-3ppc-4f35-3m26",
+          "severity": "high",
+          "cwe": [
+            "CWE-1333"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": ">=10.0.0 <10.2.1"
+        },
+        {
+          "source": 1113545,
+          "name": "minimatch",
+          "dependency": "minimatch",
+          "title": "minimatch has ReDoS: matchOne() combinatorial backtracking via multiple non-adjacent GLOBSTAR segments",
+          "url": "https://github.com/advisories/GHSA-7r86-cg39-jmmj",
+          "severity": "high",
+          "cwe": [
+            "CWE-407"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": ">=10.0.0 <10.2.3"
+        },
+        {
+          "source": 1113553,
+          "name": "minimatch",
+          "dependency": "minimatch",
+          "title": "minimatch ReDoS: nested *() extglobs generate catastrophically backtracking regular expressions",
+          "url": "https://github.com/advisories/GHSA-23c5-xmqv-rm74",
+          "severity": "high",
+          "cwe": [
+            "CWE-1333"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": ">=10.0.0 <10.2.3"
+        }
+      ],
+      "effects": [
+        "@vercel/python-analysis"
+      ],
+      "range": "10.0.0 - 10.2.2",
+      "nodes": [
+        "node_modules/@vercel/python-analysis/node_modules/minimatch"
+      ],
+      "fixAvailable": {
+        "name": "vercel",
+        "version": "32.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "path-to-regexp": {
+      "name": "path-to-regexp",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1101846,
+          "name": "path-to-regexp",
+          "dependency": "path-to-regexp",
+          "title": "path-to-regexp outputs backtracking regular expressions",
+          "url": "https://github.com/advisories/GHSA-9wv6-86v2-598j",
+          "severity": "high",
+          "cwe": [
+            "CWE-1333"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": ">=4.0.0 <6.3.0"
+        },
+        {
+          "source": 1115573,
+          "name": "path-to-regexp",
+          "dependency": "path-to-regexp",
+          "title": "path-to-regexp vulnerable to Denial of Service via sequential optional groups",
+          "url": "https://github.com/advisories/GHSA-j3q9-mxjg-w52f",
+          "severity": "high",
+          "cwe": [
+            "CWE-400",
+            "CWE-1333"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": ">=8.0.0 <8.4.0"
+        },
+        {
+          "source": 1115582,
+          "name": "path-to-regexp",
+          "dependency": "path-to-regexp",
+          "title": "path-to-regexp vulnerable to Regular Expression Denial of Service via multiple wildcards",
+          "url": "https://github.com/advisories/GHSA-27v5-c462-wpq7",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-1333"
+          ],
+          "cvss": {
+            "score": 5.9,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": ">=8.0.0 <8.4.0"
+        }
+      ],
+      "effects": [
+        "@vercel/backends",
+        "@vercel/express",
+        "@vercel/fun",
+        "@vercel/hono",
+        "@vercel/node",
+        "@vercel/remix-builder"
+      ],
+      "range": "4.0.0 - 6.2.2 || 8.0.0 - 8.3.0",
+      "nodes": [
+        "node_modules/@vercel/backends/node_modules/path-to-regexp",
+        "node_modules/@vercel/express/node_modules/path-to-regexp",
+        "node_modules/@vercel/fun/node_modules/path-to-regexp",
+        "node_modules/@vercel/hono/node_modules/path-to-regexp",
+        "node_modules/@vercel/node/node_modules/path-to-regexp",
+        "node_modules/@vercel/remix-builder/node_modules/path-to-regexp"
+      ],
+      "fixAvailable": {
+        "name": "vercel",
+        "version": "32.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "picomatch": {
+      "name": "picomatch",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1115551,
+          "name": "picomatch",
+          "dependency": "picomatch",
+          "title": "Picomatch: Method Injection in POSIX Character Classes causes incorrect Glob Matching",
+          "url": "https://github.com/advisories/GHSA-3v7f-55p6-f55p",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-1321"
+          ],
+          "cvss": {
+            "score": 5.3,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:N"
+          },
+          "range": ">=4.0.0 <4.0.4"
+        },
+        {
+          "source": 1115554,
+          "name": "picomatch",
+          "dependency": "picomatch",
+          "title": "Picomatch has a ReDoS vulnerability via extglob quantifiers",
+          "url": "https://github.com/advisories/GHSA-c2c7-rcm5-vvqj",
+          "severity": "high",
+          "cwe": [
+            "CWE-1333"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": ">=4.0.0 <4.0.4"
+        }
+      ],
+      "effects": [],
+      "range": "4.0.0 - 4.0.3",
+      "nodes": [
+        "node_modules/picomatch"
+      ],
+      "fixAvailable": true
+    },
+    "smol-toml": {
+      "name": "smol-toml",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1115393,
+          "name": "smol-toml",
+          "dependency": "smol-toml",
+          "title": "smol-toml: Denial of Service via TOML documents containing thousands of consecutive commented lines",
+          "url": "https://github.com/advisories/GHSA-v3rj-xjv7-4jmq",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-674"
+          ],
+          "cvss": {
+            "score": 5.3,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:L"
+          },
+          "range": "<1.6.1"
+        }
+      ],
+      "effects": [
+        "@vercel/rust"
+      ],
+      "range": "<1.6.1",
+      "nodes": [
+        "node_modules/smol-toml"
+      ],
+      "fixAvailable": {
+        "name": "vercel",
+        "version": "32.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "srvx": {
+      "name": "srvx",
+      "severity": "moderate",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1115537,
+          "name": "srvx",
+          "dependency": "srvx",
+          "title": "srvx is vulnerable to middleware bypass via absolute URI in request line ",
+          "url": "https://github.com/advisories/GHSA-p36q-q72m-gchr",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-706"
+          ],
+          "cvss": {
+            "score": 4.8,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:N"
+          },
+          "range": "<0.11.13"
+        }
+      ],
+      "effects": [
+        "@vercel/backends"
+      ],
+      "range": "<0.11.13",
+      "nodes": [
+        "node_modules/srvx"
+      ],
+      "fixAvailable": {
+        "name": "vercel",
+        "version": "32.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "tar": {
+      "name": "tar",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1113375,
+          "name": "tar",
+          "dependency": "tar",
+          "title": "Arbitrary File Read/Write via Hardlink Target Escape Through Symlink Chain in node-tar Extraction",
+          "url": "https://github.com/advisories/GHSA-83g3-92jg-28cx",
+          "severity": "high",
+          "cwe": [
+            "CWE-22"
+          ],
+          "cvss": {
+            "score": 7.1,
+            "vectorString": "CVSS:3.1/AV:L/AC:L/PR:N/UI:R/S:U/C:H/I:H/A:N"
+          },
+          "range": "<7.5.8"
+        },
+        {
+          "source": 1114200,
+          "name": "tar",
+          "dependency": "tar",
+          "title": "tar has Hardlink Path Traversal via Drive-Relative Linkpath",
+          "url": "https://github.com/advisories/GHSA-qffp-2rhf-9h96",
+          "severity": "high",
+          "cwe": [
+            "CWE-22",
+            "CWE-59"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": "<=7.5.9"
+        },
+        {
+          "source": 1114302,
+          "name": "tar",
+          "dependency": "tar",
+          "title": "node-tar Symlink Path Traversal via Drive-Relative Linkpath",
+          "url": "https://github.com/advisories/GHSA-9ppj-qmqm-q256",
+          "severity": "high",
+          "cwe": [
+            "CWE-22"
+          ],
+          "cvss": {
+            "score": 0,
+            "vectorString": null
+          },
+          "range": "<=7.5.10"
+        }
+      ],
+      "effects": [],
+      "range": "<=7.5.10",
+      "nodes": [
+        "node_modules/tar"
+      ],
+      "fixAvailable": true
+    },
+    "undici": {
+      "name": "undici",
+      "severity": "high",
+      "isDirect": false,
+      "via": [
+        {
+          "source": 1101610,
+          "name": "undici",
+          "dependency": "undici",
+          "title": "Use of Insufficiently Random Values in undici",
+          "url": "https://github.com/advisories/GHSA-c76h-2ccp-4975",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-330"
+          ],
+          "cvss": {
+            "score": 6.8,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:R/S:U/C:H/I:H/A:N"
+          },
+          "range": ">=4.5.0 <5.28.5"
+        },
+        {
+          "source": 1112496,
+          "name": "undici",
+          "dependency": "undici",
+          "title": "Undici has an unbounded decompression chain in HTTP responses on Node.js Fetch API via Content-Encoding leads to resource exhaustion",
+          "url": "https://github.com/advisories/GHSA-g9mf-h72j-4rw9",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-770"
+          ],
+          "cvss": {
+            "score": 5.9,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": "<6.23.0"
+        },
+        {
+          "source": 1113069,
+          "name": "undici",
+          "dependency": "undici",
+          "title": "undici Denial of Service attack via bad certificate data",
+          "url": "https://github.com/advisories/GHSA-cxrh-j4jr-qwg3",
+          "severity": "low",
+          "cwe": [
+            "CWE-401"
+          ],
+          "cvss": {
+            "score": 3.1,
+            "vectorString": "CVSS:3.1/AV:N/AC:H/PR:L/UI:N/S:U/C:N/I:N/A:L"
+          },
+          "range": "<5.29.0"
+        },
+        {
+          "source": 1114594,
+          "name": "undici",
+          "dependency": "undici",
+          "title": "Undici has an HTTP Request/Response Smuggling issue",
+          "url": "https://github.com/advisories/GHSA-2mjp-6q6p-2qxm",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-444"
+          ],
+          "cvss": {
+            "score": 6.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:L/A:L"
+          },
+          "range": "<6.24.0"
+        },
+        {
+          "source": 1114638,
+          "name": "undici",
+          "dependency": "undici",
+          "title": "Undici has Unbounded Memory Consumption in WebSocket permessage-deflate Decompression",
+          "url": "https://github.com/advisories/GHSA-vrm6-8vpv-qv8q",
+          "severity": "high",
+          "cwe": [
+            "CWE-409"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": "<6.24.0"
+        },
+        {
+          "source": 1114640,
+          "name": "undici",
+          "dependency": "undici",
+          "title": "Undici has Unhandled Exception in WebSocket Client Due to Invalid server_max_window_bits Validation",
+          "url": "https://github.com/advisories/GHSA-v9p9-hfj2-hcw8",
+          "severity": "high",
+          "cwe": [
+            "CWE-248"
+          ],
+          "cvss": {
+            "score": 7.5,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+          },
+          "range": "<6.24.0"
+        },
+        {
+          "source": 1114642,
+          "name": "undici",
+          "dependency": "undici",
+          "title": "Undici has CRLF Injection in undici via `upgrade` option",
+          "url": "https://github.com/advisories/GHSA-4992-7rv2-5pvq",
+          "severity": "moderate",
+          "cwe": [
+            "CWE-93"
+          ],
+          "cvss": {
+            "score": 4.6,
+            "vectorString": "CVSS:3.1/AV:N/AC:L/PR:L/UI:R/S:U/C:L/I:L/A:N"
+          },
+          "range": "<6.24.0"
+        }
+      ],
+      "effects": [
+        "@vercel/node"
+      ],
+      "range": "<=6.23.0",
+      "nodes": [
+        "node_modules/@vercel/node/node_modules/undici"
+      ],
+      "fixAvailable": {
+        "name": "vercel",
+        "version": "32.3.0",
+        "isSemVerMajor": true
+      }
+    },
+    "vercel": {
+      "name": "vercel",
+      "severity": "high",
+      "isDirect": true,
+      "via": [
+        "@vercel/backends",
+        "@vercel/build-utils",
+        "@vercel/elysia",
+        "@vercel/express",
+        "@vercel/fastify",
+        "@vercel/fun",
+        "@vercel/h3",
+        "@vercel/hono",
+        "@vercel/hydrogen",
+        "@vercel/koa",
+        "@vercel/nestjs",
+        "@vercel/node",
+        "@vercel/python",
+        "@vercel/redwood",
+        "@vercel/remix-builder",
+        "@vercel/rust",
+        "@vercel/static-build"
+      ],
+      "effects": [],
+      "range": "28.12.3 || >=28.17.0",
+      "nodes": [
+        "node_modules/vercel"
+      ],
+      "fixAvailable": {
+        "name": "vercel",
+        "version": "32.3.0",
+        "isSemVerMajor": true
+      }
+    }
+  },
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 1,
+      "moderate": 7,
+      "high": 24,
+      "critical": 0,
+      "total": 32
+    },
+    "dependencies": {
+      "prod": 3,
+      "dev": 439,
+      "optional": 144,
+      "peer": 3,
+      "peerOptional": 0,
+      "total": 441
+    }
+  }
+}

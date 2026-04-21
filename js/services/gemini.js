@@ -16,6 +16,33 @@ const getAiConfig = () => {
     };
 };
 
+/**
+ * PRÉ-PROCESSADOR DE IMAGEM (v2.0 - Low Light Optimization)
+ * Melhora contraste e brilho via Canvas antes do OCR.
+ */
+async function preprocessImage(file) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                
+                // Filtros de realce de texto
+                ctx.filter = 'grayscale(100%) contrast(1.5) brightness(1.2)';
+                ctx.drawImage(img, 0, 0);
+                
+                canvas.toBlob((blob) => resolve(blob || file), 'image/jpeg', 0.9);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
 // Tesseract.js OCR runner — roda direto no browser, zero custo
 async function extractTextFromImage(file) {
     if (typeof Tesseract === 'undefined') {
@@ -29,7 +56,10 @@ async function extractTextFromImage(file) {
         throw new Error('Tesseract.js indisponível. Sem capacidade de OCR.');
     }
 
-    const result = await Tesseract.recognize(file, 'por+eng', {
+    // Otimizar imagem para baixa iluminação
+    const processedFile = await preprocessImage(file);
+
+    const result = await Tesseract.recognize(processedFile, 'por+eng', {
         logger: m => {
             if (m.status === 'recognizing text' && window.toastManager) {
                 window.toastManager.show('Vision: OCR', `Lendo caligrafia: ${Math.round(m.progress * 100)}%`, 'ai');
@@ -104,7 +134,7 @@ async function callGroqDirect(prompt, key) {
 /**
  * ORQUESTRADOR DE CHAMADAS COM RESILIÊNCIA
  */
-async function callAI(prompt) {
+export async function callAI(prompt) {
     const config = getAiConfig();
     
     // Lista de tentativas (Fallback Cascade)

@@ -2,7 +2,7 @@
 // Modais: Player Actions, Sumula, PreMatch, Penalty, Coach, PlayerEdit, ImportList, EndGame, Report
 
 import matchState from '../state.js';
-import { processImageForPlayers, parseRegulationDocument } from '../services/gemini.js';
+import { processImageForPlayers, parseRegulationDocument } from '../services/gemini.js?v=2';
 
 class ModalManager {
   constructor() {
@@ -420,7 +420,7 @@ class ModalManager {
         if (lines.length > 3) {
           window.toastManager?.show(`IA ${teamName}`, 'Processando lista...', 'ai');
           try {
-            const { processTextForPlayers } = await import('../services/gemini.js');
+            const { processTextForPlayers } = await import('../services/gemini.js?v=2');
             const result = await processTextForPlayers(text);
             if (Array.isArray(result) && result.length > 0) {
               const teamKey = teamId === 'home' ? 'homeTeam' : 'awayTeam';
@@ -517,7 +517,7 @@ class ModalManager {
         const reader = new FileReader();
         reader.onloadend = async () => {
           const prompt = `Extraia dados do banner da partida: competição, times, estádio, data, hora. Formato JSON: {"competition":"...","stadium":"...","date":"...","homeTeam":"...","awayTeam":"..."}`;
-          const { callBannerAI } = await import('../services/gemini.js');
+          const { callBannerAI } = await import('../services/gemini.js?v=2');
           const text = await callBannerAI(reader.result);
           const parsed = cleanAndParseJSON(text);
           matchState.setState(prev => ({
@@ -748,10 +748,58 @@ class ModalManager {
       
       window.toastManager?.show('Configurado', 'Chaves de IA atualizadas com sucesso.', 'success');
       this.close();
-    };
+      };
 
-    this.open(content, 'Configuração de IA Ultra');
-  }
-}
+      this.open(content, 'Configurar Inteligência');
+      }
 
-export const modalManager = new ModalManager();
+      // ============================================================
+      // MATCH HISTORY GALLERY
+      // ============================================================
+      showMatchHistory() {
+      const index = JSON.parse(localStorage.getItem('GGPRO_MATCH_INDEX') || '[]');
+
+      window.loadSavedMatch = (id) => {
+      if (confirm('Carregar esta partida substituirá o jogo atual. Continuar?')) {
+        if (matchState.loadMatchFromHistory(id)) {
+          this.close();
+          window.render();
+          window.toastManager.show('Histórico', 'Partida carregada.', 'success');
+        }
+      }
+      };
+
+      window.deleteSavedMatch = (id) => {
+      if (confirm('Excluir permanentemente este registro?')) {
+        matchState.deleteMatchFromHistory(id);
+        this.showMatchHistory(); // Refresh
+      }
+      };
+
+      const content = `
+      <div class="flex flex-col gap-4">
+        ${index.length === 0 ? `
+          <div class="text-center py-10 text-slate-500 italic text-xs">Nenhuma partida salva encontrada...</div>
+        ` : index.map(m => `
+          <div class="p-4 bg-slate-800 border border-white/5 rounded-2xl flex flex-col gap-3">
+            <div class="flex justify-between items-start">
+              <div class="flex flex-col">
+                <span class="text-[8px] font-black text-blue-500 uppercase tracking-widest">${m.date}</span>
+                <span class="text-xs font-bold text-white mt-1">${m.teams.home} ${m.teams.score} ${m.teams.away}</span>
+                <span class="text-[9px] text-slate-500 mt-0.5">${m.details.competition || 'Amistoso'}</span>
+              </div>
+              <div class="flex gap-2">
+                <button onclick="loadSavedMatch('${m.id}')" class="p-2 bg-blue-600/20 text-blue-400 rounded-lg hover:bg-blue-600 hover:text-white transition-all text-xs">📂</button>
+                <button onclick="deleteSavedMatch('${m.id}')" class="p-2 bg-red-600/20 text-red-400 rounded-lg hover:bg-red-600 hover:text-white transition-all text-xs">🗑️</button>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+      `;
+
+      this.open(content, 'Histórico de Partidas');
+      }
+      }
+
+      export const modalManager = new ModalManager();

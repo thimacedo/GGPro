@@ -5,14 +5,20 @@
   "type": "module",
   "description": "Narrador Pro - Pure Vanilla JS Edition",
   "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
     "build": "echo 'Skipping build for Pure Vanilla JS architecture'",
     "start": "echo 'Serving static files from root'"
   },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
-    "@vercel/speed-insights": "^2.0.0"
+    "@vercel/speed-insights": "^2.0.0",
+    "obs-websocket-js": "^5.0.8"
   },
   "devDependencies": {
-    "vercel": "latest"
+    "@vitest/coverage-v8": "^4.1.5",
+    "jsdom": "^29.0.2",
+    "vercel": "latest",
+    "vitest": "^4.1.5"
   }
 }

@@ -64,7 +64,9 @@ class MatchState {
   }
 
   save() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state));
+    }
     this.notify();
   }
 
@@ -704,19 +706,51 @@ class MatchState {
   }
 
   saveMatchToHistory() {
-    const history = JSON.parse(localStorage.getItem('GGPRO_MATCH_HISTORY') || '[]');
+    const historyIndex = JSON.parse(localStorage.getItem('GGPRO_MATCH_INDEX') || '[]');
+    const matchId = genId();
     const matchData = {
-      id: genId(),
-      date: new Date().toISOString(),
+      id: matchId,
+      timestamp: Date.now(),
+      date: new Date().toLocaleString('pt-BR'),
       details: { ...this.state.matchDetails },
-      teams: { home: this.state.homeTeam.name, away: this.state.awayTeam.name },
-      score: { ...this.state.score },
-      state: JSON.parse(JSON.stringify(this.state))
+      teams: { 
+        home: this.state.homeTeam.name, 
+        away: this.state.awayTeam.name,
+        score: `${this.state.score.home} x ${this.state.score.away}`
+      }
     };
     
-    history.push(matchData);
-    localStorage.setItem('GGPRO_MATCH_HISTORY', JSON.stringify(history.slice(-20))); // Mantém últimas 20
-    this.setState({ matchHistory: history.map(m => m.id) });
+    // Salvar o corpo da partida em chave separada para não onerar o índice
+    localStorage.setItem(`GGPRO_MATCH_${matchId}`, JSON.stringify(this.state));
+    
+    // Atualizar índice (mantém as últimas 50 partidas)
+    const newIndex = [matchData, ...historyIndex].slice(0, 50);
+    localStorage.setItem('GGPRO_MATCH_INDEX', JSON.stringify(newIndex));
+    
+    this.setState({ matchHistory: newIndex.map(m => m.id) });
+    return matchId;
+  }
+
+  loadMatchFromHistory(matchId) {
+    const saved = localStorage.getItem(`GGPRO_MATCH_${matchId}`);
+    if (saved) {
+      try {
+        this.state = JSON.parse(saved);
+        this.save();
+        return true;
+      } catch (e) {
+        console.error("Erro ao carregar partida do histórico", e);
+      }
+    }
+    return false;
+  }
+
+  deleteMatchFromHistory(matchId) {
+    localStorage.removeItem(`GGPRO_MATCH_${matchId}`);
+    const index = JSON.parse(localStorage.getItem('GGPRO_MATCH_INDEX') || '[]');
+    const newIndex = index.filter(m => m.id !== matchId);
+    localStorage.setItem('GGPRO_MATCH_INDEX', JSON.stringify(newIndex));
+    this.setState({ matchHistory: newIndex.map(m => m.id) });
   }
 }
 

@@ -132,4 +132,11 @@ export const TEAM_ABBREVIATIONS = {
   'criciuma': 'CRI'
 };
 
+export const BROADCAST_THEMES = {
+  'classic': { id: 'theme-classic', name: 'Narrador Pro Classic', primary: '#3b82f6' },
+  'champions': { id: 'theme-champions', name: 'Champions League', primary: '#001c58' },
+  'brasileirao': { id: 'theme-brasileirao', name: 'Brasileirão Assaí', primary: '#004d2c' },
+  'premier': { id: 'theme-premier', name: 'Premier League', primary: '#3d195b' }
+};
+
 export const PERIODS = ['PRE_MATCH', '1T', 'INTERVAL', '2T', '1ET', '2ET', 'PENALTIES', 'FINISHED'];

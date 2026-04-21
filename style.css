@@ -1,34 +1,75 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap');
-
 :root {
-  /* Cores Profissionais - Inspiradas em La Liga e broadcast moderno */
+  /* Cores Base - Fallback */
+  --primary: #3b82f6;
+  --primary-glow: rgba(59, 130, 246, 0.5);
+  --accent: #fbbf24;
   --bg-main: #020617;
   --bg-surface: #0f172a;
-  --bg-accent: #1e293b;
-  --primary: #3b82f6;
-  --secondary: #64748b;
-  --text-main: #f8fafc;
-  --text-muted: #94a3b8;
   --border: rgba(255, 255, 255, 0.06);
+  --text-main: #f8fafc;
   
-  --red-500: #ef4444;
-  --emerald-500: #10b981;
-  --amber-500: #f59e0b;
-  --live-accent: #fbbf24;
-
-  /* Tokens de Layout */
-  --radius-sm: 8px;
-  --radius-md: 12px;
   --radius-lg: 20px;
   --radius-xl: 32px;
-  --radius-full: 9999px;
-  
-  --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  --shadow-glow: 0 0 30px rgba(59, 130, 246, 0.2);
-  
-  --font-mono: 'JetBrains Mono', monospace;
   --transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
+
+/* SKIN: CHAMPIONS LEAGUE (Dark Blue & Star Gold) */
+.theme-champions {
+  --primary: #001c58;
+  --primary-glow: rgba(0, 28, 88, 0.6);
+  --accent: #d4af37;
+  --bg-main: #000511;
+  --bg-surface: #000c29;
+  --border: rgba(212, 175, 55, 0.1);
+}
+
+/* SKIN: BRASILEIRÃO (Amazon Green & Canary Yellow) */
+.theme-brasileirao {
+  --primary: #004d2c;
+  --primary-glow: rgba(0, 77, 44, 0.6);
+  --accent: #facc15;
+  --bg-main: #052e16;
+  --bg-surface: #064e3b;
+  --border: rgba(250, 204, 21, 0.1);
+}
+
+/* SKIN: PREMIER LEAGUE (Royal Purple & White) */
+.theme-premier {
+  --primary: #3d195b;
+  --primary-glow: rgba(61, 25, 91, 0.6);
+  --accent: #00ff85;
+  --bg-main: #1a0a2e;
+  --bg-surface: #2b124a;
+  --border: rgba(0, 255, 133, 0.1);
+}
+
+/* SKIN: NARRADOR PRO CLASSIC */
+.theme-classic {
+  --primary: #3b82f6;
+  --primary-glow: rgba(59, 130, 246, 0.5);
+  --accent: #fbbf24;
+  --bg-main: #020617;
+  --bg-surface: #0f172a;
+  --border: rgba(255, 255, 255, 0.06);
+}
+
+/* Animações e Feedback de Voz */
+@keyframes voice-wave {
+  0% { transform: scaleY(0.5); opacity: 0.3; }
+  50% { transform: scaleY(1.5); opacity: 1; }
+  100% { transform: scaleY(0.5); opacity: 0.3; }
+}
+
+.voice-bar {
+  width: 4px;
+  height: 24px;
+  background: var(--accent);
+  border-radius: var(--radius-full);
+  animation: voice-wave 1s infinite ease-in-out;
+  box-shadow: 0 0 15px var(--accent);
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap');
 
 /* Animações de Broadcast */
 @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
