@@ -87,6 +87,7 @@ class PressureService {
       return this.lastAnalysis;
     } catch (error) {
       console.error("Erro na análise de pressão:", error);
+      return this.lastAnalysis;
     } finally {
       this.isAnalyzing = false;
     }
@@ -119,6 +120,11 @@ class PressureService {
   dispatchUpdate() {
     const event = new CustomEvent('pressureUpdate', { detail: this.lastAnalysis });
     window.dispatchEvent(event);
+  }
+
+  reset() {
+    this.lastAnalysis = { score: 50, narrative: "Jogo equilibrado.", dominance: 'neutral', timestamp: 0 };
+    this.isAnalyzing = false;
   }
 }
 

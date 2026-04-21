@@ -108,6 +108,13 @@ class OBSService {
       window.dispatchEvent(new CustomEvent('obsStatusChange', { detail: { isConnected: this.isConnected } }));
     }
   }
+
+  reset() {
+    this.isConnected = false;
+    if (this.obs) {
+      try { this.obs.disconnect(); } catch(e) {}
+    }
+  }
 }
 
 export const obsService = new OBSService();

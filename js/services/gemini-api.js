@@ -173,7 +173,7 @@ export async function callAI(prompt) {
     throw lastError || new Error('Todos os canais de IA falharam.');
 }
 
-const cleanAndParseJSON = (text) => {
+export const cleanAndParseJSON = (text) => {
     try {
         let clean = text.replace(/```json/g, '').replace(/```/g, '').trim();
         const firstBrace = clean.indexOf('{');
