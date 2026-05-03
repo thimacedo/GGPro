@@ -3,6 +3,7 @@
 
 import OBSWebSocket from './obs-ws.js';
 import { toastManager } from '../components/toasts.js';
+import matchState from '../state.js';
 
 class OBSService {
   constructor() {
@@ -87,6 +88,12 @@ class OBSService {
     try {
       await this.obs.call('SaveReplayBuffer');
       toastManager.show('OBS', 'Replay salvo!', 'success');
+      
+      // Registrar na timeline
+      matchState.addEvent({
+        type: 'HIGHLIGHT',
+        description: '💾 Replay de destaque salvo'
+      });
     } catch (e) {
       console.warn('Falha ao salvar replay. O Replay Buffer está ativo?');
     }
