@@ -2,7 +2,7 @@
 // Modais: Player Actions, Sumula, PreMatch, Penalty, Coach, PlayerEdit, ImportList, EndGame, Report
 
 import matchState from '../state.js';
-import { processImageForPlayers, parseRegulationDocument } from '../services/gemini.js?v=2';
+import { processImageForPlayers, parseRegulationDocument } from '../services/gemini-api.js';
 
 class ModalManager {
   constructor() {

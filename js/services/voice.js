@@ -1,7 +1,7 @@
 // js/services/voice.js - v6.1 ULTRA
 // Motor Híbrido Avançado: Heurística Ultra-Resiliente + IA Fallback
 
-import { parseMatchCommand } from './gemini.js?v=2';
+import { parseMatchCommand } from './gemini-api.js';
 import matchState from '../state.js';
 
 class VoiceController {
