@@ -1,11 +1,13 @@
 {
   "version": 2,
   "outputDirectory": ".",
+  "functions": {
+    "api/browser.js": {
+      "memory": 1024,
+      "maxDuration": 15
+    }
+  },
   "rewrites": [
-    {
-      "source": "/diag/v454",
-      "destination": "/api/gemini.js"
-    },
     {
       "source": "/api/(.*)",
       "destination": "/api/$1"
