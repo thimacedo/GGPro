@@ -66,6 +66,32 @@ class OBSService {
   }
 
   /**
+   * Alterna o estado do Replay Buffer (liga/desliga).
+   */
+  async toggleReplayBuffer() {
+    if (!this.isConnected) return;
+    try {
+      await this.obs.call('ToggleReplayBuffer');
+      toastManager.show('OBS', 'Replay Buffer alterado', 'info');
+    } catch (e) {
+      console.error('Erro ao alternar Replay Buffer:', e);
+    }
+  }
+
+  /**
+   * Salva o conteúdo atual do Replay Buffer.
+   */
+  async saveReplayBuffer() {
+    if (!this.isConnected) return;
+    try {
+      await this.obs.call('SaveReplayBuffer');
+      toastManager.show('OBS', 'Replay salvo!', 'success');
+    } catch (e) {
+      console.warn('Falha ao salvar replay. O Replay Buffer está ativo?');
+    }
+  }
+
+  /**
    * Reage a eventos do jogo e dispara ações no OBS se o autoSwitch estiver ativo.
    */
   handleGameEvent(event) {
@@ -73,6 +99,7 @@ class OBSService {
 
     if (event.type === 'GOAL') {
       this.switchScene(this.sceneMap.GOAL);
+      this.saveReplayBuffer();
       // Opcional: Voltar para a cena tática após 10 segundos
       setTimeout(() => this.switchScene(this.sceneMap.TACTICAL), 15000);
     }
