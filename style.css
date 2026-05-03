@@ -1,115 +1,135 @@
 :root {
   --primary: #3b82f6;
-  --primary-glow: rgba(59, 130, 246, 0.5);
-  --accent: #fbbf24;
   --bg-main: #020617;
   --bg-surface: #0f172a;
-  --border: rgba(255, 255, 255, 0.06);
-  --text-main: #f8fafc;
-  --radius-lg: 20px;
-  --radius-xl: 32px;
-  --transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  --text: #f8fafc;
+  --text-dim: #64748b;
+  --border: rgba(255, 255, 255, 0.08);
+  --radius: 1rem;
+  --header-h: 60px;
+  --nav-h: 70px;
 }
 
-/* Scrollbar Profissional */
-.custom-scrollbar::-webkit-scrollbar { width: 4px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
 body {
-  font-family: 'Inter', sans-serif;
-  background-color: var(--bg-main);
-  color: var(--text-main);
   margin: 0;
-  overflow: hidden;
+  font-family: system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text);
   height: 100vh;
+  height: 100dvh; /* Altura dinâmica para mobile */
+  overflow: hidden;
 }
 
-/* Layout do Console de Guerra */
-aside, section {
+/* Utilitários Flexbox/Grid (Substituindo Tailwind Crítico) */
+.flex { display: flex; }
+.flex-col { flex-direction: column; }
+.flex-1 { flex: 1; }
+.items-center { align-items: center; }
+.justify-between { justify-content: space-between; }
+.gap-2 { gap: 0.5rem; }
+.p-4 { padding: 1rem; }
+.w-full { width: 100%; }
+.h-full { height: 100%; }
+
+/* Layout Base */
+#root {
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  height: 100%;
 }
 
-/* Efeito Glassmorphism Global */
-.backdrop-blur-xl {
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-}
-
-/* Botões de Ação Rápida */
-button {
-  cursor: pointer;
-  user-select: none;
-  touch-action: manipulation;
-}
-
-button:active {
-  transform: scale(0.95);
-}
-
-/* Estilo das Listas de Jogadores */
-.player-list-item {
+.header {
+  height: var(--header-h);
+  border-bottom: 1px solid var(--border);
+  padding: 0 1rem;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: rgba(255,255,255,0.03);
-  border-radius: 12px;
-  border: 1px solid transparent;
-  transition: var(--transition);
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(10px);
 }
 
-.player-list-item:hover {
-  background: rgba(255,255,255,0.05);
-  border-color: rgba(255,255,255,0.1);
-}
-
-/* Timeline Events */
-.event-card {
-  padding: 12px;
-  background: rgba(255,255,255,0.03);
-  border-radius: 16px;
-  border-left: 3px solid var(--primary);
-  animation: slideIn 0.3s ease-out;
-}
-
-@keyframes slideIn {
-  from { opacity: 0; transform: translateX(20px); }
-  to { opacity: 1; transform: translateX(0); }
-}
-
-/* Temas Dinâmicos */
-.theme-champions { --primary: #0047ff; --bg-main: #000411; }
-.theme-brasileirao { --primary: #00a859; --bg-main: #052e16; }
-.theme-premier { --primary: #3d195b; --bg-main: #1a0a2e; }
-
-/* Utilitários */
-.claro {
-  --bg-main: #f8fafc;
-  --bg-surface: #ffffff;
-  --text-main: #0f172a;
-  --border: rgba(0,0,0,0.06);
-}
-
-/* Responsividade de Emergência */
-@media (max-width: 1280px) {
-  .w-80 { width: 240px; }
-  .w-48 { width: 140px; }
-}
-
-/* Campo Tático em Tela Cheia */
-#tactical-pitch {
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(circle at center, #064e3b 0%, #022c22 100%);
-  border-radius: 2rem;
+.main-container {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
   position: relative;
 }
 
-.pitch-line {
-  border: 1.5px solid rgba(255,255,255,0.2);
-  pointer-events: none;
+/* Colunas do Console de Guerra */
+.col-aside { width: 200px; border-right: 1px solid var(--border); padding: 0.75rem; overflow-y: auto; }
+.col-main { flex: 1; padding: 0.75rem; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+.col-right { width: 320px; border-left: 1px solid var(--border); padding: 0.75rem; overflow-y: auto; }
+
+/* Estilo dos Botões Mobile-First */
+.btn-action {
+  width: 100%;
+  padding: 1.25rem 0.5rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-surface);
+  color: var(--text);
+  font-weight: 800;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.1s, background 0.2s;
 }
+
+.btn-action:active { transform: scale(0.96); background: var(--primary); }
+
+/* Adaptação Mobile Radical */
+@media (max-width: 768px) {
+  .col-aside, .col-right {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    z-index: 10;
+    background: var(--bg-main);
+    display: none; /* Escondido por padrão no mobile */
+  }
+
+  /* Mostrar apenas a aba ativa */
+  .active-mobile-tab { display: flex !important; }
+
+  .mobile-nav {
+    height: var(--nav-h);
+    background: var(--bg-surface);
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.6rem;
+    font-weight: 900;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    border: none;
+    background: none;
+  }
+
+  .nav-item.active { color: var(--primary); }
+  .nav-item-icon { font-size: 1.25rem; }
+}
+
+/* Esconder Nav no Desktop */
+@media (min-width: 769px) {
+  .mobile-nav { display: none; }
+}
+
+/* Scrollbars */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
+
+/* Animações */
+.animate-fade { animation: fadeIn 0.3s ease-out; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
