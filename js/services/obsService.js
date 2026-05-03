@@ -33,6 +33,7 @@ class OBSService {
       'STATS': 'CENA_STATS',
       'PRESSURE_HIGH': 'CENA_ATAQUE'
     };
+    this.lastReplaySave = 0;
   }
 
   async connect() {
@@ -114,6 +115,13 @@ class OBSService {
     // Se a pressão for maior que 80%, mudar para cena de ataque
     if (analysis.score > 80 || analysis.score < 20) {
       this.switchScene(this.sceneMap.PRESSURE_HIGH);
+      
+      // Gatilho de Replay automático com cooldown de 30s
+      const now = Date.now();
+      if (now - this.lastReplaySave > 30000) {
+        this.saveReplayBuffer();
+        this.lastReplaySave = now;
+      }
     }
   }
 

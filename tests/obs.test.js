@@ -92,4 +92,30 @@ describe('OBSService - Integration Logic', () => {
     expect(disconnectSpy).toHaveBeenCalled();
     expect(connectSpy).toHaveBeenCalled();
   });
+
+  it('should trigger saveReplayBuffer on high pressure with cooldown', async () => {
+    obsService.isConnected = true;
+    obsService.config.autoSwitch = true;
+    
+    const callSpy = vi.spyOn(obsService.obs, 'call');
+    const now = Date.now();
+    vi.setSystemTime(now);
+
+    // Primeiro disparo (pico de pressão)
+    obsService.handlePressureUpdate({ score: 85, dominance: 'home' });
+    expect(callSpy).toHaveBeenCalledWith('SaveReplayBuffer');
+    
+    callSpy.mockClear();
+
+    // Segundo disparo imediato (deve ser ignorado pelo cooldown)
+    obsService.handlePressureUpdate({ score: 90, dominance: 'home' });
+    expect(callSpy).not.toHaveBeenCalledWith('SaveReplayBuffer');
+
+    // Terceiro disparo após 31 segundos (deve funcionar)
+    vi.setSystemTime(now + 31000);
+    obsService.handlePressureUpdate({ score: 82, dominance: 'home' });
+    expect(callSpy).toHaveBeenCalledWith('SaveReplayBuffer');
+    
+    vi.useRealTimers();
+  });
 });

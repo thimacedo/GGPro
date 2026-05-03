@@ -5,10 +5,11 @@ Sistema/Plataforma GG Pro - Dashboard de Analytics e Narração.
 
 ## 📌 Status Atual
 **Data:** 03 de Maio de 2026
-**Fase:** Integração Broadcast (v7.1)
-**Resumo:** Integração avançada com OBS Studio. Implementado o serviço de Replay Buffer para captura automática de momentos importantes (Gols) e controle manual de replays.
+**Fase:** Integração Broadcast (v7.2)
+**Resumo:** Integração avançada com OBS Studio. Implementado gatilhos automáticos de replay baseados em picos de pressão detectados por IA e controle de cooldown.
 
 ### ✅ Concluído Recentemente:
+- [x] **v7.2:** IA Momentum Triggers: Captura automática de replays em picos de pressão (>80%) com cooldown de 30s.
 - [x] **v7.1:** Highlights Engine: Implementação do OBS Replay Buffer Service.
 - [x] **v7.0:** Integração OBS Studio (WebSocket Service + Config UI).
 - [x] **v6.6.1:** Estabilização (Vitest + JSDOM) e Correção de Bugs de Referência.
