@@ -37,6 +37,29 @@ window.handleAction = (action) => console.log("Ação do Operador:", action);
 window.generateDistinctShortName = generateDistinctShortName;
 window.saveObsConfig = (addr, pass, auto) => obsService.saveConfig({ address: addr, password: pass, autoSwitch: auto });
 
+/**
+ * LOGICA DE EVENTOS RÁPIDOS (CONSOE)
+ */
+window.quickEvent = (type, teamId) => {
+  const teamName = matchState.getTeamShortName(teamId);
+  const descriptions = {
+    'GOAL': `⚽ GOL do ${teamName}!`,
+    'YELLOW_CARD': `🟨 Cartão Amarelo para ${teamName}`,
+    'RED_CARD': `🟥 Cartão Vermelho para ${teamName}`,
+    'FOUL': `⚠ Falta cometida pelo ${teamName}`,
+    'CORNER': `🚩 Escanteio para ${teamName}`,
+    'SHOT': `🎯 Finalização do ${teamName}`
+  };
+
+  matchState.addEvent({
+    type,
+    teamId,
+    description: descriptions[type] || `Evento: ${type}`
+  });
+
+  toastManager.show('Console', descriptions[type], 'success');
+};
+
 window.changeTheme = (themeId) => {
   const theme = BROADCAST_THEMES[themeId];
   if (!theme) return;
@@ -141,38 +164,84 @@ function render() {
   root.innerHTML = `
     <div class="h-screen flex flex-col font-sans selection:bg-blue-500/20 overflow-hidden transition-colors duration-700 ${ui.isLightMode ? 'claro' : 'bg-slate-950 text-slate-50'}">
 
-      <!-- Componente Header -->
-      <div id="headerContainer"></div>
+      <!-- Header Compacto -->
+      <div id="headerContainer" class="border-b border-white/5 bg-slate-900/20 backdrop-blur-md"></div>
 
-      <!-- Voice HUD -->
-      ${renderVoiceHud(ui.voiceState)}
+      <!-- Console de Operações -->
+      <main class="flex-1 flex gap-2 p-2 min-h-0 overflow-hidden">
+        
+        <!-- Coluna Esquerda: Eventos Rápidos (P0 para Operação) -->
+        <aside class="w-48 flex flex-col gap-2 bg-slate-900/50 rounded-3xl border border-white/5 p-3 overflow-y-auto custom-scrollbar">
+          <h3 class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 text-center">Atalhos</h3>
+          
+          <div class="grid grid-cols-1 gap-2">
+            <button onclick="window.quickEvent('GOAL', 'home')" class="py-4 bg-emerald-600/20 border border-emerald-500/30 rounded-2xl text-emerald-400 font-black text-xs hover:bg-emerald-600 hover:text-white transition-all">GOL CASA</button>
+            <button onclick="window.quickEvent('GOAL', 'away')" class="py-4 bg-emerald-600/20 border border-emerald-500/30 rounded-2xl text-emerald-400 font-black text-xs hover:bg-emerald-600 hover:text-white transition-all">GOL VISIT.</button>
+            <div class="h-px bg-white/5 my-1"></div>
+            <button onclick="window.quickEvent('YELLOW_CARD', 'home')" class="py-3 bg-amber-500/20 border border-amber-500/30 rounded-2xl text-amber-400 font-black text-[10px] hover:bg-amber-500 hover:text-white transition-all">AMARELO</button>
+            <button onclick="window.quickEvent('RED_CARD', 'home')" class="py-3 bg-red-600/20 border border-red-500/30 rounded-2xl text-red-400 font-black text-[10px] hover:bg-red-600 hover:text-white transition-all">VERMELHO</button>
+            <button onclick="window.quickEvent('FOUL', 'home')" class="py-3 bg-slate-800 border border-white/5 rounded-2xl text-slate-400 font-black text-[10px] hover:bg-slate-700 transition-all">FALTA</button>
+            <button onclick="window.quickEvent('CORNER', 'home')" class="py-3 bg-slate-800 border border-white/5 rounded-2xl text-slate-400 font-black text-[10px] hover:bg-slate-700 transition-all">ESCANT.</button>
+            <button onclick="window.quickEvent('SHOT', 'home')" class="py-3 bg-blue-600/20 border border-blue-500/30 rounded-2xl text-blue-400 font-black text-[10px] hover:bg-blue-600 hover:text-white transition-all">CHUTE</button>
+          </div>
+        </aside>
 
-      <!-- Conteúdo Principal -->
-      <main class="flex-1 flex flex-col px-2 md:px-4 min-h-0 ${ui.isFullscreen ? 'overflow-hidden pb-24 pt-2' : 'overflow-y-auto pb-40 pt-4'} custom-scrollbar">
-        <div class="w-full max-w-7xl mx-auto flex flex-col min-h-0 ${ui.isFullscreen ? 'h-full' : 'gap-4 md:gap-6'}">
+        <!-- Coluna Central: Mapa Tático / Elenco -->
+        <section class="flex-1 flex flex-col gap-2 min-w-0">
+          <div class="flex items-center gap-2">
+            <button id="setViewField" class="px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${ui.viewMode === 'field' ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-900 text-slate-500 border border-white/5'}">🏟 CAMPO</button>
+            <button id="setViewList" class="px-6 py-2 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all ${ui.viewMode === 'list' ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-900 text-slate-500 border border-white/5'}">📋 ELENCO</button>
+            <div class="flex-1"></div>
+            <button id="undoBtn" class="px-4 py-2 bg-slate-900 border border-white/5 rounded-xl text-[10px] font-black text-slate-500 hover:text-red-400 transition-all uppercase">Desfazer</button>
+          </div>
 
-          <!-- Tabs -->
-          <div id="tabsContainer" class="flex justify-center gap-2 ${ui.isFullscreen ? 'hidden' : ''}">
-            <div class="flex justify-center gap-2 bg-slate-900/50 p-1.5 rounded-2xl w-fit mx-auto border border-white/5 backdrop-blur-xl">
-              <button id="tabMain" class="px-8 py-2.5 rounded-xl font-black text-[10px] tracking-widest transition-all ${ui.activeTab === 'main' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-500 hover:text-white'}">NARRAÇÃO</button>
-              <button id="tabStats" class="px-8 py-2.5 rounded-xl font-black text-[10px] tracking-widest transition-all ${ui.activeTab === 'stats' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-500 hover:text-white'}">ESTATÍSTICAS</button>
-              <button id="tabReport" class="px-8 py-2.5 rounded-xl font-black text-[10px] tracking-widest transition-all ${ui.activeTab === 'report' ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-slate-500 hover:text-white'}">RELATÓRIO</button>
+          <div id="mainDisplay" class="flex-1 bg-slate-900/30 rounded-[2.5rem] border border-white/5 relative overflow-hidden backdrop-blur-sm">
+            ${ui.viewMode === 'field' ? fieldManager.render(state, true) : renderPlayerLists(state)}
+          </div>
+        </section>
+
+        <!-- Coluna Direita: Estatísticas e Timeline -->
+        <aside class="w-80 flex flex-col gap-2 overflow-hidden">
+          <!-- Estatísticas Live -->
+          <div class="bg-slate-900/50 rounded-3xl border border-white/5 p-4 backdrop-blur-xl">
+             ${statsManager.render(state, true)} <!-- Renderização compacta -->
+          </div>
+
+          <!-- Timeline Compacta -->
+          <div class="flex-1 bg-slate-900/50 rounded-3xl border border-white/5 flex flex-col overflow-hidden backdrop-blur-xl">
+            <div class="p-4 border-b border-white/5 bg-white/5">
+              <h3 class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">📜 Cronologia</h3>
+            </div>
+            <div class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
+              ${(state.events || []).slice(0, 20).map(e => renderTimelineEvent(e, state)).join('')}
             </div>
           </div>
+        </aside>
 
-          <div id="tabContent" class="flex-1 min-h-0">
-            ${renderActiveTab(state)}
-          </div>
-        </div>
       </main>
 
-      <!-- Command Bar -->
-      ${renderCommandBar(state)}
+      <!-- Command Bar (Solenya Edition) -->
+      <div class="p-4 bg-slate-950 border-t border-white/5">
+        <div class="max-w-5xl mx-auto flex items-center gap-4">
+          <button id="micBtn" class="w-12 h-12 rounded-full bg-slate-900 border border-white/10 flex items-center justify-center text-xl hover:bg-red-600/20 transition-all relative">
+            🎙️
+            <div id="micPulse" class="absolute inset-0 bg-red-600/20 rounded-full ${ui.voiceState.isRecording ? '' : 'hidden'} animate-pulse"></div>
+          </button>
+          
+          <div class="flex-1 flex items-center bg-slate-900/80 border border-white/10 rounded-2xl px-4 py-1 ring-1 ring-white/5">
+            <input
+              type="text"
+              id="commandInput"
+              placeholder="Digite comando ou narre..."
+              class="flex-1 bg-transparent border-none py-2 font-bold text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-0"
+            />
+          </div>
 
-      <!-- Quick Action Buttons -->
-      <div class="absolute top-4 right-4 z-[70] flex gap-2">
-        <button id="toggleContrast" class="p-3 rounded-2xl bg-slate-900/80 text-white border border-white/10 backdrop-blur-md shadow-2xl hover:bg-slate-800 transition-all">🌓</button>
-        <button id="openSettings" class="p-3 rounded-2xl bg-slate-900/80 text-white border border-white/10 backdrop-blur-md shadow-2xl hover:bg-slate-800 transition-all">⚙️</button>
+          <div class="flex gap-2">
+            <button id="openSettings" class="p-3 rounded-xl bg-slate-900 border border-white/5 text-slate-500 hover:text-white transition-all">⚙️</button>
+            <button id="toggleContrast" class="p-3 rounded-xl bg-slate-900 border border-white/5 text-slate-500 hover:text-white transition-all">🌓</button>
+          </div>
+        </div>
       </div>
 
       <!-- Settings Menu -->
@@ -407,30 +476,25 @@ function attachFieldInteractions() {
 }
 
 function attachEventListeners() {
-  document.getElementById('tabMain')?.addEventListener('click', () => { ui.activeTab = 'main'; render(); });
-  document.getElementById('tabStats')?.addEventListener('click', () => { ui.activeTab = 'stats'; render(); });
-  document.getElementById('tabReport')?.addEventListener('click', () => { ui.activeTab = 'report'; render(); });
   document.getElementById('setViewList')?.addEventListener('click', () => { ui.viewMode = 'list'; render(); });
   document.getElementById('setViewField')?.addEventListener('click', () => { ui.viewMode = 'field'; render(); });
-  document.getElementById('toggleFullscreen')?.addEventListener('click', () => { ui.isFullscreen = !ui.isFullscreen; render(); });
-  document.getElementById('playPauseBottom')?.addEventListener('click', () => matchState.handlePlayPauseToggle());
+  
   document.getElementById('micBtn')?.addEventListener('click', () => voice.toggle());
 
   const cmdInput = document.getElementById('commandInput');
   if (cmdInput) {
     cmdInput.onkeydown = (e) => { if (e.key === 'Enter') { handleCommandSubmit(cmdInput.value); cmdInput.value = ''; } };
   }
-  const sendBtn = document.getElementById('sendBtn');
-  if (sendBtn) {
-    sendBtn.onclick = () => { if (cmdInput) { handleCommandSubmit(cmdInput.value); cmdInput.value = ''; } };
-  }
 
   document.getElementById('openSettings')?.addEventListener('click', () => { ui.isSettingsOpen = true; render(); });
   document.getElementById('settingsOverlay')?.addEventListener('click', () => { ui.isSettingsOpen = false; render(); });
   document.getElementById('toggleContrast')?.addEventListener('click', () => { ui.isLightMode = !ui.isLightMode; render(); });
 
-  document.getElementById('btnFinalize')?.addEventListener('click', () => modalManager.showEndGameOptions());
-  document.getElementById('undoBtn')?.addEventListener('click', () => { if (matchState.undo()) { render(); } });
+  document.getElementById('undoBtn')?.addEventListener('click', () => { 
+    console.log("Revertendo última ação...");
+    matchState.handleUndo(); 
+    render(); 
+  });
 }
 
 // Global functions for events

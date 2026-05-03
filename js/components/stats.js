@@ -4,7 +4,7 @@
 import matchState from '../state.js';
 
 class StatsManager {
-  render(state) {
+  render(state, compact = false) {
     const safeEvents = state.events || [];
     const getCount = (teamId, types) => safeEvents.filter(e => e.teamId === teamId && types.includes(e.type) && !e.isAnnulled).length;
 
@@ -29,13 +29,47 @@ class StatsManager {
     const awayReds = getCount('away', ['RED_CARD']);
 
     // Cálculo de posse de bola (baseado em volume de eventos como proxy)
-    const totalEvents = homeTotalShots + awayTotalShots + homeCorners + awayCorners + homeFouls + awayFouls;
     const homeWeight = (homeTotalShots * 2) + homeCorners + (awayFouls * 0.5);
     const awayWeight = (awayTotalShots * 2) + awayCorners + (homeFouls * 0.5);
     const totalWeight = homeWeight + awayWeight;
     
     const homePossession = totalWeight === 0 ? 50 : Math.round((homeWeight / totalWeight) * 60 + 20); // Range 20-80%
     const awayPossession = 100 - homePossession;
+
+    if (compact) {
+      return `
+        <div class="flex flex-col gap-4 animate-fade-in">
+          <div class="flex justify-between items-center px-2 mb-2">
+            <div class="flex flex-col">
+              <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">${state.homeTeam.shortName || 'CAS'}</span>
+              <span class="text-2xl font-black text-white">${homeGoals}</span>
+            </div>
+            <div class="h-8 w-px bg-white/5"></div>
+            <div class="flex flex-col text-right">
+              <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">${state.awayTeam.shortName || 'VIS'}</span>
+              <span class="text-2xl font-black text-white">${awayGoals}</span>
+            </div>
+          </div>
+          
+          <div class="space-y-3">
+            ${this.renderStatBar('Posse', homePossession, awayPossession, state.homeTeam.color, state.awayTeam.color, true, true)}
+            ${this.renderStatBar('Finalizações', homeTotalShots, awayTotalShots, state.homeTeam.color, state.awayTeam.color, false, true)}
+            ${this.renderStatBar('Escanteios', homeCorners, awayCorners, state.homeTeam.color, state.awayTeam.color, false, true)}
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 pt-2 border-t border-white/5">
+            <div class="flex justify-center gap-2">
+              <span class="text-[10px] font-bold text-yellow-500">${homeYellows}🟨</span>
+              <span class="text-[10px] font-bold text-red-500">${homeReds}🟥</span>
+            </div>
+            <div class="flex justify-center gap-2">
+              <span class="text-[10px] font-bold text-yellow-500">${awayYellows}🟨</span>
+              <span class="text-[10px] font-bold text-red-500">${awayReds}🟥</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
 
     return `
       <div class="flex flex-col gap-6 animate-fade-in">
@@ -135,11 +169,27 @@ class StatsManager {
     return `Em Jogo: ${mins}'`;
   }
 
-  renderStatBar(label, homeValue, awayValue, homeColor, awayColor, isPercentage = false) {
+  renderStatBar(label, homeValue, awayValue, homeColor, awayColor, isPercentage = false, isCompact = false) {
     const total = homeValue + awayValue;
     const homeWidth = total === 0 ? 50 : (homeValue / total) * 100;
     const displayHome = isPercentage ? `${homeValue}%` : homeValue;
     const displayAway = isPercentage ? `${awayValue}%` : awayValue;
+
+    if (isCompact) {
+      return `
+        <div>
+          <div class="flex justify-between text-[8px] font-black uppercase text-slate-500 mb-1 tracking-tighter">
+            <span>${displayHome}</span>
+            <span>${label}</span>
+            <span>${displayAway}</span>
+          </div>
+          <div class="flex h-1 bg-slate-900/50 rounded-full overflow-hidden">
+            <div class="h-full transition-all duration-1000" style="width: ${homeWidth}%; background-color: ${homeColor}"></div>
+            <div class="h-full transition-all duration-1000" style="width: ${100 - homeWidth}%; background-color: ${awayColor}"></div>
+          </div>
+        </div>
+      `;
+    }
 
     return `
       <div class="group">
